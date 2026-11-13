@@ -1,0 +1,10 @@
+{
+  "check_updates_payload": {"status": "ok", "hasUpdate": false, "hasCriticalUpdate": false},
+  "google_https_passthrough": true,
+  "local_registration_stub": true,
+  "local_oauth_stub": true,
+  "local_ntp_server": true,
+  "local_sync_payload": true,
+  "extra_hosts": ["startup.mobile.yandex.net", "uniproxy.alice.yandex.net", "clck.yandex.net", "api.lbs.yandex.net"],
+  "http_connectivity_hosts": ["connectivitycheck.gstatic.com", "www.google.com"]
+}

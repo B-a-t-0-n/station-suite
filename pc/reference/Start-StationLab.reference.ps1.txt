@@ -1,0 +1,433 @@
+#requires -Version 5.1
+#requires -RunAsAdministrator
+<#
+ Station Lab autostart / self-heal.
+
+ Idempotent: starts only missing services, leaves running ones alone.
+ Intended to be run by scheduled tasks at logon and every minute.
+#>
+[CmdletBinding()]
+param(
+    [switch]$Quiet
+)
+
+$ErrorActionPreference = 'Stop'
+
+$Root = '<LEGACY_WORKSPACE>'
+$Lab = Join-Path $Root 'outputs\station-max'
+$TftpdDir = Join-Path $Lab 'Tftpd'
+$Stand = Join-Path $env:USERPROFILE 'AppData\Local\StationLab\stand'
+$LogPath = Join-Path $Stand 'station-lab.log'
+$PauseFile = Join-Path $Stand 'maintenance-mode'
+$TunnelOnlyMode = Test-Path -LiteralPath (Join-Path $Stand 'pc-tunnel-only')
+$Python = 'C:\Python313\python.exe'
+$AsrPython = Join-Path $Root 'work\station-voice-backend\env\Scripts\python.exe'
+$GigaPython = Join-Path $Root 'work\station-gigachat\env\Scripts\python.exe'
+$Adb = Join-Path $Root 'work\android-tools\platform-tools\adb.exe'
+$StationIp = '192.168.77.100'
+$LabIp = '192.168.77.1'
+$UniproxyIp = '192.168.77.2'
+
+New-Item -ItemType Directory -Force -Path $Stand | Out-Null
+$launcherMutex = New-Object System.Threading.Mutex($false, 'Global\StationLabLauncher')
+$launcherAcquired = $false
+try { $launcherAcquired = $launcherMutex.WaitOne(0) }
+catch [System.Threading.AbandonedMutexException] { $launcherAcquired = $true }
+if (-not $launcherAcquired) { exit 0 }
+
+function Write-LabLog([string]$Message) {
+    $line = ('{0:yyyy-MM-dd HH:mm:ss} {1}' -f (Get-Date), $Message)
+    Add-Content -LiteralPath $LogPath -Value $line -Encoding utf8
+    if (-not $Quiet) { Write-Host $line }
+}
+
+function Get-LabAdapter {
+    $nic = Get-NetAdapter -InterfaceIndex 17 -ErrorAction SilentlyContinue
+    if ($nic -and $nic.InterfaceDescription -match 'Realtek Gaming 2.5GbE') { return $nic }
+    return Get-NetAdapter -ErrorAction SilentlyContinue |
+        Where-Object { $_.InterfaceDescription -match 'Realtek Gaming 2.5GbE' } |
+        Select-Object -First 1
+}
+
+function Test-LabTcp([string]$Address, [int]$Port) {
+    return [bool](Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue |
+        Where-Object { $_.LocalAddress -eq $Address })
+}
+
+function Wait-LabTcp([string]$Address, [int]$Port, [int]$Seconds) {
+    for ($i = 0; $i -lt $Seconds; $i++) {
+        if (Test-LabTcp $Address $Port) { return $true }
+        Start-Sleep -Seconds 1
+    }
+    return $false
+}
+
+function Test-LabUdp([int]$Port) {
+    return [bool](Get-NetUDPEndpoint -LocalPort $Port -ErrorAction SilentlyContinue)
+}
+
+function Wait-LabUdp([int]$Port, [int]$Seconds) {
+    for ($i = 0; $i -lt $Seconds; $i++) {
+        if (Test-LabUdp $Port) { return $true }
+        Start-Sleep -Seconds 1
+    }
+    return $false
+}
+
+function Ensure-LabAddresses {
+    $nic = Get-LabAdapter
+    if (-not $nic) { throw 'Lab Ethernet adapter (Realtek Gaming 2.5GbE) was not found.' }
+    if ($nic.Status -ne 'Up') {
+        Enable-NetAdapter -Name $nic.Name -Confirm:$false -ErrorAction Stop
+        for ($i = 0; $i -lt 10; $i++) {
+            Start-Sleep -Seconds 1
+            $nic = Get-LabAdapter
+            if ($nic.Status -eq 'Up') { break }
+        }
+    }
+    Set-NetIPInterface -InterfaceIndex $nic.InterfaceIndex -Dhcp Disabled -ErrorAction SilentlyContinue
+    foreach ($ip in @($LabIp, $UniproxyIp)) {
+        $exists = Get-NetIPAddress -InterfaceIndex $nic.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+            Where-Object { $_.IPAddress -eq $ip }
+        if (-not $exists) {
+            New-NetIPAddress -InterfaceIndex $nic.InterfaceIndex -IPAddress $ip -PrefixLength 24 -ErrorAction Stop | Out-Null
+            Write-LabLog "Added lab address $ip"
+        }
+    }
+    # The lab Ethernet must not become the PC default route.
+    Get-NetRoute -InterfaceIndex $nic.InterfaceIndex -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue |
+        Remove-NetRoute -Confirm:$false -ErrorAction SilentlyContinue
+}
+
+function Ensure-LabFirewall {
+    $tftpd = Join-Path $TftpdDir 'tftpd64.exe'
+    $rules = @(
+        @{ Name = 'StationLab-DHCP';          Protocol = 'UDP'; LocalPort = '67';        LocalAddress = $LabIp;        RemotePort = '68'; Program = $tftpd },
+        @{ Name = 'StationLab-DNS-UDP';       Protocol = 'UDP'; LocalPort = '53';        LocalAddress = $LabIp;        RemoteAddress = $StationIp; Program = $Python },
+        @{ Name = 'StationLab-DNS-TCP';       Protocol = 'TCP'; LocalPort = '53';        LocalAddress = $LabIp;        RemoteAddress = $StationIp; Program = $Python },
+        @{ Name = 'StationLab-HTTP';          Protocol = 'TCP'; LocalPort = @(80, 443);  LocalAddress = $LabIp;        RemoteAddress = $StationIp; Program = $Python },
+        @{ Name = 'StationLab-Uniproxy';      Protocol = 'TCP'; LocalPort = '443';       LocalAddress = $UniproxyIp;   RemoteAddress = $StationIp; Program = $Python },
+        @{ Name = 'StationLab-Control';       Protocol = 'TCP'; LocalPort = '8900';      LocalAddress = $LabIp;        RemoteAddress = $StationIp; Program = $Python },
+        @{ Name = 'StationLab-Display';       Protocol = 'TCP'; LocalPort = '18090';     LocalAddress = $LabIp;        RemoteAddress = $StationIp; Program = $Python },
+        @{ Name = 'StationLab-NTP';           Protocol = 'UDP'; LocalPort = '123';       LocalAddress = $LabIp;        RemoteAddress = $StationIp; Program = $Python }
+    )
+    foreach ($rule in $rules) {
+        $existing = Get-NetFirewallRule -Name $rule.Name -ErrorAction SilentlyContinue
+        if ($existing -and $existing.Enabled.ToString() -eq 'True' -and
+            $existing.Action.ToString() -eq 'Allow') {
+            continue
+        }
+        Remove-NetFirewallRule -Name $rule.Name -ErrorAction SilentlyContinue
+        $params = @{
+            Name = $rule.Name
+            DisplayName = $rule.Name
+            Direction = 'Inbound'
+            Action = 'Allow'
+            Protocol = $rule.Protocol
+            Profile = 'Any'
+            Enabled = 'True'
+            Program = $rule.Program
+        }
+        if ($rule.LocalPort) { $params.LocalPort = $rule.LocalPort }
+        if ($rule.RemotePort) { $params.RemotePort = $rule.RemotePort }
+        if ($rule.LocalAddress) { $params.LocalAddress = $rule.LocalAddress }
+        if ($rule.RemoteAddress) { $params.RemoteAddress = $rule.RemoteAddress }
+        New-NetFirewallRule @params | Out-Null
+    }
+    Write-LabLog 'Firewall rules ensured.'
+}
+
+function Ensure-LabTime {
+    $service = Get-Service -Name 'W32Time' -ErrorAction SilentlyContinue
+    if ($null -ne $service -and $service.Status -eq 'Running') {
+        $w32pid = (Get-CimInstance Win32_Service -Filter "Name='W32Time'" -ErrorAction SilentlyContinue).ProcessId
+        $owner = Get-NetUDPEndpoint -LocalPort 123 -ErrorAction SilentlyContinue |
+            Where-Object { $_.OwningProcess -eq $w32pid }
+        if ($owner) {
+            Stop-Service -Name 'W32Time' -Force -ErrorAction Stop
+            Set-Service -Name 'W32Time' -StartupType Manual -ErrorAction SilentlyContinue
+            Write-LabLog 'Stopped W32Time so the local NTP server can bind 192.168.77.1:123.'
+        }
+    }
+}
+
+function Start-LabDhcp {
+    if (Get-Process -Name 'tftpd64' -ErrorAction SilentlyContinue) {
+        Write-LabLog 'DHCP server already running.'
+        return
+    }
+    $exe = Join-Path $TftpdDir 'tftpd64.exe'
+    $ini = Join-Path $TftpdDir 'tftpd32-local-config.ini'
+    $template = Join-Path $TftpdDir 'tftpd32-local-config-template.ini'
+    if (-not (Test-Path $exe) -or -not (Test-Path $template)) { throw 'DHCP files are missing.' }
+    Copy-Item -LiteralPath $template -Destination $ini -Force
+    $start = New-Object Diagnostics.ProcessStartInfo
+    $start.FileName = $exe
+    $start.WorkingDirectory = $TftpdDir
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+    $start.EnvironmentVariables['TFTP_INI'] = $ini
+    $process = [Diagnostics.Process]::Start($start)
+    if (-not (Wait-LabUdp 67 15)) { throw 'DHCP did not open UDP 67.' }
+    Write-LabLog "DHCP started (pid $($process.Id))."
+}
+
+function Start-LabConfig {
+    if (Test-LabTcp $LabIp 443) {
+        if ($TunnelOnlyMode) {
+            $modeReady = Join-Path $Stand 'config-ready.json'
+            $readyState = if (Test-Path -LiteralPath $modeReady) { Get-Content -LiteralPath $modeReady -Raw | ConvertFrom-Json } else { $null }
+            $listenerPids = @(Get-NetTCPConnection -State Listen -LocalAddress $LabIp -LocalPort 443 | Select-Object -ExpandProperty OwningProcess -Unique)
+            if (-not $readyState -or $readyState.requireStationRelay -ne $true -or $listenerPids -notcontains $readyState.pid) {
+                throw 'Tunnel-only mode requires a verified relay listener; request config restart.'
+            }
+        }
+        Write-LabLog 'Local config server already listening on 192.168.77.1:443.'
+        return
+    }
+    $script = Join-Path $Lab 'LocalConfigServer.py'
+    $cert = Join-Path $Lab 'tls-experiment\fullchain.pem'
+    $key = Join-Path $Lab 'tls-experiment\quasar-all.key'
+    $policy = Join-Path $TftpdDir 'config-policy.json'
+    $sync = '<USERPROFILE>\AppData\Local\Temp\opencode\station-adb-sync\02-sync-glagol-plus-voice.json'
+    $events = Join-Path $Stand 'config-events.jsonl'
+    $ready = Join-Path $Stand 'config-ready.json'
+    $stop = Join-Path $Stand 'config-stop'
+    $stdout = Join-Path $Stand 'config.stdout.log'
+    $stderr = Join-Path $Stand 'config.stderr.log'
+    foreach ($file in @($script, $cert, $key, $policy, $sync)) {
+        if (-not (Test-Path -LiteralPath $file)) { throw "Missing config input: $file" }
+    }
+    Remove-Item -LiteralPath $stop -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $ready -ErrorAction SilentlyContinue
+    $arguments = @(
+        '-I', '-B', '-u', $script,
+        '--cert', $cert, '--key', $key,
+        '--events', $events, '--ready', $ready, '--stop-file', $stop,
+        '--policy', $policy, '--sync-payload', $sync,
+        '--led-overlay', (Join-Path $Stand 'display-settings.json'),
+        '--station-relay', (Join-Path $Stand 'local-config-relay.json'),
+        '--max-seconds', '86400'
+    )
+    if ($TunnelOnlyMode) { $arguments += '--require-station-relay' }
+    $process = Start-Process -FilePath $Python -ArgumentList $arguments -WindowStyle Hidden -PassThru `
+        -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    if (-not (Wait-LabTcp $LabIp 443 25)) {
+        $detail = Get-Content -LiteralPath $stderr -Tail 20 -ErrorAction SilentlyContinue
+        throw ('Config server did not start. ' + ($detail -join ' '))
+    }
+    Write-LabLog "Local config server started (pid $($process.Id))."
+}
+
+function Start-LabDisplay {
+    if (Test-LabTcp $LabIp 18090) { return }
+    $script = '<USERPROFILE>\Documents\Codex\2026-11-09\x20\work\station-display-control\display_bridge.py'
+    if (-not (Test-Path -LiteralPath $script)) { throw 'Display settings bridge is missing.' }
+    $process = Start-Process -FilePath $Python -ArgumentList @('-I', '-B', '-u', $script,
+        '--settings', (Join-Path $Stand 'display-settings.json')) -WindowStyle Hidden -PassThru `
+        -RedirectStandardOutput (Join-Path $Stand 'display.stdout.log') `
+        -RedirectStandardError (Join-Path $Stand 'display.stderr.log')
+    if (-not (Wait-LabTcp $LabIp 18090 25)) { throw 'Display settings bridge did not start.' }
+    Write-LabLog "Display settings bridge started (pid $($process.Id))."
+}
+
+function Start-LabAsr {
+    $streaming = Join-Path $Root 'work\station-voice-backend\streaming_asr_server.py'
+    $oneshot = Join-Path $Root 'work\station-voice-backend\asr_server.py'
+    if (-not (Test-LabTcp '127.0.0.1' 18889)) {
+        $out = Join-Path $Stand 'streaming-asr.stdout.log'
+        $err = Join-Path $Stand 'streaming-asr.stderr.log'
+        $process = Start-Process -FilePath $AsrPython -ArgumentList @('-I', '-B', '-u', $streaming) `
+            -WindowStyle Hidden -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+        if (-not (Wait-LabTcp '127.0.0.1' 18889 60)) { throw 'Streaming ASR did not start on 18889.' }
+        Write-LabLog "Streaming ASR started (pid $($process.Id))."
+    }
+    if (-not (Test-LabTcp '127.0.0.1' 18888)) {
+        $out = Join-Path $Stand 'asr.stdout.log'
+        $err = Join-Path $Stand 'asr.stderr.log'
+        $process = Start-Process -FilePath $AsrPython -ArgumentList @('-I', '-B', '-u', $oneshot) `
+            -WindowStyle Hidden -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+        if (-not (Wait-LabTcp '127.0.0.1' 18888 60)) { throw 'One-shot ASR did not start on 18888.' }
+        Write-LabLog "One-shot ASR started (pid $($process.Id))."
+    }
+}
+
+function Start-LabVoice {
+    if (Test-LabTcp $UniproxyIp 443) {
+        Write-LabLog 'Voice daemon already listening on 192.168.77.2:443.'
+        return
+    }
+    $script = Join-Path $Root 'work\station-desktop\mic_signal\station_voice_daemon.py'
+    $out = Join-Path $Stand 'voice-daemon.stdout.log'
+    $err = Join-Path $Stand 'voice-daemon.stderr.log'
+    $process = Start-Process -FilePath $Python -ArgumentList @('-I', '-B', '-u', $script) `
+        -WindowStyle Hidden -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+    if (-not (Wait-LabTcp $UniproxyIp 443 25)) { throw 'Voice daemon did not bind 192.168.77.2:443.' }
+    Write-LabLog "Voice daemon started (pid $($process.Id))."
+}
+
+function Start-LabMusic {
+    if (Test-LabTcp $LabIp 8899) {
+        Write-LabLog 'Music server already listening on 192.168.77.1:8899.'
+        return
+    }
+    $script = Join-Path $Root 'work\station-gigachat\music_server.py'
+    $root = Join-Path $env:LOCALAPPDATA 'StationLab\vk-music'
+    $out = Join-Path $Stand 'music-server.stdout.log'
+    $err = Join-Path $Stand 'music-server.stderr.log'
+    $arguments = @('-I', '-B', '-u', $script, '--root', $root, '--host', $LabIp, '--port', '8899')
+    $process = Start-Process -FilePath $GigaPython -ArgumentList $arguments `
+        -WindowStyle Hidden -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+    if (-not (Wait-LabTcp $LabIp 8899 25)) { throw 'Music server did not bind 192.168.77.1:8899.' }
+    Write-LabLog "Music server started (pid $($process.Id))."
+}
+
+function Connect-LabAdb {
+    if (-not (Test-Path -LiteralPath $Adb)) {
+        Write-LabLog 'adb.exe not found; skipped station ADB setup.'
+        return
+    }
+    try {
+        & $Adb start-server 2>&1 | Out-Null
+        & $Adb connect ($StationIp + ':5555') 2>&1 | Out-Null
+        & $Adb -s ($StationIp + ':5555') forward tcp:19891 tcp:9891 2>&1 | Out-Null
+        Write-LabLog 'ADB server/forward checked.'
+    } catch {
+        Write-LabLog ('ADB setup skipped: ' + $_.Exception.Message)
+    }
+}
+
+function Stop-RetiredStationServices {
+    # Only exact reviewed script identities are retired; unrelated Python stays alone.
+    $retired = @(
+        (Join-Path $Root 'work\station-desktop\mic_signal\station_voice_daemon.py'),
+        (Join-Path $Root 'work\station-gigachat\music_server.py'),
+        (Join-Path $Root 'work\station-voice-backend\streaming_asr_server.py'),
+        (Join-Path $Root 'work\station-voice-backend\asr_server.py'),
+        (Join-Path $Root 'work\station-lab-control\control_server.py'),
+        '<USERPROFILE>\Documents\Codex\2026-11-09\x20\work\station-display-control\display_bridge.py'
+    )
+    foreach ($candidate in @(Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'")) {
+        if (-not $candidate.CommandLine) { continue }
+        $line = $candidate.CommandLine.Replace('/', '\')
+        foreach ($scriptPath in $retired) {
+            if ($line.Contains($scriptPath)) {
+                Stop-Process -Id $candidate.ProcessId -Force -ErrorAction SilentlyContinue
+                Write-LabLog ('Retired PC service stopped: ' + [IO.Path]::GetFileName($scriptPath))
+                break
+            }
+        }
+    }
+}
+
+function Ensure-StationInputHelper {
+    $bootstrap = Join-Path $Root 'work\station-agent\tools\Start-StationInputHelper.ps1'
+    if (-not (Test-Path -LiteralPath $bootstrap)) { throw 'Station input bootstrap is missing.' }
+    & $bootstrap -Adb $Adb -Target ($StationIp + ':5555') | Out-Null
+    Write-LabLog 'On-device input helper checked without pressing keys.'
+}
+
+function Ensure-StationAgent {
+    if (-not (Test-Path -LiteralPath $Adb)) { return }
+    try {
+        $target = $StationIp + ':5555'
+        $pids = (& $Adb -s $target shell pidof local.station.agent 2>$null) -join ' '
+        if ($pids -match '\d+') { return }
+        & $Adb -s $target shell am start -n local.station.agent/.MainActivity 2>&1 | Out-Null
+        Start-Sleep -Seconds 2
+        & $Adb -s $target shell am start -a android.intent.action.MAIN -c android.intent.category.HOME 2>&1 | Out-Null
+        Write-LabLog 'Station Agent was missing; started and returned to home.'
+    } catch {
+        Write-LabLog ('Agent watchdog skipped: ' + $_.Exception.Message)
+    }
+}
+
+$RestartConfigFile = Join-Path $Stand 'restart-config'
+if (Test-Path -LiteralPath $RestartConfigFile) {
+    Remove-Item -LiteralPath $RestartConfigFile -Force -ErrorAction SilentlyContinue
+    Write-LabLog 'Config restart requested.'
+    $configOwners = Get-NetTCPConnection -LocalAddress $LabIp -LocalPort 443 -State Listen -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($configPid in $configOwners) {
+        Stop-Process -Id $configPid -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Seconds 1
+}
+
+$RestartControlFile = Join-Path $Stand 'restart-control'
+if (Test-Path -LiteralPath $RestartControlFile) {
+    Remove-Item -LiteralPath $RestartControlFile -Force -ErrorAction SilentlyContinue
+    if ($TunnelOnlyMode) {
+        # Port 8900 belongs to the same owner as CONNECT/config transport.
+        # The guarded panel launcher can ensure its relay without killing that owner.
+        Write-LabLog 'Tunnel-only panel check requested; transport owner is preserved.'
+    } else {
+        Write-LabLog 'Control restart requested.'
+        $controlOwners = Get-NetTCPConnection -State Listen -LocalPort 8900 -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty OwningProcess -Unique
+        foreach ($controlPid in $controlOwners) {
+            Stop-Process -Id $controlPid -Force -ErrorAction SilentlyContinue
+        }
+        Start-Sleep -Seconds 1
+    }
+    $controlStart = Join-Path $Root 'work\station-lab-control\Start-Control.ps1'
+    if (Test-Path -LiteralPath $controlStart) {
+        Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile', '-WindowStyle', 'Hidden',
+            '-ExecutionPolicy', 'Bypass', '-File', $controlStart, '-ServerOnly') -WindowStyle Hidden
+        Write-LabLog 'Guarded panel launcher started.'
+    }
+}
+
+$RestartDisplayFile = Join-Path $Stand 'restart-display'
+if (Test-Path -LiteralPath $RestartDisplayFile) {
+    Remove-Item -LiteralPath $RestartDisplayFile -ErrorAction SilentlyContinue
+    $displayScript = '<USERPROFILE>/Documents/Codex/2026-11-09/x20/work/station-display-control/display_bridge.py'
+    $displayOwners = Get-NetTCPConnection -LocalAddress $LabIp -LocalPort 18090 -State Listen -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($displayOwnerPid in $displayOwners) {
+        $displayProcess = Get-CimInstance Win32_Process -Filter "ProcessId=$displayOwnerPid"
+        if ($displayProcess.CommandLine -and $displayProcess.CommandLine.Replace('\', '/').Contains($displayScript)) {
+            Stop-Process -Id $displayOwnerPid -ErrorAction SilentlyContinue
+            Write-LabLog 'Display settings bridge restart requested.'
+        } else {
+            Write-LabLog 'Display bridge restart skipped: listener identity was not confirmed.'
+        }
+    }
+}
+
+if (Test-Path -LiteralPath $PauseFile) {
+    Write-LabLog 'Maintenance mode is enabled; startup check skipped.'
+    exit 0
+}
+
+try {
+    try {
+        Write-LabLog 'Station Lab startup check started.'
+        Ensure-LabAddresses
+        Ensure-LabFirewall
+        Ensure-LabTime
+        Start-LabDhcp
+        Start-LabConfig
+        if ($TunnelOnlyMode) {
+            Stop-RetiredStationServices
+        } else {
+            try { Start-LabDisplay } catch { Write-LabLog ('Display settings unavailable: ' + $_.Exception.Message) }
+            Start-LabAsr
+            Start-LabVoice
+            Start-LabMusic
+        }
+        Connect-LabAdb
+        Ensure-StationAgent
+        if ($TunnelOnlyMode) { Ensure-StationInputHelper }
+        Write-LabLog 'Station Lab startup check finished.'
+    } catch {
+        Write-LabLog ('Station Lab startup check FAILED: ' + $_.Exception.Message)
+        if (-not $Quiet) { throw }
+        exit 1
+    }
+    exit 0
+} finally {
+    if ($launcherAcquired) { $launcherMutex.ReleaseMutex() }
+    $launcherMutex.Dispose()
+}

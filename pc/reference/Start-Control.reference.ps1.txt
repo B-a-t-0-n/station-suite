@@ -1,0 +1,115 @@
+#requires -Version 5.1
+<#
+ Opens the Station panel; tunnel-only mode must never start the legacy server.
+ Run with -ServerOnly from the logon task.
+#>
+[CmdletBinding()]
+param(
+    [switch]$ServerOnly
+)
+
+$ErrorActionPreference = 'Stop'
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$server = Join-Path $here 'control_server.py'
+$python = 'C:\Python313\python.exe'
+$stand = Join-Path $env:USERPROFILE 'AppData\Local\StationLab\stand'
+$stdout = Join-Path $stand 'control.stdout.log'
+$stderr = Join-Path $stand 'control.stderr.log'
+
+function Test-ControlPort {
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $client.Connect('127.0.0.1', 8900)
+        return $true
+    } catch {
+        return $false
+    } finally {
+        $client.Close()
+    }
+}
+
+function Open-ControlPanel {
+    $edgeCandidates = @(
+        'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
+        'C:\Program Files\Microsoft\Edge\Application\msedge.exe'
+    )
+    $edge = $edgeCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if ($edge) {
+        Start-Process -FilePath $edge -ArgumentList '--app=http://127.0.0.1:8900' | Out-Null
+    } else {
+        Start-Process 'http://127.0.0.1:8900' | Out-Null
+    }
+}
+
+# This logon task can run before the regular keepalive. Check the persisted mode
+# before any legacy launch, even while the new relay has not bound port 8900 yet.
+if (Test-Path -LiteralPath (Join-Path $stand 'pc-tunnel-only')) {
+    $runtimeRoot = '<VOICE_SOURCE>\tools'
+    $runtimeScript = Join-Path $runtimeRoot 'tunnel_only_supervisor.py'
+    $runtimeLauncher = Join-Path $runtimeRoot 'Start-VoiceRuntime.ps1'
+    foreach ($required in @($python, $runtimeScript, $runtimeLauncher)) {
+        if (-not (Test-Path -LiteralPath $required)) { throw 'Station tunnel runtime is unavailable.' }
+    }
+    function Get-TunnelPanelStatus {
+        $statusText = & $python $runtimeScript status
+        if ($LASTEXITCODE -ne 0) { throw 'Station tunnel status failed.' }
+        try { $status = $statusText | ConvertFrom-Json -ErrorAction Stop }
+        catch { throw 'Station tunnel status is invalid.' }
+        if ($null -eq $status -or $status.running -isnot [bool]) { throw 'Station tunnel status is invalid.' }
+        if ($status.PSObject.Properties.Match('panelRelayReady').Count -gt 0 -and $status.panelRelayReady -isnot [bool]) {
+            throw 'Station tunnel status is invalid.'
+        }
+        return $status
+    }
+    $runtimeStatus = Get-TunnelPanelStatus
+    if (-not $runtimeStatus.running) {
+        # The existing launcher serializes startup and checks the current owner.
+        # No new supervisor is launched here if an existing one is still running.
+        & powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File $runtimeLauncher
+        if ($LASTEXITCODE -ne 0) { throw 'Station tunnel launcher failed.' }
+    }
+    $relayReady = $false
+    for ($i = 0; $i -lt 30; $i++) {
+        $runtimeStatus = Get-TunnelPanelStatus
+        if ($runtimeStatus.running -eq $true -and $runtimeStatus.panelRelayReady -eq $true -and (Test-ControlPort)) {
+            $relayReady = $true
+            break
+        }
+        Start-Sleep -Milliseconds 300
+    }
+    if (-not $relayReady) { throw 'Station tunnel panel did not become ready; legacy fallback is disabled.' }
+    if (-not $ServerOnly) { Open-ControlPanel }
+    exit 0
+}
+
+New-Item -ItemType Directory -Force -Path $stand | Out-Null
+if (-not (Test-Path -LiteralPath $server)) { throw 'control_server.py not found.' }
+if (-not (Test-Path -LiteralPath $python)) { throw 'Python not found.' }
+
+if (-not (Test-ControlPort) -and -not $ServerOnly) {
+    $taskExists = $false
+    & schtasks.exe /Query /TN 'StationLab-Control' 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { $taskExists = $true }
+    if ($taskExists) {
+        & schtasks.exe /Run /TN 'StationLab-Control' 2>$null | Out-Null
+        for ($i = 0; $i -lt 30; $i++) {
+            Start-Sleep -Milliseconds 300
+            if (Test-ControlPort) { break }
+        }
+    }
+}
+
+if (-not (Test-ControlPort)) {
+    Start-Process -FilePath $python `
+        -ArgumentList @('-I', '-B', '-u', $server) `
+        -WorkingDirectory $here -WindowStyle Hidden `
+        -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
+    for ($i = 0; $i -lt 30; $i++) {
+        Start-Sleep -Milliseconds 300
+        if (Test-ControlPort) { break }
+    }
+}
+if (-not (Test-ControlPort)) { throw 'Control server did not start on 8900.' }
+if ($ServerOnly) { exit 0 }
+
+Open-ControlPanel

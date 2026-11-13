@@ -1,0 +1,30 @@
+{
+  "android_api": 28,
+  "java_source_target": 8,
+  "host_assertions_passed": 345,
+  "sockets_opened": false,
+  "device_access": false,
+  "real_api_requests": 0,
+  "files": [
+    {
+      "path": "src/local/station/voicebridge/VoicePipeline.java",
+      "bytes": 12885,
+      "sha256": "6ec0e430cb6a1eb152f4c89eaeb7371afa8b0a1b435e39a045b6566cd498a3e3"
+    },
+    {
+      "path": "tools/tests/test_voice_pipeline.py",
+      "bytes": 2568,
+      "sha256": "d4c0c87d513abcd834994ba04688084a6cb3b94b4c9eb1c1e88849622dbd409e"
+    },
+    {
+      "path": "tools/tests/pipeline-host/VoicePipelineHostTest.java",
+      "bytes": 13713,
+      "sha256": "133296c9d1f011470157ffee0a7526ec627de0e0740bee08ffe6fd2d4468aab9"
+    },
+    {
+      "path": "VOICE-PIPELINE.md",
+      "bytes": 3474,
+      "sha256": "ec7d344f3d544da192f1581568176067e82b1d1a069ee98bc2d7175b7f98b709"
+    }
+  ]
+}

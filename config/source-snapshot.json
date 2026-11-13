@@ -1,0 +1,709 @@
+{
+  "hashEncoding": "Git-normalized LF for text; raw bytes for binary",
+  "files": [
+    {
+      "path": "apps/agent/AndroidManifest.xml",
+      "sha256": "25b5375a010fcf57858487d2319b5fbca5e9086f7780a5cf67dafd03f5b57f73"
+    },
+    {
+      "path": "apps/agent/assets/index.html",
+      "sha256": "eff72283b484d59a9c2692f4638d2d208c975d9adb08a3242223e96526aee4b0"
+    },
+    {
+      "path": "apps/agent/assets/schedule-alert.gif",
+      "sha256": "fb22cf008a08a69c94e641294a99b793398006409f28ea015c0858dd53b7a1a0"
+    },
+    {
+      "path": "apps/agent/assets/schedule-clear.gif",
+      "sha256": "039994b0ffc7f8058d13a3c468b86d41a75b780fb89811fd66d31035b6d077aa"
+    },
+    {
+      "path": "apps/agent/assets/schedule-signal.wav",
+      "sha256": "7aa8edab5e5b78e53cd84e7ef1d63f10d55b516df04722e4442e5d8f424e88a1"
+    },
+    {
+      "path": "apps/agent/build.py",
+      "sha256": "34df4bcb922f00a256a5f3f658562361d98f2d268e23bb26b81e7a27ed72ec24"
+    },
+    {
+      "path": "apps/agent/res/xml/network_security_config.xml",
+      "sha256": "83516f703eac4ca4ad63bb9cf5013eb8820b2ccfe727d09907c6188c25790350"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/AgentEqualizer.java",
+      "sha256": "8babe8742bac7a182bb2b70aad625ae73572e40c7f9ba3cc9c909c00c9d4f534"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/AgentHandlerDispatcher.java",
+      "sha256": "992997ce4ecd088c8c9b0a98a3d1c1ba7b354be3ea0a50fc562ef7a106c40fa4"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/AgentHttpServer.java",
+      "sha256": "65964bdde4b153d845d2f90ae2294270c091b069e152cde39ad63e6c0dd130d7"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/AgentMediaCallback.java",
+      "sha256": "326d5f7f5261cb6c338f822a0ed5a0300b57f39dd9d257087d17a5320c89ccd7"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/AgentMediaDispatch.java",
+      "sha256": "da50b83b0982cac3288919f2ab401c68781cd54617c4b3e991631723a9a9e35f"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/AgentMediaQueue.java",
+      "sha256": "270b865033ae64b4498d97bb3659cdb05ac25c1c65bcb783a92fb28d2fa516ef"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/AgentService.java",
+      "sha256": "c337a2f80caa474a6f7551b531739158ed7590c65d568abde87e0c5cc02ba081"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/AndroidAgentEqualizer.java",
+      "sha256": "dc4cf2cd1d71521b502395ec014a9522d5c1ad313cadf004a8f30a5315f5eb95"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/BluetoothMediaCommands.java",
+      "sha256": "211335ea6a3d12c72aa25a9b1e8e4fbe2cbfe5b2be7e471b86c7006f54943b10"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/BluetoothRecoveryServer.java",
+      "sha256": "2165a7a30d9c60cd9489280e2e94a30b20012952978a4d14299438c62f4c1652"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/BootReceiver.java",
+      "sha256": "e03cd131c0413060540b64d91aa7a6b5c56c117f09529f5e850092071791bd89"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/DnsGuardVpnService.java",
+      "sha256": "4aa9c60e8ac16d480c5bf358a18e4b80772f1fcd629ba1e1e805f1bf8d52206a"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/LocalDiagnostics.java",
+      "sha256": "a60a743739a5ca57502d08b07e9750a1636d3ac44f742258dce7d48fe36a293f"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/LocalProxyServer.java",
+      "sha256": "ecb9f62086aa7685cc741134c715d351873d6e582321efcd802f2e41f7e7b791"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/LocalVoiceServer.java",
+      "sha256": "bb526621439681b6b3a9c4bce3bf63466056658af03ffddf8b7db5a3dc3594e1"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/MainActivity.java",
+      "sha256": "947a5f3e03d94fb310a6f89d4501b7a16c1e6ded67220b3dfa9b625561cd6026"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/MusicSpectrumFrames.java",
+      "sha256": "fcf383e0b93450413ed04421145f09e7859dd3e58db8d35b70fa6d4d3a5410cd"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/MusicSpectrumSource.java",
+      "sha256": "6e0a6b6e8bdf30c03f4ede9536fd64300c55b64e683c8bb79e6d0bdb81069337"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/NativeCommands.java",
+      "sha256": "e4a7e513cad0643811fc18ee9616755f69bfc18a83cd75f7e6131b8e37abfafc"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/NativeDisplaySettings.java",
+      "sha256": "de2a70cf6718b54914c0a65934980142afa7619bc033ce7ddd4e32b503e224c3"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/NativeMusicPlayer.java",
+      "sha256": "b578b1c356396942209b02007df0564ab572faad565f0b66f6209bf2cec3db73"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/NativeMusicWire.java",
+      "sha256": "cbfdffd452aee9d6224e1b7befb79e2478d51b069e871a2d6d98debc9797eb48"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/NativeTimerDisplay.java",
+      "sha256": "dd7b5200ec9a4bdf6994ba0ad3cc83f8a92ef50d6d7e4123f37cee48c79d2076"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/PcDisplaySettingsBridge.java",
+      "sha256": "f6f43e1f8973da1de342f09608ecf93e7fe80d783a5287f9d65e042c6302ec12"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/ScheduleGif.java",
+      "sha256": "798f1c45812fece9566f369da96f520fde754ee88309bca83253f40a2583ad01"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/ScheduleReceiver.java",
+      "sha256": "6d24e5ee30cd0d5b7bf0345cc2e95b28f60eaafc9391a5a9b9c4ae08b3441d10"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/ScheduleSignal.java",
+      "sha256": "4e1b36542d64630d655e5a1f03a9a88315c0abe43c4b42244b91c1ce57ba88c5"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/StationDisplaySettings.java",
+      "sha256": "941c6899250e002d6f541a3891556b1f732780f294a3ac7c249f8b40e3fb8e36"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/StationInputClient.java",
+      "sha256": "478d5b52c45323fbdb8e8a3efd1bc68109e442f2be476691ff6eeeeb44047551"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/StationInputHelper.java",
+      "sha256": "f893b721a116234a6b7994d65ab2b8d837ac7809af671c9e14d06afd26e98795"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/StationScheduleDisplay.java",
+      "sha256": "e980f5dee01bceda7505d04f87f92eb442957de9628519874b0f8c7f17aefadb"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/StationScheduleRuntime.java",
+      "sha256": "565e02e7c0ca45b01a287360641d1d467d06d1e7025f83b861de8f3640818d40"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/StationSchedules.java",
+      "sha256": "3898f7a6519988e10453ce6e8173a741077045e02a8c8feb22e1ac128ea0eec9"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/StationVpnService.java",
+      "sha256": "3f0ac886d059429abe998cba9a09eba716bf2ef445a3c722e46dab1821d576d6"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/VpnConsentActivity.java",
+      "sha256": "9e2e83e4394ac85f1e554cf3aa5b02f5014953ab21bb7a12134ced58cfefe81f"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/VpnTestActivity.java",
+      "sha256": "c181943f6a1a5d9f1af4cf8ed469623d4e7fe91677c05bb7b800d4f553125bd4"
+    },
+    {
+      "path": "apps/agent/tests/display-host/ScheduleDisplayHostTest.java",
+      "sha256": "1fe6fb1c8867bc62e2ff0a345b1856dbbcb626379d24a79428096be87674c1da"
+    },
+    {
+      "path": "apps/agent/tests/display-settings-host/StationDisplaySettingsHostTest.java",
+      "sha256": "e71f696989cbac91ae25c142349c13aecac09c25b6dbefff52f9d17f29a8caea"
+    },
+    {
+      "path": "apps/agent/tests/equalizer-adapter-host/android/content/Context.java",
+      "sha256": "dd39e88355a8ae0722c5c2a5e79d8e8b6edb69560c61cc0615fade37757d5316"
+    },
+    {
+      "path": "apps/agent/tests/equalizer-adapter-host/android/content/SharedPreferences.java",
+      "sha256": "fed423263ad6501376131e38f07597c3f44864599108a5f36d2c947e53948f91"
+    },
+    {
+      "path": "apps/agent/tests/equalizer-adapter-host/android/media/audiofx/Equalizer.java",
+      "sha256": "7704d8e4f624b25d230f5222c307ab75fa3801392752aeedfc093af8a60e6207"
+    },
+    {
+      "path": "apps/agent/tests/equalizer-adapter-host/android/media/MediaPlayer.java",
+      "sha256": "17c83d6d38ac74bff7f7d0c129f7b8c81daab063bfba2c937e3826ac34d5e043"
+    },
+    {
+      "path": "apps/agent/tests/equalizer-adapter-host/local/station/agent/AndroidAgentEqualizerHostTest.java",
+      "sha256": "245c08b9c245b30da8903c1ce92a821ed9c41774768fe79af5294cc2eefcd459"
+    },
+    {
+      "path": "apps/agent/tests/equalizer-host/AgentEqualizerHostTest.java",
+      "sha256": "1d7b15aa5d67af7fa3c60d87f405bb17297b90ad3893ba5a1802125ba2e1f53b"
+    },
+    {
+      "path": "apps/agent/tests/gif-host/local/station/agent/ScheduleGifHostTest.java",
+      "sha256": "fcf4c65529f2eb7f06889148388c2dbc3fcc144623349c90ef5e973d0f47b876"
+    },
+    {
+      "path": "apps/agent/tests/media-host/AgentMediaHostTest.java",
+      "sha256": "06d166b1587778b48786dd13206a776ea8fb2a91559562485a74ca5c2e7c3548"
+    },
+    {
+      "path": "apps/agent/tests/MusicSpectrumHostTest.java",
+      "sha256": "4c9cc88698b93f53842b21e3c9687c3f89292892ce74cef5fbb8495d36a8ca37"
+    },
+    {
+      "path": "apps/agent/tests/MusicSpectrumTests.py",
+      "sha256": "32053cb101d14f78c28de2db8db901a5afb549f71315b1c3792d95358069308b"
+    },
+    {
+      "path": "apps/agent/tests/native-timer-host/local/station/agent/NativeTimerDisplayHostTest.java",
+      "sha256": "b70f7632b0946e521ac2cadcc111d1072e38ecaffe70da90d89adcbe5796e878"
+    },
+    {
+      "path": "apps/agent/tests/schedule-http-host/AgentScheduleHttpHostTest.java",
+      "sha256": "4220cae45de9b296444134bdd64a8d5433a8fdde80d321c432af136551cce0d4"
+    },
+    {
+      "path": "apps/agent/tests/schedules-host/StationSchedulesHostTest.java",
+      "sha256": "c75084f64609e0d099d9ec960368a5fc27ce91607b413289ff61579cee6788f2"
+    },
+    {
+      "path": "apps/agent/tests/station-input-host/StationInputHostTest.java",
+      "sha256": "7a8619b4b2f9560191d460509dd0a0b9c0e46fee51e9beae30e304d3665de21d"
+    },
+    {
+      "path": "apps/agent/tests/test_display_settings.py",
+      "sha256": "1d5bc1fef33914b2cc7c6278bb97b0b10ad8d458317b9c879e0562ede151d3e7"
+    },
+    {
+      "path": "apps/agent/tests/test_equalizer.py",
+      "sha256": "06c2f36e0e99b006b2f06f4eccda0c163de395fb9250b86675400a6c53355c2b"
+    },
+    {
+      "path": "apps/agent/tests/test_media_commands.py",
+      "sha256": "e5ecb85d005ec6a84054a2607784c3e793edfbb2d90b2e3670ad3ac5585dd493"
+    },
+    {
+      "path": "apps/agent/tests/test_native_timer_display.py",
+      "sha256": "36fec49b5fa0d8fb87192cfafa5bcf113386f5f69d51bf747557a08fc9810b64"
+    },
+    {
+      "path": "apps/agent/tests/test_schedule_display.py",
+      "sha256": "484d1102f5b68f0c79e917276379148acc9add60a9b4c3fd9430891bc3ec3b52"
+    },
+    {
+      "path": "apps/agent/tests/test_schedule_gif.py",
+      "sha256": "1741ca12ad646daad1d6f43379e2e5748e3ae6f7363e83d795172dba86200cdc"
+    },
+    {
+      "path": "apps/agent/tests/test_schedule_http.py",
+      "sha256": "7c405ca9fff00a7749abc93fb026e72533033d34e63efee714ccf6878451a899"
+    },
+    {
+      "path": "apps/agent/tests/test_schedules.py",
+      "sha256": "024a11afa3a0466b329f662f6ca11ae41cc04f1f0760b724533575075f3682b8"
+    },
+    {
+      "path": "apps/agent/tests/test_station_input.py",
+      "sha256": "81db011ac5f7645cff97875e93c92ca3ff943a34ac30e2ae6aacbb4d8be98629"
+    },
+    {
+      "path": "apps/phone/AndroidManifest.xml",
+      "sha256": "700802f5056311d268abea61e1700e54723bcb90dcb104135abad7874b5cb33c"
+    },
+    {
+      "path": "apps/phone/build.py",
+      "sha256": "28e0325255f6f4c1fb2b33c5060de58bb5becf7ccda809a0fedcc18f0f2c11dc"
+    },
+    {
+      "path": "apps/phone/res/drawable/ic_remote.xml",
+      "sha256": "b2a2b131f4a3b8466259287e0b94c2fe30d0c6676fb3fb146e9e44dd9c0d298b"
+    },
+    {
+      "path": "apps/phone/res/drawable/station_max.png",
+      "sha256": "f9508ac42ea2ac50c20fc940354fb43c0e6380677f49e0f4e072fbd8cb86f3e3"
+    },
+    {
+      "path": "apps/phone/res/values/styles.xml",
+      "sha256": "12e88b13039de54eddb2da42275d425b446a308d02708bdac1271dc1b2313fbe"
+    },
+    {
+      "path": "apps/phone/res/xml/network_security_config.xml",
+      "sha256": "83516f703eac4ca4ad63bb9cf5013eb8820b2ccfe727d09907c6188c25790350"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/BluetoothRemoteClient.java",
+      "sha256": "834d72a1fcac34d9b72aac1dcc9dd98955832b5f19d362c7a2aa72166ea1f4b1"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/DisplayModel.java",
+      "sha256": "d395692fce7d90fa106db80f69f3b23da8f674e41b0f9e4b0ac19daee155ac08"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/DisplayPanel.java",
+      "sha256": "26a9961cfa1a4fafcd5f9ea5989e0b88284de921dd547e2bad66d9a7e18299e5"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/DisplayReadSchedule.java",
+      "sha256": "291eb0a1464bddc2abd7d93510ab89eaab80a9a3ce1697fd9b4990849e068ee2"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/DotClockView.java",
+      "sha256": "1d6b01afc0d3cbb9ae3287a87b8da84e0d1fd09260ecffc4bd8df19a45f5a851"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/DotMusicFrames.java",
+      "sha256": "2907142f7a383bad3dcbf5f7a85ab262dbc385e2ea350662b79c00438b7fd8aa"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/DotMusicPreviewView.java",
+      "sha256": "8e59d76d3d7ddfbb2874702be18b718839121fead9013823f7b0adfb7ee72624"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/EqualizerModel.java",
+      "sha256": "57f590cbe3c75bbeace8f089175e1dd35296d300fef1cc7b48417cf9eddc922e"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/EqualizerPanel.java",
+      "sha256": "6c8bed1d855d3472c2fe726e0e9278a3c4fa3f1cd727034c7488abd7ab60d1d4"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/HidDeviceCallback.java",
+      "sha256": "c7ec78fdb690e8748a59f5543f0aecee73f05fbc6c076f95fb3cbadfddde4865"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/HidProfileListener.java",
+      "sha256": "bd1e457d5df0b140b484d84a34251124ff438ed401f8b6764689733d98f01b64"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/HidRemoteClient.java",
+      "sha256": "0444ec97afa9b2873ca77ddc2dc4efa8bad40c2323b09a91b8b251eb4790aa1c"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/LightRingView.java",
+      "sha256": "4dea16fc0a14d80b37d10c8f5ab6c3a1185285a2b8dea92429b665bb90be9729"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/MainActivity.java",
+      "sha256": "b70c13c86ea3daf3df637a82cc413487d7216132e538f6c7ec27b0bc4e835fcb"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/MusicPanel.java",
+      "sha256": "69f1fba24fccc69a261396fd4dd18a623e41f986f82dba0cfa60c7dda5d13329"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/MusicPlayback.java",
+      "sha256": "8eb9bea1251af95d1cea84971819bc276ebb4732ae419fd8bfc5b565a60f59da"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/PhoneUi.java",
+      "sha256": "94fe55535acb090cdc6824e8364e680a3cabe510f8055c31e044b1d279bde652"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/RemoteIconView.java",
+      "sha256": "bd8413eaa3f6cd457a8e8ae39cae7c961993e609255985122648a2a44a8c8738"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/RemotePadView.java",
+      "sha256": "3452eb0473693d544d3b8cd152699cca5fa15c4842674629c32789d136ea5701"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/ScheduleModel.java",
+      "sha256": "cbf1383814da8f191bb40d7c78d336a1811c181e0b2fd525ee0ab17d5c90745f"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/SchedulePanel.java",
+      "sha256": "d397db800d37a38743ea1c93d22c5ac7af06505f4310b60934299513e98319eb"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/StationDeviceView.java",
+      "sha256": "5a7613d1d0b0608785f639d31a8ca9ef471048efae4d9ff55f0ea54bf6f3661d"
+    },
+    {
+      "path": "apps/phone/src/local/station/remote/VolumeListener.java",
+      "sha256": "ee3462496ccbde682fd140c243e74103f82649a8298bc5a31b9b4b5f3c661c7c"
+    },
+    {
+      "path": "apps/voicebridge/AndroidManifest.xml",
+      "sha256": "7e6eb4e8fbc18ef33aa56fa1228a5dc23410958677e744c76125c145b661faaf"
+    },
+    {
+      "path": "apps/voicebridge/assets/asr_fixture.wav",
+      "sha256": "2ef824ace75fa21587f59dac8c0e0957dfb928fa81d8e7d5d6569bc69d95d5ad"
+    },
+    {
+      "path": "apps/voicebridge/assets/legacy_reply_fixture.ogg",
+      "sha256": "7cf6c9c078dc8ae1bfc9ba7d1c7158750862f4071b6c9bc11b42f8c6191b5ac5"
+    },
+    {
+      "path": "apps/voicebridge/assets/licenses/JNA-LICENSE.txt",
+      "sha256": "07c938b23950ab7d47a24ef35f9f5da3a05ae164278dc959ad6994135ed59ff1"
+    },
+    {
+      "path": "apps/voicebridge/assets/licenses/ONNXRUNTIME-LICENSE.txt",
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+    },
+    {
+      "path": "apps/voicebridge/assets/licenses/ONNXRUNTIME-THIRD-PARTY.txt",
+      "sha256": "0e07b95f3a8d6230037707c5c4a2b554d12c4cb67369669ac255635528ffcee2"
+    },
+    {
+      "path": "apps/voicebridge/assets/licenses/SHERPA-MODEL-LICENSE.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "apps/voicebridge/assets/licenses/SHERPA-ONNX-LICENSE.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "apps/voicebridge/assets/licenses/VOSK-APACHE-2.0.txt",
+      "sha256": "bb618af833c817ab01c1564bd3ec75ba4b4f9cf30910a4a2168e30a674ee8cc6"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/01.ogg",
+      "sha256": "744e3db8605a2d6b042323cdcdd211af5d98958cd5f2bee076c76490f507730b"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/01.wav",
+      "sha256": "235815a2b720bce1afa95c5e81b23fc4fc8135399fc773d371f2bae74a335794"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/02.ogg",
+      "sha256": "f57d584aeae98f79594a9e208dbc6d930b0a507c2221f42a4da62000e783e8f2"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/02.wav",
+      "sha256": "d04bfa11dfdf3195809ef4b95b90387d99d72489604b6b1aa34aad16e6154bda"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/03.ogg",
+      "sha256": "ea244ca5c3a07afc0b162d7537aeb9e7fc33c22598e2b186336fd0236e3e0f15"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/03.wav",
+      "sha256": "608aff1078e67c391a067a706ea329ab01d0491ba27f2fbf0b85105a8ce0f19a"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/04.ogg",
+      "sha256": "21b31dd28315928e5d9cd6e0a66f7a3e5bcbd1e3b5d61a7fada43983fc92effe"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/04.wav",
+      "sha256": "36488d713d924e63e350dc117fd2436fc6fddecc6440a23cd6d945399850f657"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/05.ogg",
+      "sha256": "5b644a21cdcdc77a6fa7d19bcaf140334973eb1c8e4bfe26f6db30465ae32480"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/05.wav",
+      "sha256": "749a50fa3a2c5cec2221cc83197401044daa5c90a1e9339941afdf916a285753"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/06.ogg",
+      "sha256": "e5c58e434c303945357d33d994a39d07e985a37fecefffef4ac638060fc4300b"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/06.wav",
+      "sha256": "d68648133e5d6bbe92e2af5789ce12b1d3f5cb84c5839d9645d6aac62c01ad30"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/07.ogg",
+      "sha256": "36d39720d9093cc0a5b17c0b00a51ca06754763ccea2dd7d470cce0efb10daab"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/07.wav",
+      "sha256": "1fc5195e51190d9025b864a70ac5765ea1c70a27ffadd2ccf4c7ba307244d6f8"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/08.ogg",
+      "sha256": "19836a467e642023912450518c82c9a4b9eb668069a8ab8c6d11a6d1c3b6ab0b"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/08.wav",
+      "sha256": "8305caf742fef102c5c1ee2cbf0ef70fead2918250e171f7bd0beeeaa36ba0ed"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/09.ogg",
+      "sha256": "7b89ee6280c1681acec9913b92c76f373a41c4d3561de3fa8974534cdb8d3d58"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/09.wav",
+      "sha256": "73048b03e665707bdbf0bf7b4c9948914cd27d1cf7da1057b4aab99774419d6b"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/10.ogg",
+      "sha256": "e8770ad3aa57305f8fcd4960729fdf62ae24ffb65c3b22b629a78842a1bbd382"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/10.wav",
+      "sha256": "19f729379c5f5d4adee91c0300aaa960ad4f9eee43fb5e331de42873ace05b87"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/11.ogg",
+      "sha256": "cb4aefb8aed395f0352e17b7a2a41b4e92c10f78a5136e07f81786d22698645c"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/11.wav",
+      "sha256": "c4ee2f280c0e74090e95cf2c1abf18aafddc7ba3d91d2cbb387b83ceb0ed35b0"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/12.ogg",
+      "sha256": "036f94457f3e3bd9073e0ba9ed641cad3b3106694802ae8907e3b20729a60c96"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/12.wav",
+      "sha256": "1299a971418af4bfee9bb08703da149bd700f40f56e7d0f2111e0dbfb4d513f0"
+    },
+    {
+      "path": "apps/voicebridge/assets/local-asr-fixtures/manifest.json",
+      "sha256": "2c8133814611539902861c2e8e54a46fd7b392ac67748601fbc06dc13aba814b"
+    },
+    {
+      "path": "apps/voicebridge/assets/pipeline_fixture.json",
+      "sha256": "95a0c65b76958bc24f57173d4569329b77c850ceda0923a8960feee74adaa923"
+    },
+    {
+      "path": "apps/voicebridge/assets/pipeline_fixture.ogg",
+      "sha256": "542376a7c35debd1ad20af0ce0111cbc4366b2ceb93a31d21554a4e019c6d60c"
+    },
+    {
+      "path": "apps/voicebridge/assets/pipeline_fixture.wav",
+      "sha256": "8fdf44d598c74cbe45c4c1d5a0d825abd1e861cce1cfe00772ca628b8e8bc003"
+    },
+    {
+      "path": "apps/voicebridge/assets/pipeline_ogg_fixture.json",
+      "sha256": "94641d1a8b90907a721fb891aefccfe133696eb02121f7d043d9ff0264626a1c"
+    },
+    {
+      "path": "apps/voicebridge/assets/russian_trusted_bundle.pem",
+      "sha256": "ac7a191999f5f6215df2f86f6f4c3b5fca380110b9fc6c28913494676bd9d2c9"
+    },
+    {
+      "path": "apps/voicebridge/build.py",
+      "sha256": "0294c354d48346d0a670eae38dd17632663f76358292671a2be2487b12e9597d"
+    },
+    {
+      "path": "apps/voicebridge/res/values/strings.xml",
+      "sha256": "4cdce033ca817a793962ce06f896466f435e1972082d55aa5034ee6c4318df68"
+    },
+    {
+      "path": "apps/voicebridge/res/xml/network_security_config.xml",
+      "sha256": "355040bde7e74f93c4ab0adbf8208ac331ae84f6448beb494a977217672f8a13"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/AndroidOpusDecoder.java",
+      "sha256": "51f67944ccebccd31273e124de7601ad7565fefc359d8c47012fea001b3abdef"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/BootReceiver.java",
+      "sha256": "deee5e093928575e0c6b67d971aa0f84ccd2bb90ce33027bda65c941b0de4d7c"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/CloudClient.java",
+      "sha256": "83367342300923e89c28291de0392f93ad00760686b5e88f6005eea223e8266c"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LegacyPipelineHandler.java",
+      "sha256": "2ff1dd0bf2157104e5b8a634435428a24e0e24fa2fb0e49274ea18e3ce0dc775"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LegacyVoiceReply.java",
+      "sha256": "ae67e6a556a40d2cd96e215b46162100ee68b5ba20b13a8fda383a81e6a15fcd"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LegacyVoiceSession.java",
+      "sha256": "69fc415e2c313c98231f5ba5fdd501c6fbfd96a53d2cab11bbd7c60d6adaf359"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalAsrProbe.java",
+      "sha256": "ea9ff12c9a72d197be043e000a438b9089bac57787cdd595b93e5df5759615e6"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalAsrRuntime.java",
+      "sha256": "f598f71666d001d7ff2d85863e2609b65c1b1c84fb76d3e6ca88272263ce42dd"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalConfigPushServer.java",
+      "sha256": "63980b3d12dc5bcffca4ac9e31c0510e8011744081dca57539b4ca1d6f81b80f"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalMusicCatalog.java",
+      "sha256": "8faa44b86da55baf0a1aea323e84235056a71e887eafff0708c2c4bc083117ae"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalMusicRequests.java",
+      "sha256": "cb3044c7b65954c027c14a7fb36241470365cf8d6df177235117800238a501e1"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalMusicServer.java",
+      "sha256": "c11f72d00c0ee1dc04f79cff70a82e432fd7e2fa699fbc5a5959af32284bfa28"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalMusicUrls.java",
+      "sha256": "65a1923d10775d2f7eb2b6b6e4a6a652e44778b6a328b62c435570d9a1abd2ff"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalServicesService.java",
+      "sha256": "7c5be3020afcc9583e24865a9cce4cbd4c9683d7631de0f4eb539548401e872f"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalSpeechRecognizer.java",
+      "sha256": "5cad4514b895744e834d866d5ab66a22fc64f869c0687e3a884f0e8cca4e3184"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LocalVoiceCommands.java",
+      "sha256": "8509db24b9953e804132f777bd92dbcb81f788378b96c98a0b5a0eacfa8aa897"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/LoopbackVoiceServer.java",
+      "sha256": "4d1fbee375a5bd2912560620aeee3aafb78269a38a2840fe7625a3d7ef9a0926"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/MainActivity.java",
+      "sha256": "711834b55491dbfbc1eaf7bd80aaf62a91b46b47c5f18dfa841cc3aa5252f3a5"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/NativeConfigJson.java",
+      "sha256": "e5dbcb8e912200733b23bda4a2747990fdb8abc91f4d33af487add2c6572d907"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/NativeConfigProtocol.java",
+      "sha256": "b9c5b4567c29588f096557e6b7a36d5af81e1632c71bc0c8229a6bebc8915e23"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/NativeConfigServer.java",
+      "sha256": "48a3e2464714a907b09c8a9785d25dc6d309850057b74c390ce7fb0b2ac0a30f"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/NativeConfigStore.java",
+      "sha256": "60b9591213a8edfbceb380f92c9a51b1825af274e8b1242d6799385158b1e506"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/NativeOggInput.java",
+      "sha256": "3affb9a5374e0deb33cd132e58ec604297dd548624d34143731bf23049a29a05"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/OnDeviceRecognizer.java",
+      "sha256": "31303fcab379d362568401c84984696220a6aae428920e95402168175b7be93c"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/PrivateConfig.java",
+      "sha256": "bc1391aa1e0ac01b51aeca0a89e87e83d4db0a9ff39a5f0d36b26330d90c2456"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/ProbeReceiver.java",
+      "sha256": "5a5214299cdbba139b77bf0bba1c7fb5cee89bcf246e5c4fb3e801e2ba05e5e4"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/ProbeService.java",
+      "sha256": "ed201ab62bf8010dcedeb65b5e30c70f0f7ac7395c58fb2fff4f0ab2360f6ffb"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/RuntimeReceiver.java",
+      "sha256": "773a7278fba35bb6c4dd065d96e9970f66448d18efce50a98d9cb062c4eaa86e"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/RuntimeSettings.java",
+      "sha256": "f70647341f6ebd92829f671784a6e311783733f158ffe8267f51f6fcc85a092e"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/RuntimeVoiceHandler.java",
+      "sha256": "2c645e66967206d7a61468272d6473535a54a0f5ed1e808626724b7190d54460"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/SherpaAsrProbe.java",
+      "sha256": "3ed4568658e8de8b96021062ea3ca26d2e9853c9e880007c5ea6f252594bb1f5"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/SherpaSpeechRecognizer.java",
+      "sha256": "7edc06bc556c9de83c20cfcaa5d0777d0aca43eebf4f0d6740599022a55bd10d"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/SpeechifyClient.java",
+      "sha256": "8f840b35167d1b3c85869944b51eb98db715ebd8d111cfad11eb60118b99d707"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/StreamingOpusInput.java",
+      "sha256": "b94b3226dfa3ff17b2e19ab5f609c5ac8d61d3d3bc12c8d4924c01df12806a77"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/VoiceCloudGate.java",
+      "sha256": "aded6a4af809cbb39a0ae8a7a43ef31b4ea1219058d7c4b258580b5f834617b8"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/VoicePipeline.java",
+      "sha256": "6acd7263cbebc34e978d2e06ebf81c76d6d31a0b593be0f1cb0878ded113831a"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/VoiceRuntimeService.java",
+      "sha256": "1bd80b2f1972709e950320ac88c496c66e8a61b346f598ca98f57bdd1fe688d6"
+    }
+  ]
+}

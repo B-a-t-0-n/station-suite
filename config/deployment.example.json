@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "privateDir": "D:/StationSuite-Private",
+  "python": "C:/Python313/python.exe",
+  "adb": "C:/Android/platform-tools/adb.exe",
+  "serial": "192.168.77.100:5555",
+  "labInterfaceIndex": 0,
+  "labInterfaceGuid": "REPLACE_WITH_DEDICATED_ETHERNET_GUID",
+  "wanInterfaceIndex": 0,
+  "wanNetwork": "192.0.2.0/24",
+  "labIp": "192.168.77.1",
+  "voiceIp": "192.168.77.2",
+  "stationIp": "192.168.77.100",
+  "dhcpExecutable": "D:/StationSuite-Tools/tftpd64.exe",
+  "dhcpSha256": "43a8a79001510fa969ae31521aef550ff4c9c7771e903792b60a499ecf48b388",
+  "baselineSha256": "REPLACE_WITH_PRIVATE_NATIVE_BASELINE_SHA256",
+  "policySha256": "REPLACE_WITH_PRIVATE_POLICY_SHA256",
+  "tlsLeafSha256": "REPLACE_WITH_PRIVATE_ACCEPTED_LEAF_DER_SHA256",
+  "agentApk": "D:/StationSuite-Releases/station-agent.apk"
+}

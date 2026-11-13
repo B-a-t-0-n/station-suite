@@ -1,0 +1,128 @@
+{
+  "voice": "Microsoft Irina Desktop",
+  "audioPlayed": false,
+  "microphoneCaptured": false,
+  "phrases": [
+    {
+      "expected": "сколько будет два плюс два",
+      "id": "01",
+      "text": "Сколько будет два плюс два?",
+      "kind": "question",
+      "decodedSamples": 133440,
+      "sampleRate": 48000,
+      "sha256": "744e3db8605a2d6b042323cdcdd211af5d98958cd5f2bee076c76490f507730b",
+      "bytes": 7701
+    },
+    {
+      "expected": "назови столицу россии",
+      "id": "02",
+      "text": "Назови столицу России.",
+      "kind": "question",
+      "decodedSamples": 128640,
+      "sampleRate": 48000,
+      "sha256": "f57d584aeae98f79594a9e208dbc6d930b0a507c2221f42a4da62000e783e8f2",
+      "bytes": 7268
+    },
+    {
+      "expected": "почему небо голубое",
+      "id": "03",
+      "text": "Почему небо голубое?",
+      "kind": "question",
+      "decodedSamples": 119040,
+      "sampleRate": 48000,
+      "sha256": "ea244ca5c3a07afc0b162d7537aeb9e7fc33c22598e2b186336fd0236e3e0f15",
+      "bytes": 6400
+    },
+    {
+      "expected": "расскажи короткую сказку",
+      "id": "04",
+      "text": "Расскажи короткую сказку.",
+      "kind": "question",
+      "decodedSamples": 137040,
+      "sampleRate": 48000,
+      "sha256": "21b31dd28315928e5d9cd6e0a66f7a3e5bcbd1e3b5d61a7fada43983fc92effe",
+      "bytes": 7861
+    },
+    {
+      "expected": "сделай громче",
+      "id": "05",
+      "text": "Сделай громче.",
+      "kind": "command",
+      "decodedSamples": 100800,
+      "sampleRate": 48000,
+      "sha256": "5b644a21cdcdc77a6fa7d19bcaf140334973eb1c8e4bfe26f6db30465ae32480",
+      "bytes": 5586
+    },
+    {
+      "expected": "сделай тише",
+      "id": "06",
+      "text": "Сделай тише.",
+      "kind": "command",
+      "decodedSamples": 94560,
+      "sampleRate": 48000,
+      "sha256": "e5c58e434c303945357d33d994a39d07e985a37fecefffef4ac638060fc4300b",
+      "bytes": 5219
+    },
+    {
+      "expected": "установи громкость на тридцать процентов",
+      "id": "07",
+      "text": "Установи громкость на тридцать процентов.",
+      "kind": "command",
+      "decodedSamples": 181920,
+      "sampleRate": 48000,
+      "sha256": "36d39720d9093cc0a5b17c0b00a51ca06754763ccea2dd7d470cce0efb10daab",
+      "bytes": 10690
+    },
+    {
+      "expected": "поставь музыку на паузу",
+      "id": "08",
+      "text": "Поставь музыку на паузу.",
+      "kind": "command",
+      "decodedSamples": 132960,
+      "sampleRate": 48000,
+      "sha256": "19836a467e642023912450518c82c9a4b9eb668069a8ab8c6d11a6d1c3b6ab0b",
+      "bytes": 7526
+    },
+    {
+      "expected": "продолжи музыку",
+      "id": "09",
+      "text": "Продолжи музыку.",
+      "kind": "command",
+      "decodedSamples": 107520,
+      "sampleRate": 48000,
+      "sha256": "7b89ee6280c1681acec9913b92c76f373a41c4d3561de3fa8974534cdb8d3d58",
+      "bytes": 5250
+    },
+    {
+      "expected": "останови музыку",
+      "id": "10",
+      "text": "Останови музыку.",
+      "kind": "command",
+      "decodedSamples": 102720,
+      "sampleRate": 48000,
+      "sha256": "e8770ad3aa57305f8fcd4960729fdf62ae24ffb65c3b22b629a78842a1bbd382",
+      "bytes": 5562
+    },
+    {
+      "expected": "не делай громче",
+      "id": "11",
+      "text": "Не делай громче.",
+      "kind": "negative",
+      "decodedSamples": 101040,
+      "sampleRate": 48000,
+      "sha256": "cb4aefb8aed395f0352e17b7a2a41b4e92c10f78a5136e07f81786d22698645c",
+      "bytes": 5450
+    },
+    {
+      "expected": "как подключить телефон по блютузу",
+      "id": "12",
+      "text": "Как подключить телефон по блютузу?",
+      "kind": "question",
+      "decodedSamples": 162720,
+      "sampleRate": 48000,
+      "sha256": "036f94457f3e3bd9073e0ba9ed641cad3b3106694802ae8907e3b20729a60c96",
+      "bytes": 9448
+    }
+  ],
+  "syntheticOnly": true
+}

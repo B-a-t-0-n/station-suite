@@ -1,0 +1,40 @@
+{
+  "android_api": 28,
+  "java_source_target": 8,
+  "host_assertions_passed": 219,
+  "sockets_opened": false,
+  "device_access": false,
+  "real_api_requests": 0,
+  "authenticated_synthesis_tested": false,
+  "files": [
+    {
+      "path": "src/local/station/voicebridge/SpeechifyClient.java",
+      "bytes": 18252,
+      "sha256": "461b9463c62ef57c1f78529b416314a329dd834914a6f16d4599f25a8b6681b2"
+    },
+    {
+      "path": "tools/tests/test_speechify_client.py",
+      "bytes": 2432,
+      "sha256": "7ababb970afd726d721156a988d45b507f8383a6e0d54381b537c38bb895efbd"
+    },
+    {
+      "path": "tools/tests/speechify-host/SpeechifyClientHostTest.java",
+      "bytes": 17784,
+      "sha256": "9294fbc652fd3a9e6c196095bbc34e47b9f0554930156193b7606f4b8f914a2c"
+    },
+    {
+      "path": "tools/tests/speechify-host/deps/json-20240303.jar",
+      "bytes": 78332,
+      "sha256": "3cf6cd6892e32e2b4c1c39e0f52f5248a2f5b37646fdfbb79a66b46b618414ed"
+    },
+    {
+      "path": "SPEECHIFY-CLIENT.md",
+      "bytes": 5394,
+      "sha256": "332f0fabda9bc09cd717b661651ff0909822f731c954b5821704ebc45e8ba92b"
+    }
+  ],
+  "formats_covered": [
+    "mp3",
+    "ogg"
+  ]
+}

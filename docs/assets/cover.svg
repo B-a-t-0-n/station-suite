@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="440" viewBox="0 0 1280 440">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#f5f2ff"/><stop offset="1" stop-color="#e9e2ff"/></linearGradient>
+    <linearGradient id="purple" x2="1" y2="1"><stop stop-color="#8c74ff"/><stop offset="1" stop-color="#6550dd"/></linearGradient>
+    <pattern id="dots" width="13" height="13" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r="2.2" fill="#ded5ff"/></pattern>
+  </defs>
+  <rect width="1280" height="440" rx="32" fill="url(#bg)"/>
+  <circle cx="1100" cy="170" r="260" fill="#ffffff" opacity=".38"/>
+  <circle cx="1150" cy="360" r="220" fill="#c5b7f8" opacity=".22"/>
+  <text x="70" y="93" fill="#7965cf" font-family="Arial,sans-serif" font-size="17" font-weight="700" letter-spacing="5">STATION MAX · COMMUNITY LAB</text>
+  <text x="66" y="189" fill="#242036" font-family="Arial,sans-serif" font-size="80" font-weight="700">Station Suite</text>
+  <text x="70" y="239" fill="#706780" font-family="Arial,sans-serif" font-size="25">Пульт. Голос. Музыка. На своей Станции.</text>
+  <g font-family="Arial,sans-serif" font-size="17" font-weight="700">
+    <rect x="70" y="294" width="158" height="46" rx="23" fill="white"/><text x="97" y="323" fill="#7863d0">BLUETOOTH</text>
+    <rect x="240" y="294" width="165" height="46" rx="23" fill="white"/><text x="270" y="323" fill="#7863d0">LOCAL ASR</text>
+    <rect x="417" y="294" width="164" height="46" rx="23" fill="white"/><text x="450" y="323" fill="#7863d0">LED DISPLAY</text>
+  </g>
+  <g transform="translate(901 54)">
+    <rect x="0" y="48" width="190" height="268" rx="35" fill="#cbc2df"/>
+    <rect x="9" y="64" width="172" height="236" rx="25" fill="url(#dots)" opacity=".8"/>
+    <ellipse cx="95" cy="49" rx="95" ry="30" fill="#302a43"/>
+    <ellipse cx="95" cy="47" rx="78" ry="20" fill="none" stroke="url(#purple)" stroke-width="5"/>
+    <rect x="24" y="111" width="142" height="88" rx="17" fill="#302a43"/>
+    <text x="95" y="167" text-anchor="middle" fill="#eee8ff" font-family="monospace" font-size="37">12:34</text>
+    <rect x="54" y="290" width="82" height="18" rx="9" fill="#b5aaca"/>
+    <ellipse cx="95" cy="335" rx="112" ry="14" fill="#6550aa" opacity=".1"/>
+  </g>
+  <text x="70" y="399" fill="#9a8eb2" font-family="Arial,sans-serif" font-size="15">Android 9 · Station Max 20221212 · Windows transport</text>
+</svg>

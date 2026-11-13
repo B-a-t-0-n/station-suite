@@ -1,0 +1,11 @@
+{
+  "syntheticOnly": true,
+  "microphoneCaptured": false,
+  "sourceSha256": "8fdf44d598c74cbe45c4c1d5a0d825abd1e861cce1cfe00772ca628b8e8bc003",
+  "sha256": "542376a7c35debd1ad20af0ce0111cbc4366b2ceb93a31d21554a4e019c6d60c",
+  "bytes": 6953,
+  "codec": "opus",
+  "channels": 1,
+  "decodedSamples": 120003,
+  "sampleRate": 48000
+}

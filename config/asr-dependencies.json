@@ -1,0 +1,163 @@
+{
+  "created_utc": "2026-11-12T18:24:05.491611+00:00",
+  "target": {
+    "os": "Android",
+    "api": 28,
+    "abi": "arm64-v8a",
+    "java_class_major": 52
+  },
+  "vosk_min_sdk_from_aar_manifest": 21,
+  "artifacts": [
+    {
+      "file": "downloads/vosk-android-0.3.75.aar",
+      "bytes": 13472638,
+      "sha256": "ab2f8b91ac8051561aa325546b35fed9a68b36b8121bac5c6fb927525c4adfad",
+      "primary_url": "https://repo.maven.apache.org/maven2/com/alphacephei/vosk-android/0.3.75/vosk-android-0.3.75.aar",
+      "acquired": "downloaded_from_publisher_maven_central",
+      "license": "Apache-2.0",
+      "publisher_checksum_url": "https://repo.maven.apache.org/maven2/com/alphacephei/vosk-android/0.3.75/vosk-android-0.3.75.aar.sha256",
+      "publisher_checksum_algorithm": "sha256",
+      "publisher_checksum": "ab2f8b91ac8051561aa325546b35fed9a68b36b8121bac5c6fb927525c4adfad",
+      "publisher_checksum_verified": true
+    },
+    {
+      "file": "downloads/jna-5.18.1.aar",
+      "bytes": 522677,
+      "sha256": "7f053e3ec99e14dd71259c82c1c8a02738d64a13c31226b2acc170f3060951e0",
+      "primary_url": "https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.18.1/jna-5.18.1.aar",
+      "acquired": "downloaded_from_publisher_maven_central",
+      "license": "Apache-2.0",
+      "publisher_checksum_url": "https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.18.1/jna-5.18.1.aar.sha1",
+      "publisher_checksum_algorithm": "sha1",
+      "publisher_checksum": "8e93d068c4eab70ada4c79e010198a112aa3c581",
+      "publisher_checksum_verified": true
+    },
+    {
+      "file": "downloads/vosk-model-small-ru-0.22.zip",
+      "bytes": 46236750,
+      "sha256": "961d5ff98a17f4aa6de69864d0aa71fa5bac682301d2b5d17a3f24c5c99a46d4",
+      "primary_url": "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip",
+      "acquired": "reused_existing_local_download",
+      "original_primary_url": "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip",
+      "original_acquisition_url": "https://huggingface.co/rhasspy/vosk-models/resolve/main/ru/vosk-model-small-ru-0.22.zip",
+      "primary_verified_manifest": "https://alphacephei.com/vosk/models/model-list.json",
+      "primary_md5": "d1759dc83eb8fd87850129afbd9f4b7b",
+      "verified_against_primary_size_and_md5": true,
+      "license": "Apache-2.0"
+    }
+  ],
+  "extracted_files": [
+    {
+      "file": "extracted/jna-5.18.1/AndroidManifest.xml",
+      "bytes": 268,
+      "sha256": "2b8d0c03a6bf61cb4cac8635f048b6eb4e650078a45d8a39eaa4f38383c6b332"
+    },
+    {
+      "file": "extracted/jna-5.18.1/classes.jar",
+      "bytes": 220845,
+      "sha256": "3b5492e8705f68f42aafba29d5909326ca7e6e17fce1063cba72be70131a4710"
+    },
+    {
+      "file": "extracted/jna-5.18.1/jni/arm64-v8a/libjnidispatch.so",
+      "bytes": 176520,
+      "sha256": "abc26e994517bcaa3309acdb0a27373864086c7569c89d3087b8626fada9ef06"
+    },
+    {
+      "file": "extracted/vosk-android-0.3.75/AndroidManifest.xml",
+      "bytes": 190,
+      "sha256": "8cc606b5d1d80f66574f997fb2f5ffc7d855ac0bb897c711ccdcb571996a31d2"
+    },
+    {
+      "file": "extracted/vosk-android-0.3.75/classes.jar",
+      "bytes": 17718,
+      "sha256": "2b04acaa7d098a6485422a787058722b0118d87afb8055240177fc0d65d980e1"
+    },
+    {
+      "file": "extracted/vosk-android-0.3.75/jni/arm64-v8a/libvosk.so",
+      "bytes": 10042800,
+      "sha256": "06965ebb4e5eb3a9e4a815755e178d9553392e3fe8d3d368ac46952ad3694173"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/am/final.mdl",
+      "bytes": 15862383,
+      "sha256": "36d67b53dc90d96ea48097f9e17e7c5937689ad76cb8bed25091317bbaf25919"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/conf/mfcc.conf",
+      "bytes": 131,
+      "sha256": "1e2228006d01d805ad1c267fee9f79709ca87ac51bd82b0e3f5c69ba543f0fc4"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/conf/model.conf",
+      "bytes": 289,
+      "sha256": "dd7178da0e99fdbe489816c1e9702c3daa28e02accacc2993e0becb7af33b80c"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/graph/disambig_tid.int",
+      "bytes": 25,
+      "sha256": "c3af3dbc5eb301c4b282480d785c04b1642a8db83210a12332e9790e50146fd2"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/graph/Gr.fst",
+      "bytes": 32288259,
+      "sha256": "189b4f67c69eb34b9d8b47b12f184665e5445667ca5264579b61c6b9eb2cef1e"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/graph/HCLr.fst",
+      "bytes": 32993810,
+      "sha256": "0b096f4676f306aa3e60d2244ef1e24c5c699b8794acf3c3946b59bcc9dca831"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/graph/phones/word_boundary.int",
+      "bytes": 2166,
+      "sha256": "23081404fe1cc7338c013a4beec133637147d60472c06ab64ff88ee3d028a7b5"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/ivector/final.dubm",
+      "bytes": 168048,
+      "sha256": "7dffe22bd992d7274fba925632bded4756d82dfd9b962d3c703110251fdf35b8"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/ivector/final.ie",
+      "bytes": 9927287,
+      "sha256": "94f2558d00fe199ac01409281352eb16707ec075baaf9cc0d7b53011583cfa0e"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/ivector/final.mat",
+      "bytes": 44975,
+      "sha256": "956577d396b636fe359b4321f10df5ed6a76bdfdec366b4a2b7d3242e524f04f"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/ivector/global_cmvn.stats",
+      "bytes": 1077,
+      "sha256": "c600cbf4acfbfac99d587040d48dc31129cd635b112ff15bfa2e9d3b0cece1f8"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/ivector/online_cmvn.conf",
+      "bytes": 95,
+      "sha256": "a2f3571754b64297cb7efb2e7ca3df61995c5a45fcbb97188f90613552bb2dfe"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/ivector/splice.conf",
+      "bytes": 35,
+      "sha256": "9f0c5f7c82d18eaf25d8bce470efa9f7741f88411fe428774bc0a9bb69a24756"
+    },
+    {
+      "file": "models/vosk-model-small-ru-0.22/README",
+      "bytes": 660,
+      "sha256": "b662517cacda14945e159538d6dd8faff23bd706e024c4fb338b6013c9939b9e"
+    }
+  ],
+  "vosk_elf_needed": [
+    "liblog.so",
+    "libm.so",
+    "libdl.so",
+    "libc.so"
+  ],
+  "device_tested": false,
+  "dependency_sources": [
+    "https://repo.maven.apache.org/maven2/com/alphacephei/vosk-android/0.3.75/vosk-android-0.3.75.pom",
+    "https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.18.1/jna-5.18.1.pom"
+  ],
+  "model_unpacked_bytes": 91289240
+}

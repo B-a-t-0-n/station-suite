@@ -1,0 +1,252 @@
+#requires -Version 5.1
+<#
+    Station Lab OTA guard.
+
+    Verifies, from the PC and through ADB, that the Station cannot bypass the
+    local update mock:
+      - build is still the expected one;
+      - Wi-Fi is disabled and not connected;
+      - no global IPv6 address on Ethernet;
+      - the Station cannot open a direct public TCP connection;
+      - tunnel-only: a fresh pinned-TLS probe of the Station-local responder
+        returned both update flags as boolean false;
+      - legacy: the latest /check_updates PC event returned hasUpdate=false.
+
+    Writes %LOCALAPPDATA%\StationLab\stand\ota-guard.json and a log line.
+    This is a network/observability guard, not a root OTA disabler.
+#>
+[CmdletBinding()]
+param(
+    [string]$Station = '192.168.77.100:5555',
+    [string]$ExpectedBuild = '20221212'
+)
+
+$ErrorActionPreference = 'Stop'
+$Root = '<LEGACY_WORKSPACE>'
+$Adb = Join-Path $Root 'work\android-tools\platform-tools\adb.exe'
+$Stand = Join-Path $env:USERPROFILE 'AppData\Local\StationLab\stand'
+$JsonPath = Join-Path $Stand 'ota-guard.json'
+$LogPath = Join-Path $Stand 'ota-guard.log'
+$EventsPath = Join-Path $Stand 'config-events.jsonl'
+$PolicyPath = Join-Path $Root 'outputs\station-max\Tftpd\config-policy.json'
+$TunnelOnlyMode = Test-Path -LiteralPath (Join-Path $Stand 'pc-tunnel-only')
+
+New-Item -ItemType Directory -Force -Path $Stand | Out-Null
+$alerts = New-Object System.Collections.Generic.List[string]
+$checks = [ordered]@{}
+$connected = $false
+$adbOutput = @()
+
+function Add-Alert([string]$Text) {
+    $alerts.Add($Text)
+}
+
+function Invoke-Adb([string[]]$Arguments) {
+    return @(& $Adb -s $Station @Arguments 2>&1 | ForEach-Object { "$_" })
+}
+
+function Write-GuardLog([string]$Text) {
+    $line = ('{0:yyyy-MM-dd HH:mm:ss} {1}' -f (Get-Date), $Text)
+    Add-Content -LiteralPath $LogPath -Value $line -Encoding utf8
+}
+
+try {
+    if (-not (Test-Path -LiteralPath $Adb)) {
+        Add-Alert "adb.exe not found: $Adb"
+    } else {
+        $adbOutput += @(& $Adb connect $Station 2>&1 | ForEach-Object { "$_" })
+        $devices = @(& $Adb devices 2>&1 | ForEach-Object { "$_" })
+        $connected = [bool]($devices | Where-Object { $_ -match [regex]::Escape($Station) + '\s+device' })
+        if (-not $connected) {
+            Add-Alert 'Station is not connected over ADB'
+        }
+    }
+
+    if ($connected) {
+        $build = (Invoke-Adb @('shell', 'getprop', 'ro.build.version.incremental') | Select-Object -First 1).Trim()
+        $checks['build'] = $build
+        $checks['expected_build'] = $ExpectedBuild
+        $checks['build_ok'] = ($build -eq $ExpectedBuild)
+        if ($build -ne $ExpectedBuild) {
+            Add-Alert "Build changed: $build (expected $ExpectedBuild)"
+        }
+
+        $wifiBefore = (Invoke-Adb @('shell', 'settings', 'get', 'global', 'wifi_on') | Select-Object -First 1).Trim()
+        $checks['wifi_enabled_before'] = $wifiBefore
+        if ($wifiBefore -eq '1') {
+            Invoke-Adb @('shell', 'svc', 'wifi', 'disable') | Out-Null
+            Start-Sleep -Seconds 2
+        }
+        $wifiAfter = (Invoke-Adb @('shell', 'settings', 'get', 'global', 'wifi_on') | Select-Object -First 1).Trim()
+        $checks['wifi_enabled_after'] = $wifiAfter
+        $checks['wifi_off'] = ($wifiAfter -eq '0')
+        if ($wifiAfter -ne '0') {
+            Add-Alert "Wi-Fi is not off: $wifiAfter"
+        }
+
+        $wifiDump = @(Invoke-Adb @('shell', 'dumpsys', 'wifi') | Where-Object { $_ -match 'mNetworkInfo' } | Select-Object -First 1)
+        $wifiState = if ($wifiDump.Count -gt 0) { $wifiDump[0].Trim() } else { '' }
+        $checks['wifi_network_info'] = $wifiState
+        $wifiConnected = $false
+        if ($wifiState -match 'state:\s*([A-Z_]+)') {
+            $wifiConnected = ($matches[1] -eq 'CONNECTED')
+        }
+        $checks['wifi_connected'] = $wifiConnected
+        if ($wifiConnected) {
+            Add-Alert 'Wi-Fi is connected; it must stay disconnected/off'
+        }
+
+        $ipv6Text = (Invoke-Adb @('shell', 'ip', '-6', 'addr', 'show', 'eth0') | Out-String)
+        $ipv6Global = [bool]($ipv6Text -match 'inet6\s+(?!fe80:)')
+        $checks['ipv6_global'] = $ipv6Global
+        if ($ipv6Global) {
+            Add-Alert 'Global IPv6 address found on eth0; IPv6 bypass is possible'
+        }
+
+        $egress = (Invoke-Adb @('shell', 'toybox netcat -w 2 1.1.1.1 443 >/dev/null 2>&1; echo EXIT=$?') | Out-String).Trim()
+        $checks['egress_probe'] = $egress
+        $directInternet = [bool]($egress -match 'EXIT=0')
+        $checks['direct_internet'] = $directInternet
+        if ($directInternet) {
+            Add-Alert 'Station can reach 1.1.1.1:443 directly; OTA traffic could bypass the mock'
+        }
+    }
+} catch {
+    Add-Alert ('ADB checks failed: ' + $_.Exception.Message)
+}
+
+if ($TunnelOnlyMode) {
+    # The PC no longer decrypts config HTTP, so old PC events cannot establish
+    # current OTA state. Probe only the existing fixed ADB TLS forward instead.
+    $checks['check_updates_payload_has_update'] = $null
+    $checks['last_check_at'] = $null
+    $checks['last_check_status'] = $null
+    $checks['last_check_has_update'] = $null
+    $checks['last_check_has_critical_update'] = $null
+    $checks['last_check_source'] = 'station_local_tls_probe'
+    $checks['last_check_age_minutes'] = $null
+    $checks['local_ota_probe_code'] = 'UNAVAILABLE'
+    try {
+        $probeScript = '<VOICE_SOURCE>\tools\probe_local_ota.py'
+        if (-not (Test-Path -LiteralPath $probeScript)) { throw 'Local OTA probe is missing.' }
+        $probeText = (& 'C:\Python313\python.exe' $probeScript) -join "`n"
+        $probeExit = $LASTEXITCODE
+        if ($probeText.Length -gt 2048) { throw 'Local OTA probe output is invalid.' }
+        $probe = $probeText | ConvertFrom-Json -ErrorAction Stop
+        if ($null -eq $probe -or $probe.scope -ne 'station_local_ota' -or
+            $probe.ok -isnot [bool] -or $probe.tlsPinned -isnot [bool] -or $probe.updatesBlocked -isnot [bool] -or
+            ($probe.checkedAtMs -isnot [long] -and $probe.checkedAtMs -isnot [int])) {
+            throw 'Local OTA probe output is invalid.'
+        }
+        $code = if ($probe.code -in @('OTA_BLOCKED','UPDATES_ENABLED','BAD_HTTP','BAD_JSON','TIMEOUT','TLS_ERROR','CERT_PIN_MISMATCH','UNAVAILABLE')) { $probe.code } else { 'INVALID_RESULT' }
+        $checks['local_ota_probe_code'] = $code
+        $ageSeconds = ([datetimeoffset]::UtcNow.ToUnixTimeMilliseconds() - $probe.checkedAtMs) / 1000.0
+        $checks['last_check_age_minutes'] = [math]::Round($ageSeconds / 60.0, 3)
+        if ($ageSeconds -lt -5 -or $ageSeconds -gt 30) { throw 'Local OTA probe result is stale.' }
+        if ($probe.hasUpdate -is [bool]) { $checks['last_check_has_update'] = $probe.hasUpdate }
+        if ($probe.hasCriticalUpdate -is [bool]) { $checks['last_check_has_critical_update'] = $probe.hasCriticalUpdate }
+        if ($probe.httpStatus -eq 200) { $checks['last_check_status'] = 200 }
+        $checks['last_check_at'] = [datetimeoffset]::FromUnixTimeMilliseconds($probe.checkedAtMs).ToString('o')
+        if ($probeExit -ne 0 -or $code -ne 'OTA_BLOCKED' -or $probe.ok -ne $true -or
+            $probe.tlsPinned -ne $true -or $probe.updatesBlocked -ne $true -or
+            $probe.hasUpdate -isnot [bool] -or $probe.hasUpdate -ne $false -or
+            $probe.hasCriticalUpdate -isnot [bool] -or $probe.hasCriticalUpdate -ne $false -or
+            ($probe.httpStatus -isnot [int] -and $probe.httpStatus -isnot [long]) -or $probe.httpStatus -ne 200) {
+            Add-Alert 'Station-local OTA responder did not confirm blocked updates.'
+        }
+    } catch {
+        # Fixed failure text only; never emit subprocess output or exception data.
+        Add-Alert 'Station-local OTA probe failed or its result is invalid/stale.'
+    }
+} else {
+$lastCheck = $null
+try {
+    if (Test-Path -LiteralPath $EventsPath) {
+        $lines = @(Get-Content -LiteralPath $EventsPath -Tail 10000 -ErrorAction SilentlyContinue)
+        for ($index = $lines.Count - 1; $index -ge 0; $index--) {
+            try {
+                $event = $lines[$index] | ConvertFrom-Json
+            } catch {
+                continue
+            }
+            if ($event.event -eq 'http' -and $event.path -eq '/check_updates' -and $event.host -eq 'quasar.yandex.net') {
+                $lastCheck = $event
+                break
+            }
+        }
+    }
+} catch {
+    Add-Alert ('Could not read config events: ' + $_.Exception.Message)
+}
+
+$payloadHasUpdate = $null
+try {
+    if (Test-Path -LiteralPath $PolicyPath) {
+        $policy = Get-Content -LiteralPath $PolicyPath -Raw | ConvertFrom-Json
+        $payloadHasUpdate = $policy.check_updates_payload.hasUpdate
+    }
+} catch {
+    Add-Alert ('Could not read config policy: ' + $_.Exception.Message)
+}
+
+$checks['check_updates_payload_has_update'] = $payloadHasUpdate
+$checks['last_check_at'] = $null
+$checks['last_check_status'] = $null
+$checks['last_check_has_update'] = $null
+$checks['last_check_source'] = $null
+$checks['last_check_age_minutes'] = $null
+
+if ($null -eq $lastCheck) {
+    Add-Alert 'No /check_updates request from the Station found in config events'
+} else {
+    $checks['last_check_at'] = $lastCheck.at
+    $checks['last_check_status'] = $lastCheck.status
+    $hasUpdate = $null
+    if ($lastCheck.PSObject.Properties.Name -contains 'has_update') {
+        $hasUpdate = $lastCheck.has_update
+        $checks['last_check_source'] = 'station_event'
+    } else {
+        $hasUpdate = $payloadHasUpdate
+        $checks['last_check_source'] = 'policy_fallback'
+    }
+    $checks['last_check_has_update'] = $hasUpdate
+    if ($lastCheck.status -ne 200) {
+        Add-Alert ("Last /check_updates status was " + $lastCheck.status)
+    }
+    if ($hasUpdate -ne $false) {
+        Add-Alert 'Last /check_updates did not return hasUpdate=false'
+    }
+    try {
+        $age = ((Get-Date).ToUniversalTime() - ([datetime]$lastCheck.at).ToUniversalTime()).TotalMinutes
+        $checks['last_check_age_minutes'] = [math]::Round($age, 1)
+        if ($age -gt 1440) {
+            Add-Alert 'Last /check_updates request is older than 24 hours'
+        }
+    } catch {
+        Add-Alert 'Could not parse last /check_updates timestamp'
+    }
+}
+}
+
+$ok = ($alerts.Count -eq 0) -and $connected -and $checks['build_ok'] -and $checks['wifi_off'] -and
+      (-not $checks['wifi_connected']) -and (-not $checks['ipv6_global']) -and (-not $checks['direct_internet'])
+
+$result = [ordered]@{
+    time = (Get-Date).ToString('o')
+    station = $Station
+    ok = [bool]$ok
+    checks = $checks
+    alerts = @($alerts)
+}
+$temp = $JsonPath + '.tmp'
+$jsonText = $result | ConvertTo-Json -Depth 8
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($temp, $jsonText, $utf8NoBom)
+Move-Item -LiteralPath $temp -Destination $JsonPath -Force
+
+$summary = ('ok={0} build={1} wifi={2} ipv6={3} direct={4} check={5}/{6} alerts={7}' -f
+    $result.ok, $checks['build'], $checks['wifi_enabled_after'], $checks['ipv6_global'],
+    $checks['direct_internet'], $checks['last_check_status'], $checks['last_check_has_update'], $alerts.Count)
+Write-GuardLog $summary
+
+if (-not $ok) { exit 1 }

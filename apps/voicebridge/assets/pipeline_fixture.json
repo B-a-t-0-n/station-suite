@@ -1,0 +1,14 @@
+{
+  "syntheticOnly": true,
+  "text": "Сколько будет два плюс два?",
+  "microphoneCaptured": false,
+  "audioPlayed": false,
+  "voice": "Windows SAPI Irina",
+  "channels": 1,
+  "sampleRate": 22050,
+  "sampleWidth": 2,
+  "frames": 55126,
+  "seconds": 2.500045351473923,
+  "bytes": 110298,
+  "sha256": "8fdf44d598c74cbe45c4c1d5a0d825abd1e861cce1cfe00772ca628b8e8bc003"
+}

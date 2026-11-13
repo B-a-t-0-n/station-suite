@@ -1,0 +1,16 @@
+{
+  "suite": "0.8.0",
+  "testedFirmware": "20221212",
+  "testedAndroidApi": 28,
+  "phone": {"package": "local.station.remote", "versionName": "0.8.0", "versionCode": 15},
+  "agent": {"package": "local.station.agent", "versionName": "0.7.4", "versionCode": 18},
+  "voicebridge": {"package": "local.station.voicebridge", "versionName": "0.21", "versionCode": 21},
+  "launcher": {
+    "package": "com.gathin.tvhome",
+    "versionName": "3.4",
+    "versionCode": 13,
+    "repository": "https://github.com/B-a-t-0-n/cleanyourtv",
+    "commit": "080ca9bd47da702349dc39fc266cadb7d1b45d0a",
+    "themes": 29
+  }
+}

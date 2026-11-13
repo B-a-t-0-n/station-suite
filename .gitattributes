@@ -1,0 +1,10 @@
+* text=auto
+*.py text eol=lf
+*.java text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.webp binary
+*.apk binary
+*.onnx binary
