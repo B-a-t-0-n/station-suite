@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-16",
+  "androidBuild": "PPR1.180610.011.20221212",
+  "scope": "Read-only permission checks and offline supervisor/installer/history analysis; no exploit or system writes",
+  "rawControlAuditSha256": "db9cda8e8ee8a2842609d512ac0726e56639c9b279a35d66e10269d889c042c5",
+  "contexts": {
+    "shell": {
+      "uid": 2000,
+      "effectiveCapabilitiesHex": "0000000000000000",
+      "canSignalUpdater": false
+    },
+    "quasar": {
+      "uid": 10005,
+      "effectiveCapabilitiesHex": "0000000000000000",
+      "canSignalUpdater": false
+    }
+  },
+  "pathWriteAccess": {
+    "shell": {
+      "/cache": false,
+      "/cache/recovery": false,
+      "/cache/recovery/command": false,
+      "/system/vendor/quasar/device_ota_update.sh": false,
+      "/system/vendor/quasar/ota_script.pub": false,
+      "/system/vendor/quasar/launch.json": false,
+      "/system/vendor/quasar/quasar-prod.cfg": false,
+      "/system/vendor/quasar/quasar_launcher2": false,
+      "/system/vendor/quasar/maind": false,
+      "/system/bin/reboot": false,
+      "/dev/block/misc": false
+    },
+    "quasar": {
+      "/cache": false,
+      "/cache/recovery": false,
+      "/cache/recovery/command": false,
+      "/system/vendor/quasar/device_ota_update.sh": false,
+      "/system/vendor/quasar/ota_script.pub": false,
+      "/system/vendor/quasar/launch.json": false,
+      "/system/vendor/quasar/quasar-prod.cfg": false,
+      "/system/vendor/quasar/quasar_launcher2": false,
+      "/system/vendor/quasar/maind": false,
+      "/system/bin/reboot": false,
+      "/dev/block/misc": false
+    }
+  },
+  "pathAccessLimit": "A false test-w result is not proof of existence; inaccessible recovery/misc paths were not opened or created.",
+  "updater": {
+    "uid": 0,
+    "effectiveCapabilitiesHex": "0000003fffffffff",
+    "selinux": "u:r:quasar:s0",
+    "cacheAndRecoveryPolicyAllowsWrite": true,
+    "policyAllowsDacOverride": true
+  },
+  "supervisor": {
+    "name": "quasar_launcher2",
+    "sha256": "4f9053407898c2715866051a673de9e4d9d0be46f174a48b3daa21e6d196f556",
+    "configReadOnce": true,
+    "livePerTaskControlFound": false,
+    "supportsEnabledFalseFound": false,
+    "registeredSignalHandlerFound": "SIGCHLD",
+    "decodedGenericSyscalls": [
+      "gettid",
+      "sched_setaffinity"
+    ],
+    "rootConfigurationWritableToAvailableIdentities": false
+  },
+  "installer": {
+    "sha256": "8289237e9424bc3a144b47d263f040e95c0e2294f51eeb75954728add15f2f9b",
+    "bytes": 227,
+    "recoveryRebootUnconditionalAfterCommandWrite": true,
+    "executed": false,
+    "cachePermissionsAloneProveInstallBarrier": false
+  },
+  "selinuxEvidence": [
+    {
+      "filename": "plat_sepolicy.cil",
+      "sha256": "499afc7d13b1f3fe0f031eb2b5e16a782a1b5747739e457c198add9e2c6e3cdc"
+    },
+    {
+      "filename": "mapping-28.0.cil",
+      "sha256": "4d31f971cbebc69ef30de35defe67aa7df246bff42beb27681fb41f90c366fe8"
+    },
+    {
+      "filename": "vendor_sepolicy.cil",
+      "sha256": "159b8f33eb44f9193ee48685ced8a86e18b3f4ae977517775a3e0dd7f73e158e"
+    }
+  ],
+  "historicalRootEvidence": {
+    "localBaselineSha256": "77ad170a11c68193282abaa1a84cf5fe0b352505b25ad4e27b5a56203e612c1b",
+    "matchingBaselineCopy": true,
+    "recoveredSourceCopiesMatch": true,
+    "oldToolReportedExactBuildAndUid0": true,
+    "oldToolFinalState": "root_selinux_not_restored",
+    "oldCleanRestoreConfirmed": false,
+    "subsequentModifiedDiagnosticAttemptRebootReported": true,
+    "currentRootProven": false,
+    "bootSafePersistentRootProven": false,
+    "newExploitRunOrModification": false,
+    "archiveLimit": "Historical logs and recovered files do not authenticate a hardware run or prove a safe repeatable root path."
+  },
+  "changesMadeToStation": false,
+  "baselineUnchanged": true,
+  "nonRootSystemOtaDisableFound": false,
+  "safeAutonomousWifiReady": false
+}
