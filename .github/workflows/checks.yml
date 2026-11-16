@@ -31,3 +31,4 @@ jobs:
           java-version: '8'
       - run: python -m unittest discover -s experimental/ring-dimmer/tests -p 'test_*.py' -v
       - run: python -m unittest discover -s experimental/music-spectrum/tests -p 'test_*.py' -v
+      - run: python -m unittest discover -s experimental/ring-state/tests -p 'test_*.py' -v

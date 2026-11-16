@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-16",
+  "device": "Station Max",
+  "firmwareBuild": "20221212",
+  "durationSeconds": 3,
+  "observation": {
+    "profile": "station-max-20221212",
+    "profileMaindSha256": "08a0050f4ad26e1054321c46d2e3631a6b02805e5e0355c10cbcbf53ea82ea6d",
+    "declaredProfileOnly": true,
+    "nativeIpcBytesSent": 0,
+    "receivedBytes": 158231,
+    "receivedFrames": 83,
+    "deviceStateFrames": 1,
+    "reason": "deadline",
+    "partialFrameDiscarded": false,
+    "arrivalAgeMs": 2968,
+    "nativeTimestampAvailable": false,
+    "renderPermit": false,
+    "latest": {
+      "profile": "station-max-20221212",
+      "deviceStateObserved": true,
+      "fields": {
+        "mics": null,
+        "alice": "idle",
+        "alarmPlaying": false,
+        "timerPlaying": false,
+        "configuration": "configured",
+        "update": null,
+        "reminderPlaying": false,
+        "notification": "none",
+        "call": null
+      },
+      "unknown": [
+        "mics",
+        "update",
+        "call"
+      ],
+      "blockers": [],
+      "quietCandidate": false,
+      "renderPermit": false,
+      "nativeOwnershipVerified": false
+    }
+  }
+}
