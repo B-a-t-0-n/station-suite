@@ -99,6 +99,7 @@ public final class LocalServiceRelay implements AutoCloseable {
     }
 
     synchronized int boundListenPort() { return listener == null ? -1 : listener.getLocalPort(); }
+    public synchronized boolean isReady() { return !closed && listener != null && listener.isBound() && !listener.isClosed(); }
 
     private void release(Socket socket) {
         sockets.remove(socket);
@@ -152,6 +153,10 @@ public final class LocalServiceRelay implements AutoCloseable {
                 return;
             }
             if (first.backendPort == 17684) push.incrementAndGet(); else config.incrementAndGet();
+            if (first.backendPort == 17684) {
+                // Push is intentionally idle between messages; the absolute relay deadline still applies.
+                backend.setSoTimeout(12000); client.setSoTimeout(12000);
+            }
             upload = new Thread(() -> {
                 try { transfer(input, socketOutput(backend), FLOW_BYTES - first.bytes.length, upstreamBytes); }
                 catch (IOException stop) { }

@@ -117,21 +117,24 @@ def main():
     needed = inspect_elf(elf)
     (current / 'elf-imports.txt').write_text(elf, encoding='utf8')
     dist = ROOT / 'dist'
+    from notice_bundle import write_bundle
+    inventory = write_bundle(source, dist, lock)
     output = dist / 'jniLibs/arm64-v8a'
     output.mkdir(parents=True, exist_ok=True)
     target = output / native.name
     shutil.copyfile(native, target)
-    notices = ['Experimental source build only. Full compiled-file notice audit remains pending.\n']
-    for relative in lock['notice_inputs']:
-        notices.extend(['\n===== ' + relative + ' =====\n', (source / relative).read_text(encoding='utf8')])
-    (dist / 'THIRD-PARTY-NOTICE-INPUTS.txt').write_text(''.join(notices), encoding='utf8')
     shutil.copyfile(current / 'elf-imports.txt', dist / 'elf-imports.txt')
     record = {'builtFromSource': True, 'source': lock, 'androidApiBuildTarget': 28,
               'needed': needed, 'bytes': target.stat().st_size, 'sha256': digest(target),
               'sourceLockSha256': digest(ROOT / 'source-lock.json'), 'builderSha256': digest(Path(__file__)),
               'command': [str(value) for value in command], 'deviceInstalled': False,
               'deviceTested': False, 'jniContract': 'upstream hev.htproxy.TProxyService',
-              'runtimeCompatibilityVerified': False, 'completeLicenseAudit': False}
+              'runtimeCompatibilityVerified': False, 'completeLicenseAudit': False,
+              'declaredNoticeInventoryComplete': inventory['declaredNoticeInventoryComplete'],
+              'translationUnits': sum(inventory['compiledCounts'].values()),
+              'noticeInventorySha256': digest(dist / 'SOURCE-NOTICE-INVENTORY.json'),
+              'noticeBundlerSha256': digest(ROOT / 'notice_bundle.py'),
+              'sourceSnapshotSha256': digest(dist / 'third-party-source-snapshot.zip')}
     (dist / 'BUILD-RECORD.json').write_text(json.dumps(record, indent=2) + '\n', encoding='utf8')
     (dist / (native.name + '.sha256')).write_text(record['sha256'] + '  ' + native.name + '\n', encoding='ascii')
     print(json.dumps({'ok': True, 'sha256': record['sha256'], 'deviceInstalled': False,

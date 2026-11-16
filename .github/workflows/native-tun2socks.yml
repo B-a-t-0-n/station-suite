@@ -41,5 +41,6 @@ jobs:
             experimental/native-tun2socks/dist/BUILD-RECORD.json
             experimental/native-tun2socks/dist/elf-imports.txt
             experimental/native-tun2socks/dist/THIRD-PARTY-NOTICE-INPUTS.txt
+            experimental/native-tun2socks/dist/SOURCE-NOTICE-INVENTORY.json
           if-no-files-found: error
           retention-days: 7

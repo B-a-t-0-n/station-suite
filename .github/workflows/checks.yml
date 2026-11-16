@@ -45,6 +45,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: python -m unittest discover -s experimental/vpn-coverage/tests -p 'test_*.py' -v
+      - run: python -m unittest discover -s experimental/vpn-relay/tests -p 'test_*.py' -v
   local-service-relay-experiment:
     runs-on: windows-latest
     timeout-minutes: 5
@@ -59,3 +60,4 @@ jobs:
           java-version: '21'
       - run: python -m unittest discover -s experimental/local-service-relay/tests -p 'test_*.py' -v
       - run: python -m unittest discover -s experimental/native-tun2socks/tests -p 'test_*.py' -v
+      - run: python -m unittest discover -s experimental/native-tun2socks/runtime-smoke/tests -p 'test_*.py' -v

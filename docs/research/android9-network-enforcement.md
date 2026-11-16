@@ -76,8 +76,8 @@ UID0. Однако в AOSP9 protected sockets и root output-interface rules м�
 HTTP204, локальный `check_updates` с `hasUpdate:false`, TLS handshake push,
 четыре отказа запрещённым направлениям и самостоятельный выход процесса.
 Клиент теста работал на ПК через временный ADB forward; backend соединения
-обслуживались на колонке. Нативный Quasar через этот transport ещё не
-проверялся. [Результаты](../../experimental/local-service-relay/results/device-20221212.json).
+обслуживались на колонке.
+[Результаты](../../experimental/local-service-relay/results/device-20221212.json).
 
 [Native TCP stack scaffold](../../experimental/native-tun2socks/README.md)
 фиксирует hev/lwIP и сборку API28/ARM64. Сборка, проверка runtime и полная
@@ -87,6 +87,14 @@ HTTP204, локальный `check_updates` с `hasUpdate:false`, TLS handshake 
 
 Закреплённая сборка уже [прошла в CI](https://github.com/B-a-t-0-n/station-suite/actions/runs/43866423108):
 ELF64/AArch64, Android ident API28, только `libc/libdl/libm` среди dynamic
-dependencies. В CI опубликованы отчёты; библиотека не устанавливалась и
-runtime на Станции не проверен. Обычные [проверки проекта](https://github.com/B-a-t-0-n/station-suite/actions/runs/43866420025)
+dependencies. Сам CI публикует отчёты и не устанавливает библиотеку на Станцию.
+Обычные [проверки проекта](https://github.com/B-a-t-0-n/station-suite/actions/runs/43866420025)
 на этом же code commit прошли.
+
+Затем локальная сборка под тем же API28 прошла две проверки на самой Станции:
+[загрузка JNI и синтетические пакеты без VPN](../../experimental/native-tun2socks/runtime-smoke/README.md),
+а затем [реальная доставка через TUN за 10 секунд](../../experimental/vpn-relay/README.md).
+Контрольный HTTP204 вернулся через локальные службы; некоторые TCP443 tuples
+совпали с established-сокетами UID0. Это уже работающий ограниченный transport.
+Принадлежность именно updatesd, OTA URL и отсутствие системных обходов этим
+не доказаны. Тестовый пакет удалён, рабочая изолированная схема сохранена.

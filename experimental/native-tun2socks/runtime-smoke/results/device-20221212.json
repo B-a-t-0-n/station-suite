@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-16",
+  "androidBuild": "PPR1.180610.011.20221212",
+  "mode": "disposable_app_process_no_vpn",
+  "nativeSha256": "061d1452c1392e71cd6f4df91b504290de6ef646855f32035d398e8e46c56c83",
+  "dexJarSha256": "ade6b30fb531bd26f1e480d5866c93642595f6752569b650be76c237c01e9b41",
+  "passes": [
+    {
+      "uid": 10005,
+      "mode": "--load-only",
+      "libraryLoaded": true,
+      "initialStopped": true,
+      "success": true,
+      "elapsedMs": 60
+    },
+    {
+      "uid": 10005,
+      "mode": "--packet-pair",
+      "libraryLoaded": true,
+      "initialStopped": true,
+      "syntheticEchoReply": true,
+      "syntheticSynAck": true,
+      "nativeStillRunning": true,
+      "statsLength": 4,
+      "stopReturned": true,
+      "nativeStopped": true,
+      "success": true,
+      "elapsedMs": 63
+    }
+  ],
+  "success": true,
+  "elapsedSeconds": 1.699,
+  "settingsAndCoreProcessPidsUnchanged": true,
+  "temporaryFilesRemoved": true,
+  "nativeBinaryPublished": false,
+  "publicBinaryDistributionGate": false,
+  "completeLicenseAudit": false,
+  "rawRecordSha256": "5e52769c47c191ca312b29d8a7bb1ffb5605015ab8f16f2ab6680959994dfdec"
+}

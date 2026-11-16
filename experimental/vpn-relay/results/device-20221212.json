@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-16",
+  "androidBuild": "PPR1.180610.011.20221212",
+  "scope": "isolated Ethernet; single private IPv4 /32 VPN to on-device services; no home Wi-Fi",
+  "requestedVpnDurationMs": 10000,
+  "success": true,
+  "apkSha256": "e88cc204756814fe4d26d138f84ceb4038f45a05ea21a7f776839d32948e6041",
+  "nativeSha256": "061d1452c1392e71cd6f4df91b504290de6ef646855f32035d398e8e46c56c83",
+  "rawRecordSha256": "facfb600168ac7bc731d91053d5fb9ec58cd67923cd9e6c3abca95ec1e3a1f47",
+  "sourceLockSha256": "023756e30504e9b58ae0be0e1b6a07328ddde90b21c6d35a49f49a02e6f8deb8",
+  "managedCanary": {
+    "uid": 10005,
+    "baselineHttp204": true,
+    "duringVpnHttp204": true,
+    "tupleCapturedBothDirections": true
+  },
+  "packetCounters": {
+    "records": 148,
+    "bytes": 40726,
+    "forwarded": 80,
+    "injected": 58,
+    "dropped": 3,
+    "tunIpv6ControlDropped": 6,
+    "nativeIpv6ControlDropped": 1,
+    "headerMetadataRecords": 141
+  },
+  "rootSocketEvidence": {
+    "uid": 0,
+    "matchedEstablishedIpv4Tcp443Tuples": 5,
+    "capturedTcp443Flows": 7,
+    "matchedFlowsHaveSynSynAckAndBidirectionalPayload": true,
+    "pidAttributed": false,
+    "updatesdAttributed": false,
+    "otaUrlObserved": false
+  },
+  "relayCounters": {
+    "accepted": 9,
+    "denied": 0,
+    "ioFailures": 0,
+    "http": 2,
+    "configTls": 4,
+    "pushTls": 3,
+    "upstreamBytes": 5900,
+    "downstreamBytes": 28444,
+    "closed": true,
+    "unfinishedUploads": 0,
+    "activeHandlers": 0
+  },
+  "rollback": {
+    "ownDeadlineObserved": true,
+    "nativeJoinAndStopConfirmed": true,
+    "independentWatchdogActuallyStoppedProcess": true,
+    "watchdogObservationElapsedSeconds": 16.302,
+    "exactBaselineRestored": true,
+    "workingProcessPidsUnchanged": true
+  },
+  "cleanup": {
+    "baselineStillIdentical": true,
+    "labPackageAbsent": true,
+    "labDirectoryAbsent": true,
+    "canaryArtifactsAbsent": true,
+    "otaGuardOk": true,
+    "localServicesHealthy": true,
+    "clockSize": "middle",
+    "agentHttp200": true,
+    "panelHttp200": true
+  },
+  "unchangedConfiguration": {
+    "wifiEnabled": false,
+    "globalHttpProxy": null,
+    "alwaysOnVpnPackage": null,
+    "lockdownEnabled": false,
+    "defaultRouteChanged": false,
+    "dnsChanged": false
+  },
+  "limitations": [
+    "The header journal records admission before packet write; one metadata record alone is not delivery proof.",
+    "UID0 identifies no particular native process; SNI routing counters do not prove any OTA URL or complete client coverage.",
+    "Physical-interface/protected socket bypass, global IPv6, boot, crash and reconnect enforcement are not proven.",
+    "Java push idle timeout is 12s but native TCP idle timeout is 3s; durable push sessions are not established by this test.",
+    "The relay serves local config/push/connectivity only; PC DNS, allowed internet transport and bootstrap dependencies remain.",
+    "Public binary distribution remains gated by incomplete third-party provenance audit; only source and reports are published."
+  ],
+  "safeAutonomousWifiReady": false
+}

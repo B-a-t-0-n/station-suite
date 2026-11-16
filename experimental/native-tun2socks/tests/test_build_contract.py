@@ -67,8 +67,9 @@ class PublicationGate(unittest.TestCase):
             'experimental/native-tun2socks/dist/BUILD-RECORD.json',
             'experimental/native-tun2socks/dist/elf-imports.txt',
             'experimental/native-tun2socks/dist/THIRD-PARTY-NOTICE-INPUTS.txt',
+            'experimental/native-tun2socks/dist/SOURCE-NOTICE-INVENTORY.json',
         })
-        self.assertEqual(len(uploaded), 3)
+        self.assertEqual(len(uploaded), 4)
         self.assertTrue(all('*' not in path and not path.endswith(('/', '.so')) for path in uploaded))
 
 
