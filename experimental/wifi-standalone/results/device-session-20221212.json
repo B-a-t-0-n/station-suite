@@ -29,9 +29,9 @@
   },
   "limits": {
     "systemOtaProtectionGuaranteed": false,
-    "coldBootTested": false,
     "shellInputHelperNeedsAdbBootstrapAfterBoot": true,
-    "generalInternetAllowlist": false
+    "generalInternetAllowlist": false,
+    "modifiedStackColdBootValidated": false
   },
   "artifacts": {
     "installedVoicebridgeApkSha256": "5171e76f9152ab6db9d1c4281575302b0d74adf363af6303008a0e7ad8f89c0d",
@@ -41,18 +41,54 @@
   "subsequentIncidents": [
     {
       "date": "2026-11-16",
-      "event": "ota_completed_after_reboot",
+      "event": "update_completion_message_after_reboot",
       "source": "user_reported",
       "newBuild": null,
       "exactCause": null,
-      "otaPreventionAtReboot": "failed",
+      "otaPreventionAtReboot": "not_proven",
       "followUpObservations": {
-        "adbAtFormerWifiAddress": "unavailable",
-        "agentAtFormerWifiAddress": "unavailable",
-        "wiredRecovery": "pending",
-        "currentModifiedRuntime": "not_verified"
+        "adbAtFormerWifiAddress": "unavailable_before_factory_reset",
+        "agentAtFormerWifiAddress": "unavailable_before_factory_reset",
+        "wiredRecovery": "adb_restored_after_factory_setup_and_one_reboot",
+        "currentModifiedRuntime": "not_restored_suite_apps_removed_by_factory_reset"
       },
-      "priorVerificationScope": "previous_session_before_reboot"
+      "priorVerificationScope": "previous_session_before_reboot",
+      "reportedUpdateType": "not_verified"
     }
-  ]
+  ],
+  "verificationScope": "previous_session_before_reboot_and_factory_reset",
+  "subsequentRecoveryVerification": {
+    "date": "2026-11-16",
+    "scope": "read_only_versions_hash_and_state_after_factory_reset_official_wired_setup_and_one_reboot",
+    "adbAvailable": true,
+    "android": 9,
+    "systemBuild": "20221212",
+    "systemFingerprint": "Yandex/yandexstation_2/yandexstation_2:9/PPR1.180610.011/20221212:user/release-keys",
+    "systemBuildAndFingerprintMatchBeforeReset": true,
+    "nativeSoftwareVersion": "1.56.1.34.1553780878.20221212.22",
+    "nativeMaindSha256": "08a0050f4ad26e1054321c46d2e3631a6b02805e5e0355c10cbcbf53ea82ea6d",
+    "nativeMaindSha256MatchesBeforeReset": true,
+    "quasarSystemApkVersionName": "2.0",
+    "quasarSystemApkVersionCode": 2,
+    "shellUid": 2000,
+    "selinux": "Enforcing",
+    "wifiDisabled": true,
+    "networkMode": "isolated_ethernet",
+    "suiteApksRemovedByFactoryReset": true,
+    "suiteRestorationStarted": false,
+    "newOsOrNativeFirmwareInstallationConfirmed": false,
+    "apkUpdatesBeforeFactoryResetDetermined": false,
+    "systemOtaProtectionProven": false,
+    "limit": "Matching Android build/fingerprint and exact native maind hash do not prove that no other updates occurred before factory reset.",
+    "sourceEvidence": [
+      {
+        "filename": "RECOVERED-FIRMWARE-VERIFICATION.json",
+        "sha256": "cda342a32adb1fb8de8f0b3ad886b358a1b7710917146b82ee733cb61b0925c6"
+      },
+      {
+        "filename": "ADB-AFTER-FACTORY-SETUP.json",
+        "sha256": "e3d4a88b748b6d103ced3bca9f3c2a121d29bf355295153ccc97460a22a5cd46"
+      }
+    ]
+  }
 }
