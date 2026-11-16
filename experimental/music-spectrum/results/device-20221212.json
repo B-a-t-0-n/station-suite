@@ -1,0 +1,2104 @@
+{
+  "schema": 1,
+  "date": "2026-11-16",
+  "device": "Station Max",
+  "firmwareBuild": "20221212",
+  "agentVersion": "0.7.4",
+  "probeVersion": "0.1",
+  "probeApkSha256": "ad61fc308862f2486c9c7a26fb93b00652d57b360d6757c07788d3c9058a2c1a",
+  "scope": "Output-mix FFT availability, not exclusive music classification or ring rendering",
+  "runs": [
+    {
+      "label": "idle",
+      "acceptedForComparison": true,
+      "interpretation": "Silent baseline",
+      "measurementStart": {
+        "playing": false,
+        "prepared": false,
+        "version": "0.7.4",
+        "musicRuntime": {
+          "backend": "native",
+          "state": "idle",
+          "nativeConfirmed": false,
+          "equalizerSupported": false
+        },
+        "volume": 19,
+        "positionMs": 0
+      },
+      "probe": {
+        "schema": 1,
+        "runId": "14065607-e28b-4e2e-900b-8dc07e0ea8a2",
+        "mode": "idle",
+        "reason": "deadline",
+        "result": "ok",
+        "stage": "enabled",
+        "session": 0,
+        "limitMs": 30000,
+        "elapsedMs": 30001,
+        "captureSize": 1024,
+        "captureRateMilliHz": 10000,
+        "samplingRateHz": 44100,
+        "sampleRateChanges": 0,
+        "frames": 296,
+        "nonzeroFrames": 0,
+        "aboveFloorFrames": 0,
+        "aboveFloorThreshold": 0.02,
+        "invalidFrames": 0,
+        "peak": 0,
+        "visualizerCreated": true,
+        "toneCreated": false,
+        "visualizerReleased": true,
+        "tonePlayed": false,
+        "toneReleased": false,
+        "finished": true,
+        "meanBands": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "peakBands": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "seconds": [
+          {
+            "second": 0,
+            "frames": 8,
+            "peak": 0
+          },
+          {
+            "second": 1,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 2,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 3,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 4,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 5,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 6,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 7,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 8,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 9,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 10,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 11,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 12,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 13,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 14,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 15,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 16,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 17,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 18,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 19,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 20,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 21,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 22,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 23,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 24,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 25,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 26,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 27,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 28,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 29,
+            "frames": 10,
+            "peak": 0
+          }
+        ]
+      },
+      "diagnosticProcessPresentAfterCleanup": false
+    },
+    {
+      "label": "music",
+      "acceptedForComparison": true,
+      "interpretation": "Initial native playback; audible playback confirmed by owner",
+      "measurementStart": {
+        "playing": true,
+        "prepared": true,
+        "version": "0.7.4",
+        "musicRuntime": {
+          "backend": "native",
+          "state": "playing",
+          "nativeConfirmed": true,
+          "equalizerSupported": false
+        },
+        "volume": 19,
+        "positionMs": 219
+      },
+      "probe": {
+        "schema": 1,
+        "runId": "dbbc8926-cb29-44bd-9577-07f3d572f8f6",
+        "mode": "music",
+        "reason": "deadline",
+        "result": "ok",
+        "stage": "enabled",
+        "session": 0,
+        "limitMs": 30000,
+        "elapsedMs": 30001,
+        "captureSize": 1024,
+        "captureRateMilliHz": 10000,
+        "samplingRateHz": 44100,
+        "sampleRateChanges": 0,
+        "frames": 296,
+        "nonzeroFrames": 296,
+        "aboveFloorFrames": 6,
+        "aboveFloorThreshold": 0.02,
+        "invalidFrames": 0,
+        "peak": 0.0234375,
+        "visualizerCreated": true,
+        "toneCreated": false,
+        "visualizerReleased": true,
+        "tonePlayed": false,
+        "toneReleased": false,
+        "finished": true,
+        "meanBands": [
+          0,
+          0,
+          0.007259283317660062,
+          0.006613376013104542,
+          0,
+          0.006596386231900642,
+          0.008617535659349156,
+          0.006855620142772862,
+          0.009210225801946177,
+          0.008199188437109121,
+          0.00962883693376693,
+          0.009263880350829663,
+          0.00976738247316565,
+          0.009824094580781534,
+          0.010020707529818072,
+          0.010316060646733538,
+          0.010348858384463672,
+          0.0106331054447915,
+          0.010829891871172304,
+          0.011026678297553107,
+          0.011037610876796484,
+          0.011048543456039863,
+          0.011048543456039863,
+          0.011048543456039863
+        ],
+        "peakBands": [
+          0,
+          0,
+          0.0234375,
+          0.017469281074217108,
+          0,
+          0.02209708691207961,
+          0.0234375,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.011048543456039806,
+          0.02209708691207961,
+          0.011048543456039806,
+          0.017469281074217108,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806
+        ],
+        "seconds": [
+          {
+            "second": 0,
+            "frames": 9,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 1,
+            "frames": 10,
+            "peak": 0.02209708691207961
+          },
+          {
+            "second": 2,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 3,
+            "frames": 10,
+            "peak": 0.02209708691207961
+          },
+          {
+            "second": 4,
+            "frames": 9,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 5,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 6,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 7,
+            "frames": 10,
+            "peak": 0.0234375
+          },
+          {
+            "second": 8,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 9,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 10,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 11,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 12,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 13,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 14,
+            "frames": 9,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 15,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 16,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 17,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 18,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 19,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 20,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 21,
+            "frames": 10,
+            "peak": 0.0234375
+          },
+          {
+            "second": 22,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 23,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 24,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 25,
+            "frames": 9,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 26,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 27,
+            "frames": 10,
+            "peak": 0.0234375
+          },
+          {
+            "second": 28,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 29,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          }
+        ]
+      },
+      "diagnosticProcessPresentAfterCleanup": false
+    },
+    {
+      "label": "paused",
+      "acceptedForComparison": false,
+      "interpretation": "Signal returned during measurement; no playback timeline; source undetermined",
+      "measurementStart": {
+        "playing": false,
+        "prepared": true,
+        "version": "0.7.4",
+        "musicRuntime": {
+          "backend": "native",
+          "state": "paused",
+          "nativeConfirmed": true,
+          "equalizerSupported": false
+        },
+        "volume": 5,
+        "positionMs": 0
+      },
+      "probe": {
+        "schema": 1,
+        "runId": "37893bd1-088c-45ae-8e96-d9721add8d33",
+        "mode": "paused",
+        "reason": "deadline",
+        "result": "ok",
+        "stage": "enabled",
+        "session": 0,
+        "limitMs": 30000,
+        "elapsedMs": 30001,
+        "captureSize": 1024,
+        "captureRateMilliHz": 10000,
+        "samplingRateHz": 44100,
+        "sampleRateChanges": 0,
+        "frames": 296,
+        "nonzeroFrames": 175,
+        "aboveFloorFrames": 2,
+        "aboveFloorThreshold": 0.02,
+        "invalidFrames": 0,
+        "peak": 0.024705294220065465,
+        "visualizerCreated": true,
+        "toneCreated": false,
+        "visualizerReleased": true,
+        "tonePlayed": false,
+        "toneReleased": false,
+        "finished": true,
+        "meanBands": [
+          0,
+          0,
+          0.004641049731596434,
+          0.004037415821316984,
+          0,
+          0.0043002277229543945,
+          0.004891389086185214,
+          0.0036643276954166615,
+          0.00550672134175386,
+          0.005006193733042457,
+          0.005670363075716,
+          0.005678816443764043,
+          0.005646539138066703,
+          0.005810527826717372,
+          0.005952651356881285,
+          0.0060729097285584415,
+          0.006149437783262087,
+          0.006247830996452485,
+          0.0063680893681296435,
+          0.0065211454775369335,
+          0.0065211454775369335,
+          0.0065211454775369335,
+          0.0065320780567803115,
+          0.0065320780567803115
+        ],
+        "peakBands": [
+          0,
+          0,
+          0.024705294220065465,
+          0.017469281074217108,
+          0,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806
+        ],
+        "seconds": [
+          {
+            "second": 0,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 1,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 2,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 3,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 4,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 5,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 6,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 7,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 8,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 9,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 10,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 11,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 12,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 13,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 14,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 15,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 16,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 17,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 18,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 19,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 20,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 21,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 22,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 23,
+            "frames": 9,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 24,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 25,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 26,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 27,
+            "frames": 10,
+            "peak": 0.024705294220065465
+          },
+          {
+            "second": 28,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 29,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          }
+        ]
+      },
+      "diagnosticProcessPresentAfterCleanup": false
+    },
+    {
+      "label": "paused-repeat",
+      "acceptedForComparison": true,
+      "interpretation": "Native paused state remained stable throughout timeline",
+      "measurementStart": {
+        "playing": false,
+        "prepared": true,
+        "version": "0.7.4",
+        "musicRuntime": {
+          "backend": "native",
+          "state": "paused",
+          "nativeConfirmed": true,
+          "equalizerSupported": false
+        },
+        "volume": 5,
+        "positionMs": 0
+      },
+      "probe": {
+        "schema": 1,
+        "runId": "7274747c-cb20-4a7a-8468-dfebc70693f0",
+        "mode": "paused",
+        "reason": "deadline",
+        "result": "ok",
+        "stage": "enabled",
+        "session": 0,
+        "limitMs": 30000,
+        "elapsedMs": 30000,
+        "captureSize": 1024,
+        "captureRateMilliHz": 10000,
+        "samplingRateHz": 44100,
+        "sampleRateChanges": 0,
+        "frames": 296,
+        "nonzeroFrames": 0,
+        "aboveFloorFrames": 0,
+        "aboveFloorThreshold": 0.02,
+        "invalidFrames": 0,
+        "peak": 0,
+        "visualizerCreated": true,
+        "toneCreated": false,
+        "visualizerReleased": true,
+        "tonePlayed": false,
+        "toneReleased": false,
+        "finished": true,
+        "meanBands": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "peakBands": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "seconds": [
+          {
+            "second": 0,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 1,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 2,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 3,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 4,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 5,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 6,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 7,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 8,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 9,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 10,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 11,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 12,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 13,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 14,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 15,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 16,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 17,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 18,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 19,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 20,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 21,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 22,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 23,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 24,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 25,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 26,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 27,
+            "frames": 10,
+            "peak": 0
+          },
+          {
+            "second": 28,
+            "frames": 9,
+            "peak": 0
+          },
+          {
+            "second": 29,
+            "frames": 10,
+            "peak": 0
+          }
+        ]
+      },
+      "diagnosticProcessPresentAfterCleanup": false,
+      "nativeTimeline": [
+        {
+          "second": 0.0,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 1.13,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 2.21,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 3.3,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 4.39,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 5.48,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 6.56,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 7.66,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 8.78,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 9.88,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 10.98,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 12.06,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 13.16,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 14.27,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 15.36,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 16.44,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 17.57,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 18.67,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 19.76,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 20.85,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 21.95,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 23.14,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 24.22,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 25.32,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 26.42,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 27.5,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 28.59,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 29.72,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        },
+        {
+          "second": 30.86,
+          "playing": false,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "paused",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 0
+        }
+      ],
+      "beforeCleanup": {
+        "playing": false,
+        "prepared": true,
+        "version": "0.7.4",
+        "musicRuntime": {
+          "backend": "native",
+          "state": "paused",
+          "nativeConfirmed": true,
+          "equalizerSupported": false
+        },
+        "volume": 5,
+        "positionMs": 0
+      }
+    },
+    {
+      "label": "music-repeat",
+      "acceptedForComparison": true,
+      "interpretation": "Native playing state remained stable throughout timeline",
+      "measurementStart": {
+        "playing": true,
+        "prepared": true,
+        "version": "0.7.4",
+        "musicRuntime": {
+          "backend": "native",
+          "state": "playing",
+          "nativeConfirmed": true,
+          "equalizerSupported": false
+        },
+        "volume": 5,
+        "positionMs": 221
+      },
+      "probe": {
+        "schema": 1,
+        "runId": "8d5f92d0-7a45-4f83-92cf-b96638495dcb",
+        "mode": "music",
+        "reason": "deadline",
+        "result": "ok",
+        "stage": "enabled",
+        "session": 0,
+        "limitMs": 30000,
+        "elapsedMs": 30000,
+        "captureSize": 1024,
+        "captureRateMilliHz": 10000,
+        "samplingRateHz": 44100,
+        "sampleRateChanges": 0,
+        "frames": 296,
+        "nonzeroFrames": 296,
+        "aboveFloorFrames": 3,
+        "aboveFloorThreshold": 0.02,
+        "invalidFrames": 0,
+        "peak": 0.024705294220065465,
+        "visualizerCreated": true,
+        "toneCreated": false,
+        "visualizerReleased": true,
+        "tonePlayed": false,
+        "toneReleased": false,
+        "finished": true,
+        "meanBands": [
+          0,
+          0,
+          0.007360083885377038,
+          0.006786248069599594,
+          0,
+          0.006794553089906921,
+          0.008776070623179907,
+          0.006179394311682539,
+          0.009204342077329916,
+          0.008037248959857447,
+          0.009465021722460524,
+          0.009460666777210464,
+          0.009489713046831143,
+          0.009736460469490244,
+          0.009955285531702069,
+          0.010189398118407328,
+          0.010490981914627587,
+          0.010644038024034878,
+          0.010818959291928925,
+          0.011004813139066351,
+          0.011026678297553107,
+          0.011037610876796484,
+          0.011037610876796484,
+          0.011048543456039863
+        ],
+        "peakBands": [
+          0,
+          0,
+          0.024705294220065465,
+          0.017469281074217108,
+          0,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.011048543456039806,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.017469281074217108,
+          0.011048543456039806,
+          0.015625,
+          0.017469281074217108,
+          0.011048543456039806,
+          0.015625,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806,
+          0.011048543456039806
+        ],
+        "seconds": [
+          {
+            "second": 0,
+            "frames": 9,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 1,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 2,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 3,
+            "frames": 9,
+            "peak": 0.015625
+          },
+          {
+            "second": 4,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 5,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 6,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 7,
+            "frames": 10,
+            "peak": 0.02209708691207961
+          },
+          {
+            "second": 8,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 9,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 10,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 11,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 12,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 13,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 14,
+            "frames": 9,
+            "peak": 0.015625
+          },
+          {
+            "second": 15,
+            "frames": 10,
+            "peak": 0.024705294220065465
+          },
+          {
+            "second": 16,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 17,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 18,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 19,
+            "frames": 10,
+            "peak": 0.02209708691207961
+          },
+          {
+            "second": 20,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 21,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 22,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 23,
+            "frames": 10,
+            "peak": 0.015625
+          },
+          {
+            "second": 24,
+            "frames": 9,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 25,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 26,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 27,
+            "frames": 10,
+            "peak": 0.017469281074217108
+          },
+          {
+            "second": 28,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          },
+          {
+            "second": 29,
+            "frames": 10,
+            "peak": 0.011048543456039806
+          }
+        ]
+      },
+      "diagnosticProcessPresentAfterCleanup": false,
+      "nativeTimeline": [
+        {
+          "second": 0.0,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 417
+        },
+        {
+          "second": 1.14,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 574
+        },
+        {
+          "second": 2.24,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 1680
+        },
+        {
+          "second": 3.41,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 2851
+        },
+        {
+          "second": 4.5,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 3927
+        },
+        {
+          "second": 5.64,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 5080
+        },
+        {
+          "second": 6.73,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 6175
+        },
+        {
+          "second": 7.82,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 7264
+        },
+        {
+          "second": 8.92,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 8353
+        },
+        {
+          "second": 10.01,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 9447
+        },
+        {
+          "second": 11.1,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 10539
+        },
+        {
+          "second": 12.19,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 11623
+        },
+        {
+          "second": 13.28,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 12716
+        },
+        {
+          "second": 14.4,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 13835
+        },
+        {
+          "second": 15.49,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 14928
+        },
+        {
+          "second": 16.6,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 16034
+        },
+        {
+          "second": 17.69,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 17130
+        },
+        {
+          "second": 18.78,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 18216
+        },
+        {
+          "second": 19.86,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 19296
+        },
+        {
+          "second": 20.96,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 20388
+        },
+        {
+          "second": 22.04,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 21474
+        },
+        {
+          "second": 23.17,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 22607
+        },
+        {
+          "second": 24.26,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 23695
+        },
+        {
+          "second": 25.36,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 24790
+        },
+        {
+          "second": 26.46,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 25900
+        },
+        {
+          "second": 27.56,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 26996
+        },
+        {
+          "second": 28.72,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 28134
+        },
+        {
+          "second": 29.81,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 29230
+        },
+        {
+          "second": 30.95,
+          "playing": true,
+          "prepared": true,
+          "version": "0.7.4",
+          "musicRuntime": {
+            "backend": "native",
+            "state": "playing",
+            "nativeConfirmed": true,
+            "equalizerSupported": false
+          },
+          "volume": 5,
+          "positionMs": 30374
+        }
+      ],
+      "beforeCleanup": {
+        "playing": true,
+        "prepared": true,
+        "version": "0.7.4",
+        "musicRuntime": {
+          "backend": "native",
+          "state": "playing",
+          "nativeConfirmed": true,
+          "equalizerSupported": false
+        },
+        "volume": 5,
+        "positionMs": 30465
+      }
+    }
+  ]
+}
