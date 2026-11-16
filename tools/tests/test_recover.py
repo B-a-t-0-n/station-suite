@@ -84,7 +84,9 @@ class RecoverTests(unittest.TestCase):
 
     def setUp(self):
         self.temp = TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.home = Path(self.temp.name); self.checkout = self.home / 'checkout'; self.checkout.mkdir()
+        # Match production path canonicalization, including Windows runner TEMP's
+        # RUNNER~1 short alias, before building fake APK identity lookup keys.
+        self.home = Path(self.temp.name).resolve(); self.checkout = self.home / 'checkout'; self.checkout.mkdir()
         (self.checkout / 'config').mkdir()
         self.model = self.home / 'model'; self.model.mkdir()
         model = self.model / 'encoder.int8.onnx'; model.write_bytes(b'model\x1a\xff\x00end')
