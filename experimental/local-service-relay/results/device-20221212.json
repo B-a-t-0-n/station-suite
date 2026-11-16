@@ -1,0 +1,63 @@
+{
+  "mode": "loopback_only_no_vpn",
+  "nativeInterceptionTested": false,
+  "dexJarSha256": "bb6c49f4e19ca56b7377a2dbaea301a77eb71a67bf81f595787a85c982c56194",
+  "deadlineMs": 12000,
+  "connectivity204": true,
+  "localOtaStub": true,
+  "pushTlsHandshake": true,
+  "displayApiDenied": true,
+  "otherIpDenied": true,
+  "otherPortDenied": true,
+  "unknownSniDenied": true,
+  "relayCounters": {
+    "accepted": 7,
+    "denied": 4,
+    "ioFailures": 0,
+    "http": 1,
+    "configTls": 1,
+    "pushTls": 1,
+    "upstreamBytes": 1397,
+    "downstreamBytes": 5752,
+    "closed": true,
+    "unfinishedUploads": 0,
+    "activeHandlers": 0
+  },
+  "processExited": true,
+  "elapsedSeconds": 13.267,
+  "success": true,
+  "processExitedAtCleanup": true,
+  "baselineUnchanged": true,
+  "date": "2026-11-16",
+  "androidBuild": "PPR1.180610.011.20221212",
+  "client": "PC via temporary ADB forward to on-device loopback; no PC service backend",
+  "relayUid": 10005,
+  "rawRecordSha256": "799619b51c0404c8acfe7899a34a7a44029f99de05760e80ea32bdbddc8e1ba9",
+  "permissionAudit": {
+    "uid": 2000,
+    "alwaysOnGetter": {
+      "status": "error",
+      "exception": "java.lang.SecurityException",
+      "controlVpnDenied": true,
+      "connectivityInternalDenied": false,
+      "systemUidDenied": false
+    },
+    "firewallGetter": {
+      "status": "error",
+      "exception": "java.lang.SecurityException",
+      "controlVpnDenied": false,
+      "connectivityInternalDenied": false,
+      "systemUidDenied": true
+    },
+    "accountCounts": [
+      0
+    ],
+    "accountCountsKnown": true,
+    "deviceAdminFeature": "true",
+    "deviceOwnerSectionPresent": false,
+    "profileOwnerSectionPresent": false,
+    "provisioned": "1",
+    "userSetupComplete": "1",
+    "baselineRestored": true
+  }
+}

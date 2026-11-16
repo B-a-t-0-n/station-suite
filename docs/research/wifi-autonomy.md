@@ -5,6 +5,14 @@
 Станции остаются локальными, наружу разрешены только нужные API и медиа.
 **Готового режима безопасного автономного Wi-Fi пока нет.**
 
+Следующий этап проверил [права Android и варианты системного guard](android9-network-enforcement.md):
+реальный shell Binder getter отказал из-за `CONTROL_VPN`, firewall getter —
+из-за требования UID1000. Device Owner не назначался: он не закрывает
+системные обходы VPN и имеет побочные эффекты. Отдельно разрабатывается
+[локальный TCP/TLS transport](../../experimental/local-service-relay/README.md)
+и закреплена сборка [native TCP stack под API28](../../experimental/native-tun2socks/README.md).
+Эти компоненты не включены в основные приложения или автозапуск.
+
 ## Направление без root
 
 Локальный `VpnService` остаётся проверяемым вариантом. Он должен доставлять

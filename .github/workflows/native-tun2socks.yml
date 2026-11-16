@@ -1,0 +1,45 @@
+name: Native TCP stack API28 experiment
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-source-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Test build refusal contracts without a native compiler
+        run: python -m unittest discover -s experimental/native-tun2socks/tests -p 'test_*.py' -v
+      - name: Checkout pinned public source and recursive dependencies
+        uses: actions/checkout@v4
+        with:
+          repository: heiher/hev-socks5-tunnel
+          ref: 75dbc1e9ace6c70d3d1b94df7c283efe1de7effc
+          path: vendor-source/hev
+          submodules: recursive
+          persist-credentials: false
+      - name: Verify source lock before toolchain acquisition
+        run: python experimental/native-tun2socks/build.py --source vendor-source/hev --ndk-home /not-used --verify-source-only
+      - name: Install pinned build-runner NDK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;29.0.14206865"
+      - name: Compile API28 ARM64 library and inspect imports
+        run: python experimental/native-tun2socks/build.py --source vendor-source/hev --ndk-home "$ANDROID_HOME/ndk/29.0.14206865"
+      - name: Save experimental build provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: hev-2.20.0-api28-arm64-build-reports
+          # Keep compiled native code private to the build runner until its complete
+          # compiled-file notice audit is reviewed. No wildcard or directory upload.
+          path: |
+            experimental/native-tun2socks/dist/BUILD-RECORD.json
+            experimental/native-tun2socks/dist/elf-imports.txt
+            experimental/native-tun2socks/dist/THIRD-PARTY-NOTICE-INPUTS.txt
+          if-no-files-found: error
+          retention-days: 7
