@@ -22,6 +22,7 @@ public final class LocalServicesService extends Service {
     private NativeConfigServer config;
     private LocalConfigPushServer push;
     private LocalMusicServer music;
+    private DirectWifiNetwork directWifi;
     private volatile boolean destroyed;
     private long heartbeat,nextAttemptAt;
     private int failures;
@@ -38,6 +39,7 @@ public final class LocalServicesService extends Service {
         @Override public void run(){
             if(destroyed)return;
             try{
+                if(directWifi!=null)directWifi.refresh();
                 if(healthy()){code="ready";failures=0;}
                 else if(SystemClock.elapsedRealtime()>=nextAttemptAt)startServices();
                 writeStatus();
@@ -46,6 +48,7 @@ public final class LocalServicesService extends Service {
     };
     @Override public void onCreate(){
         super.onCreate();
+        directWifi=new DirectWifiNetwork(this);
         NotificationChannel channel=new NotificationChannel("station_services","Сервисы Станции",NotificationManager.IMPORTANCE_LOW);
         channel.setSound(null,null);getSystemService(NotificationManager.class).createNotificationChannel(channel);
         startForeground(3,new Notification.Builder(this,"station_services")
@@ -98,7 +101,8 @@ public final class LocalServicesService extends Service {
             boolean ready=healthy();if(ready)code="ready";else if("ready".equals(code))code="listener_unavailable";
             JSONObject state=new JSONObject().put("healthy",ready).put("code",code).put("heartbeatSeq",++heartbeat)
                     .put("updatedAtMs",System.currentTimeMillis()).put("servicePid",android.os.Process.myPid())
-                    .put("retryInMs",ready?0:Math.max(0,nextAttemptAt-SystemClock.elapsedRealtime()));
+                    .put("retryInMs",ready?0:Math.max(0,nextAttemptAt-SystemClock.elapsedRealtime()))
+                    .put("directWifiBound",directWifi!=null&&directWifi.bound());
             if(!lastFailureStage.isEmpty())state.put("lastFailureStage",lastFailureStage).put("lastFailureType",lastFailureType);
             if(config!=null)state.put("config",config.status());
             if(push!=null)state.put("push",push.status());
@@ -114,7 +118,7 @@ public final class LocalServicesService extends Service {
     }
     @Override public void onDestroy(){
         destroyed=true;
-        if(worker!=null){worker.removeCallbacksAndMessages(null);worker.post(()->{closeServices();code="stopped";writeStatus();thread.quitSafely();});}
+        if(worker!=null){worker.removeCallbacksAndMessages(null);worker.post(()->{closeServices();if(directWifi!=null)directWifi.close();code="stopped";writeStatus();thread.quitSafely();});}
         super.onDestroy();
     }
     @Override public IBinder onBind(Intent intent){return null;}

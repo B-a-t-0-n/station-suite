@@ -34,6 +34,8 @@ class LocalMusicTests(unittest.TestCase):
                  "local.station.voicebridge.LocalMusicSourceHostTest"],
                 [JAVA / "java.exe", "-cp", str(host) + ";" + str(JSON_JAR),
                  "local.station.voicebridge.LocalMusicServerHostTest"],
+                [JAVA / "java.exe", "-cp", str(host) + ";" + str(JSON_JAR),
+                 "local.station.voicebridge.LocalMusicTransportHostTest"],
             ]
             for command in commands:
                 result = subprocess.run([str(part) for part in command], capture_output=True, text=True,

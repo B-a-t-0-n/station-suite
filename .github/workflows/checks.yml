@@ -61,3 +61,14 @@ jobs:
       - run: python -m unittest discover -s experimental/local-service-relay/tests -p 'test_*.py' -v
       - run: python -m unittest discover -s experimental/native-tun2socks/tests -p 'test_*.py' -v
       - run: python -m unittest discover -s experimental/native-tun2socks/runtime-smoke/tests -p 'test_*.py' -v
+      - run: python -m unittest discover -s experimental/wifi-standalone/tests -p 'test_*.py' -v
+      - name: Fetch pinned host JSON dependency
+        run: |
+          $target = 'pc/tests/speechify-host/deps/json-20240303.jar'
+          New-Item -ItemType Directory -Force -Path (Split-Path $target) | Out-Null
+          Invoke-WebRequest 'https://repo.maven.apache.org/maven2/org/json/json/20240303/json-20240303.jar' -OutFile $target
+          if ((Get-FileHash -Algorithm SHA256 -LiteralPath $target).Hash -ne '3cf6cd6892e32e2b4c1c39e0f52f5248a2f5b37646fdfbb79a66b46b618414ed') { throw 'DEPENDENCY_HASH_MISMATCH' }
+      - name: Direct Wi-Fi network ownership host test
+        env:
+          STATION_JAVA_HOME: ${{ env.JAVA_HOME }}
+        run: python -m unittest discover -s pc/tests -p test_direct_wifi_network.py -v

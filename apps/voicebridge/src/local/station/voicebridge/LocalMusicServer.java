@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Local music catalog/cache. Every upstream connection is TLS through the fixed PC CONNECT tunnel.
+/** Local music catalog/cache. Upstream TLS uses the fixed PC tunnel unless direct is explicitly configured.
  * The private configuration is never returned, logged, or placed in an upstream URL. No Android UI.
  */
 public final class LocalMusicServer implements Closeable {
@@ -159,7 +159,7 @@ public final class LocalMusicServer implements Closeable {
         long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(15);
         Map<String,String> headers=request==null?Collections.singletonMap("User-Agent","Mozilla/5.0 StationMusic/1.0"):request.headers;
         URI current=uri;
-        for(int hop=0;hop<4;hop++)try(Remote response=fetch.open(current,request==null?"GET":"POST",headers,request==null?null:request.body(),deadline)){
+        for(int hop=0;hop<4;hop++)try(Remote response=fetch.transport(config.proxy).open(current,request==null?"GET":"POST",headers,request==null?null:request.body(),deadline)){
             if(isRedirect(response.status)){
                 if(request!=null||hop==3)throw problem(502,"music_redirect_rejected");
                 current=redirect(config,current,response.header("Location"),null);continue;
@@ -224,7 +224,7 @@ public final class LocalMusicServer implements Closeable {
         URI current;try{current=config.urls.audio(resolved.source,resolved.candidateUrl);}catch(IllegalArgumentException denied){throw problem(403,"music_cdn_not_enrolled");}
         File part=new File(cacheDir,target.getName()+".part");long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(40);
         try{
-            for(int hop=0;hop<4;hop++)try(Remote response=fetch.open(current,"GET",Collections.singletonMap("User-Agent",config.credentials.userAgent),null,deadline)){
+            for(int hop=0;hop<4;hop++)try(Remote response=fetch.transport(config.proxy).open(current,"GET",Collections.singletonMap("User-Agent",config.credentials.userAgent),null,deadline)){
                 if(isRedirect(response.status)){if(hop==3)throw problem(502,"music_redirect_rejected");current=redirect(config,current,response.header("Location"),resolved.source);continue;}
                 if(response.status!=200)throw problem(502,"music_track_unavailable");
                 String type=response.header("Content-Type");
@@ -262,8 +262,15 @@ public final class LocalMusicServer implements Closeable {
             if(hosts.length()>64)throw problem(503,"music_configuration_invalid");
             Set<String> enrolled=new HashSet<>();for(int i=0;i<hosts.length();i++)enrolled.add(hosts.getString(i));
             LocalMusicRequests.Credentials credentials=new LocalMusicRequests.Credentials(vk.getString("access_token"),vk.optString("user_agent",LocalMusicRequests.DEFAULT_USER_AGENT),vk.optString("api_version","5.95"));
-            return new Config(credentials,new LocalMusicUrls(enrolled));
+            return new Config(credentials,new LocalMusicUrls(enrolled),transportProxy(config));
         }catch(Problem fixed){if(fixed.status==503)throw fixed;throw problem(503,"music_configuration_invalid");}catch(Exception invalid){throw problem(503,"music_configuration_invalid");}
+    }
+    private static Proxy transportProxy(JSONObject config) throws Exception {
+        if(!config.has("transport"))return TunnelFetch.PROXY;
+        Object mode=config.opt("transport");
+        if("tunnel".equals(mode))return TunnelFetch.PROXY;
+        if("direct".equals(mode))return Proxy.NO_PROXY;
+        throw problem(503,"music_configuration_invalid");
     }
     private long cacheBytes(){synchronized(cacheLock){long count=0;File[] files=cacheDir.listFiles();if(files!=null)for(File file:files)if(file.isFile()&&(file.getName().matches(AUDIO_NAME)||file.getName().matches(AUDIO_NAME+"\\.part")))count+=file.length();return count;}}
     private void cleanParts(){File[] files=cacheDir.listFiles();if(files!=null)for(File file:files)if(file.isFile()&&file.getName().matches(AUDIO_NAME+"\\.part"))file.delete();}
@@ -330,11 +337,15 @@ public final class LocalMusicServer implements Closeable {
     private static Problem problem(int status,String code){return new Problem(status,code);}
     private static void closeQuietly(Closeable closeable){try{closeable.close();}catch(IOException ignored){}}
     private static final class Problem extends Exception{final int status;final String code;Problem(int status,String code){super(code);this.status=status;this.code=code;}}
-    private static final class Config{final LocalMusicRequests.Credentials credentials;final LocalMusicUrls urls;Config(LocalMusicRequests.Credentials credentials,LocalMusicUrls urls){this.credentials=credentials;this.urls=urls;}}
+    private static final class Config{final LocalMusicRequests.Credentials credentials;final LocalMusicUrls urls;final Proxy proxy;Config(LocalMusicRequests.Credentials credentials,LocalMusicUrls urls,Proxy proxy){this.credentials=credentials;this.urls=urls;this.proxy=proxy;}}
     private static final class Request{final String method,target;final Map<String,String> headers;Request(String method,String target,Map<String,String> headers){this.method=method;this.target=target;this.headers=headers;}}
     private static final class ResponseOutput extends FilterOutputStream{boolean committed;ResponseOutput(OutputStream output){super(output);}public void write(byte[] bytes,int offset,int count)throws IOException{out.write(bytes,offset,count);}}
 
-    interface Fetch{Remote open(URI uri,String method,Map<String,String> headers,byte[] body,long deadline)throws Exception;}
+    interface Fetch{
+        Remote open(URI uri,String method,Map<String,String> headers,byte[] body,long deadline)throws Exception;
+        /** Synthetic host sources have no network transport; the real HTTPS adapter selects it explicitly. */
+        default Fetch transport(Proxy proxy){return this;}
+    }
     static class Remote implements Closeable{
         final int status;final InputStream body;final Map<String,String> headers;private final Runnable cleanup;
         Remote(int status,Map<String,String> headers,InputStream body,Runnable cleanup){this.status=status;this.headers=headers;this.body=body;this.cleanup=cleanup;}
@@ -343,9 +354,13 @@ public final class LocalMusicServer implements Closeable {
     }
     static final class TunnelFetch implements Fetch{
         static final Proxy PROXY=new Proxy(Proxy.Type.HTTP,new InetSocketAddress("127.0.0.1",18443));
+        private final Proxy selectedProxy;
+        TunnelFetch(){this(PROXY);}
+        private TunnelFetch(Proxy proxy){selectedProxy=proxy;}
+        @Override public Fetch transport(Proxy proxy){return new TunnelFetch(proxy);}
         public Remote open(URI uri,String method,Map<String,String> headers,byte[] body,long deadline)throws Exception{
             checkDeadline(deadline);if(!"https".equalsIgnoreCase(uri.getScheme()))throw problem(502,"music_endpoint_rejected");
-            HttpsURLConnection connection=(HttpsURLConnection)uri.toURL().openConnection(PROXY);
+            HttpsURLConnection connection=(HttpsURLConnection)uri.toURL().openConnection(selectedProxy);
             try{
                 int remaining=(int)Math.max(1,Math.min(6000,TimeUnit.NANOSECONDS.toMillis(deadline-System.nanoTime())));
                 connection.setConnectTimeout(remaining);connection.setReadTimeout(remaining);connection.setInstanceFollowRedirects(false);

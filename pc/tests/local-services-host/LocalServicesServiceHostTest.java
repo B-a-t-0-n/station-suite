@@ -32,6 +32,7 @@ public final class LocalServicesServiceHostTest {
         Files.write(new File(directory,"music-config.json").toPath(), "{}".getBytes(StandardCharsets.UTF_8));
         check(LocalServicesService.configured(context), "complete private files not configured");
         LocalServicesService service = start();
+        check(DirectWifiNetwork.latest.refreshes==1&&!state(service).getBoolean("directWifiBound"),"direct Wi-Fi lifecycle not refreshed/status absent");
         check(state(service).getBoolean("healthy") && state(service).getString("code").equals("ready"), "valid bootstrap not healthy");
         check(NativeConfigServer.latest.active && LocalConfigPushServer.latest.active && LocalMusicServer.latest.running, "valid bootstrap did not start all listeners");
         check(NativeConfigStore.syncs == 1, "bootstrap not validated exactly once");
@@ -41,8 +42,10 @@ public final class LocalServicesServiceHostTest {
         check(service.onStartCommand(null, 0, 1) == android.app.Service.START_STICKY, "service not sticky"); Handler.drain();
         check(configStarts == NativeConfigServer.starts && pushStarts == LocalConfigPushServer.starts, "duplicate start rebound listeners");
         long sequence = state(service).getLong("heartbeatSeq"); Handler.runDelayed(); Handler.drain();
+        check(DirectWifiNetwork.latest.refreshes>=2,"heartbeat did not refresh direct Wi-Fi config");
         check(state(service).getLong("heartbeatSeq") > sequence && state(service).getInt("servicePid") == 42, "heartbeat absent");
         destroy(service); sequence = state(service).getLong("heartbeatSeq");
+        check(DirectWifiNetwork.latest.closed,"destroy leaked process Wi-Fi binding owner");
         check(!state(service).getBoolean("healthy") && !NativeConfigServer.latest.active && !LocalConfigPushServer.latest.active, "destroy left listeners healthy/open");
         Handler.runDelayed(); Handler.drain(); check(state(service).getLong("heartbeatSeq") == sequence, "destroy left scheduled heartbeat");
         NativeConfigServer.failStart = true;
@@ -106,4 +109,11 @@ final class LocalMusicServer {
     void start(){running=true;}
     void close(){running=false;}
     String statusJson(){return "{\"running\":"+running+"}";}
+}
+final class DirectWifiNetwork {
+    static DirectWifiNetwork latest;int refreshes;boolean closed;
+    DirectWifiNetwork(Context context){latest=this;}
+    void refresh(){refreshes++;}
+    boolean bound(){return false;}
+    void close(){closed=true;}
 }

@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-16",
+  "device": {
+    "model": "Station Max",
+    "android": 9,
+    "build": "20221212",
+    "selinux": "Enforcing"
+  },
+  "mode": "experimental_wifi",
+  "software": {
+    "voicebridge": "0.22",
+    "wifiRelay": "0.1-experimental"
+  },
+  "verification": {
+    "ethernetCableDisconnected": "user_confirmed",
+    "pcTunnelStopped": true,
+    "agentHttp200": true,
+    "voiceServicesHealthy": true,
+    "voiceProcessBoundToWifi": true,
+    "relayPermanentActive": true,
+    "quasarUidLocalFlow": {
+      "dnsPinned": true,
+      "http204": true,
+      "configHttp200": true,
+      "hasUpdateFalse": true
+    },
+    "voiceAnswer": "user_confirmed",
+    "songPlayback": "user_confirmed"
+  },
+  "limits": {
+    "systemOtaProtectionGuaranteed": false,
+    "coldBootTested": false,
+    "shellInputHelperNeedsAdbBootstrapAfterBoot": true,
+    "generalInternetAllowlist": false
+  },
+  "artifacts": {
+    "installedVoicebridgeApkSha256": "5171e76f9152ab6db9d1c4281575302b0d74adf363af6303008a0e7ad8f89c0d",
+    "installedWifiRelayApkSha256": "af4bc2195ace94e0bdb3c096a7f9e9a168aad137c2c21d6169c8a5b08d1d5ebd",
+    "wifiNativeBinaryPublication": "not_published_pending_notice_audit"
+  }
+}
