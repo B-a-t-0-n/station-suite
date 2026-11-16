@@ -1,0 +1,46 @@
+{
+  "source": {
+    "repository": "https://github.com/heiher/hev-socks5-tunnel.git",
+    "version": "2.20.0",
+    "commit": "75dbc1e9ace6c70d3d1b94df7c283efe1de7effc",
+    "ndk_revision": "29.0.14206865",
+    "android_api": 28,
+    "abi": "arm64-v8a",
+    "submodules": {
+      "src/core": "b43fa857fb39c854da01d13bc55eded66b4f4a3b",
+      "third-part/hev-task-system": "ded55c412b3951bc7decb5cb3b9135701e762998",
+      "third-part/lwip": "8115cd6150ab32500db3d4d8bd8ad7ec6648534c",
+      "third-part/yaml": "0c82efd10dc67b9e7f159d2c7f5d1dc3c1b5bc11"
+    },
+    "notice_inputs": {
+      "LICENSE": "3cca1a91ca82e9b9c41852945ef15858f932828ceeb765b86bc1fe3f39127514",
+      "src/core/LICENSE": "3cca1a91ca82e9b9c41852945ef15858f932828ceeb765b86bc1fe3f39127514",
+      "third-part/hev-task-system/LICENSE": "3cca1a91ca82e9b9c41852945ef15858f932828ceeb765b86bc1fe3f39127514",
+      "third-part/yaml/LICENSE": "3cca1a91ca82e9b9c41852945ef15858f932828ceeb765b86bc1fe3f39127514",
+      "third-part/lwip/src/include/lwip/init.h": "a90ad6f3a482cf7f71a8e9d6899911999586fb84b6a51a8dad50cc5548c26365"
+    }
+  },
+  "builtFromSource": true,
+  "androidApiBuildTarget": 28,
+  "needed": [
+    "libc.so",
+    "libdl.so",
+    "libm.so"
+  ],
+  "bytes": 355480,
+  "sha256": "895568b1e4f495f5b03f5038866f3b0b8fd52e04ac3d88696cebf23c1c458359",
+  "sourceLockSha256": "023756e30504e9b58ae0be0e1b6a07328ddde90b21c6d35a49f49a02e6f8deb8",
+  "builderSha256": "437655e4d51a8a27d717aac2459909231d9feb4ef472289c42445c6fef893714",
+  "deviceInstalled": false,
+  "deviceTested": false,
+  "jniContract": "upstream hev.htproxy.TProxyService",
+  "runtimeCompatibilityVerified": false,
+  "completeLicenseAudit": false,
+  "date": "2026-11-16",
+  "workflowRun": "https://github.com/B-a-t-0-n/station-suite/actions/runs/43866423108",
+  "commit": "4d232daa6ca247754f981ba7d3f4c2104f1bf9c1",
+  "builderHashMatchesCommit": true,
+  "androidElfIdentApi": 28,
+  "binaryPublished": false,
+  "reportsOnly": true
+}

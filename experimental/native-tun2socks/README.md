@@ -48,8 +48,26 @@ Wi-Fi because a build completed.
 
 The source-lock verification has passed on a fresh recursive checkout. Local
 ELF refusal tests and Python syntax/help checks pass. Native compilation has
-not been performed locally because the pinned NDK is unavailable; the manual
-Linux CI workflow has not been dispatched as part of adding this scaffold.
+not been performed locally because the pinned NDK is unavailable.
+
+## Verified CI source build, 2026-11-16
+
+The [manual Linux build](https://github.com/B-a-t-0-n/station-suite/actions/runs/43866423108)
+passed at commit `4d232da`. Its library is ELF64/AArch64; Android ELF ident
+records API28, and DT_NEEDED contains only `libc.so`, `libdl.so`, `libm.so`.
+The output was 355480 bytes, SHA256
+`895568b1e4f495f5b03f5038866f3b0b8fd52e04ac3d88696cebf23c1c458359`.
+The build report's builder hash matches the committed script.
+[Sanitized provenance](results/api28-ci-20261116.json) preserves the source lock.
+
+The initial run stopped before native compilation because the API macro check
+assumed a numeric `-dM` definition. The builder now checks the preprocessor's
+expanded `__ANDROID_API__` value against exactly 28; all refusal checks remain.
+
+CI published three reports and no `.so`. This proves compilation/linking for
+the selected target, not Android9 loading, JNI readiness, TUN fd ownership,
+start/stop safety or native OTA coverage. The library has not been installed
+or tested on the Station. License and runtime gates remain open.
 
 Sources: [hev 2.20.0](https://github.com/heiher/hev-socks5-tunnel/tree/75dbc1e9ace6c70d3d1b94df7c283efe1de7effc),
 [Android API29 change](https://github.com/heiher/hev-socks5-tunnel/commit/d9d67110bd77f469e293ad29fc56b77071714549),

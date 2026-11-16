@@ -84,3 +84,9 @@ HTTP204, локальный `check_updates` с `hasUpdate:false`, TLS handshake 
 сетевая защита — разные этапы. Оба эксперимента отделены от основных APK
 и автозапуска. Текущее рабочее подключение остаётся изолированным Ethernet
 с ограниченным транспортом ПК.
+
+Закреплённая сборка уже [прошла в CI](https://github.com/B-a-t-0-n/station-suite/actions/runs/43866423108):
+ELF64/AArch64, Android ident API28, только `libc/libdl/libm` среди dynamic
+dependencies. В CI опубликованы отчёты; библиотека не устанавливалась и
+runtime на Станции не проверен. Обычные [проверки проекта](https://github.com/B-a-t-0-n/station-suite/actions/runs/43866420025)
+на этом же code commit прошли.
