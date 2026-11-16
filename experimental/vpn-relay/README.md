@@ -11,6 +11,13 @@ installation or device execution. The APK and `.so` remain private lab outputs:
 the [declared notice inventory](../native-tun2socks/NOTICE-AUDIT.md) is bundled,
 but public binary provenance/notice questions remain open.
 
+**Follow-up guard result:** an included Quasar system UID reached the isolated
+physical endpoint outside this active VPN by selecting the Ethernet `Network`.
+Default and source-bound requests were captured. The working relay therefore
+must not be treated as complete network enforcement.
+[Socket test and scope](SOCKET-ROUTE-CANARY.md) ·
+[Sanitized evidence](results/socket-route-device-20221212.json).
+
 Build the parent native experiment first. Then use Windows Java/Android tools
 and your existing external signer (the repository's builders create no signer):
 
@@ -125,7 +132,8 @@ Java push idle timeout is 12 seconds, while native TCP idle timeout remains
 
 Java 21 CI runs packet-policy and packet-fixture checks without installing the
 APK or native library. The reviewed host results include 2277 packet-policy
-assertions, 269 local-relay parser assertions plus socket integration, 2 runtime
+assertions, 300 socket-client admission assertions, 269 local-relay parser
+assertions plus socket integration, 2 runtime
 fixture tests and 6 native builder/notice tests. The runtime-smoke fixtures do
 not stand in for loading/JNI validation on the Station.
 

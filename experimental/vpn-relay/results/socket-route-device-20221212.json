@@ -1,0 +1,212 @@
+{
+  "date": "2026-11-16",
+  "androidBuild": "PPR1.180610.011.20221212",
+  "scope": "10-second single private IPv4 /32 VPN on isolated Ethernet; no real WAN or home Wi-Fi",
+  "apkSha256": "568b12c7bbdc982eb4236cd3142727539322234a856310a9e07dd7ffc83e70d8",
+  "nativeSha256": "061d1452c1392e71cd6f4df91b504290de6ef646855f32035d398e8e46c56c83",
+  "rawRecordSha256": "af83e26423e0bac5c17d1c8564cadd0c871a73f01d2acc2a2c64bc73421b52d3",
+  "testCompleted": true,
+  "testUid": 10005,
+  "executionContext": "disposable app_process via run-as under preinstalled SYSTEM/PRIVILEGED Quasar UID; not a normal third-party app UID",
+  "packageFlags": [
+    "userId=10005",
+    "privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION PARTIALLY_DIRECT_BOOT_AWARE PRIVILEGED ]",
+    "pkgFlags=[ SYSTEM DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA LARGE_HEAP ]"
+  ],
+  "filteredPermissionEvidence": [
+    "android.permission.CHANGE_NETWORK_STATE: granted=true",
+    "android.permission.INTERNET: granted=true"
+  ],
+  "baselineClients": [
+    {
+      "uid": 10005,
+      "mode": "default",
+      "bindingAttempted": false,
+      "bindingSucceeded": false,
+      "connectAttempted": true,
+      "connected": true,
+      "http204": true,
+      "stage": "complete",
+      "exception": "",
+      "errno": 0,
+      "elapsedMs": 18
+    },
+    {
+      "uid": 10005,
+      "mode": "network",
+      "bindingAttempted": true,
+      "bindingSucceeded": true,
+      "connectAttempted": true,
+      "connected": true,
+      "http204": true,
+      "stage": "complete",
+      "exception": "",
+      "errno": 0,
+      "elapsedMs": 59
+    },
+    {
+      "uid": 10005,
+      "mode": "source",
+      "bindingAttempted": true,
+      "bindingSucceeded": true,
+      "connectAttempted": true,
+      "connected": true,
+      "http204": true,
+      "stage": "complete",
+      "exception": "",
+      "errno": 0,
+      "elapsedMs": 50
+    },
+    {
+      "uid": 10005,
+      "mode": "device",
+      "bindingAttempted": true,
+      "bindingSucceeded": false,
+      "connectAttempted": false,
+      "connected": false,
+      "http204": false,
+      "stage": "bind_device",
+      "exception": "android.system.ErrnoException",
+      "errno": 1,
+      "elapsedMs": 2
+    }
+  ],
+  "duringVpnClients": [
+    {
+      "uid": 10005,
+      "mode": "default",
+      "bindingAttempted": false,
+      "bindingSucceeded": false,
+      "connectAttempted": true,
+      "connected": true,
+      "http204": true,
+      "stage": "complete",
+      "exception": "",
+      "errno": 0,
+      "elapsedMs": 35,
+      "controllerStartedSeconds": 1.457,
+      "controllerEndedSeconds": 2.512,
+      "insideConservativeVpnWindow": true,
+      "tunOutboundObserved": true,
+      "tunInboundObserved": true
+    },
+    {
+      "uid": 10005,
+      "mode": "network",
+      "bindingAttempted": true,
+      "bindingSucceeded": true,
+      "connectAttempted": true,
+      "connected": true,
+      "http204": true,
+      "stage": "complete",
+      "exception": "",
+      "errno": 0,
+      "elapsedMs": 56,
+      "controllerStartedSeconds": 2.7,
+      "controllerEndedSeconds": 3.756,
+      "insideConservativeVpnWindow": true,
+      "tunOutboundObserved": false,
+      "tunInboundObserved": false
+    },
+    {
+      "uid": 10005,
+      "mode": "source",
+      "bindingAttempted": true,
+      "bindingSucceeded": true,
+      "connectAttempted": true,
+      "connected": true,
+      "http204": true,
+      "stage": "complete",
+      "exception": "",
+      "errno": 0,
+      "elapsedMs": 34,
+      "controllerStartedSeconds": 3.963,
+      "controllerEndedSeconds": 5.024,
+      "insideConservativeVpnWindow": true,
+      "tunOutboundObserved": true,
+      "tunInboundObserved": true
+    },
+    {
+      "uid": 10005,
+      "mode": "device",
+      "bindingAttempted": true,
+      "bindingSucceeded": false,
+      "connectAttempted": false,
+      "connected": false,
+      "http204": false,
+      "stage": "bind_device",
+      "exception": "android.system.ErrnoException",
+      "errno": 1,
+      "elapsedMs": 2,
+      "controllerStartedSeconds": 5.236,
+      "controllerEndedSeconds": 6.207,
+      "insideConservativeVpnWindow": true,
+      "tunOutboundObserved": false,
+      "tunInboundObserved": false
+    }
+  ],
+  "physicalNetworkSelectionBypassObserved": true,
+  "basis": [
+    "Included UID10005 is within the installed secure-VPN rule ranges.",
+    "Default and source-bound HTTP204 requests have both directions in the bounded complete header journal.",
+    "The explicitly physical-Network-bound request returned HTTP204 inside a conservative active-VPN window with physical source address, with neither direction in the TUN journal.",
+    "The complete journal reconciles with final packet counters and was not truncated by logcat eviction."
+  ],
+  "packetCounters": {
+    "records": 169,
+    "bytes": 45500,
+    "forwarded": 94,
+    "injected": 67,
+    "dropped": 1,
+    "tunIpv6ControlDropped": 6,
+    "nativeIpv6ControlDropped": 1,
+    "headerMetadataRecords": 162
+  },
+  "relayCounters": {
+    "accepted": 11,
+    "denied": 0,
+    "ioFailures": 0,
+    "http": 3,
+    "configTls": 4,
+    "pushTls": 4,
+    "upstreamBytes": 6655,
+    "downstreamBytes": 31574,
+    "closed": true,
+    "unfinishedUploads": 0,
+    "activeHandlers": 0
+  },
+  "readOnlyRouteLookupsDuringVpn": {
+    "rootDefault": "tun",
+    "rootExplicitEth0": "eth0",
+    "quasarDefault": "tun",
+    "quasarExplicitEth0": "eth0",
+    "rootSocketExecuted": false,
+    "routeOrPolicySettersUsed": false
+  },
+  "rollback": {
+    "ownDeadlineObserved": true,
+    "nativeJoinedAndStopped": true,
+    "independentWatchdogActuallyStoppedProcess": true,
+    "watchdogObservationElapsedSeconds": 16.391,
+    "exactBaselineRestored": true
+  },
+  "cleanup": {
+    "exactBaselineStillIdentical": true,
+    "labPackageAbsent": true,
+    "labDirectoryAbsent": true,
+    "canaryArtifactsAbsent": true,
+    "otaGuardOk": true,
+    "localServicesHealthy": true,
+    "wifiEnabled": false,
+    "agentHttp200": true,
+    "panelHttp200": true
+  },
+  "limitations": [
+    "No SO_MARK value was read; protectedFromVpn is an explanation supported by upstream source, not a directly measured socket mark.",
+    "UID10005 is a privileged preinstalled package; this result is not a claim that all ordinary application UIDs bypass secure VPN.",
+    "No root client was executed. Root OIF route lookups are counterfactual routing queries, not root socket traffic.",
+    "The vendor OTA process, OTA request URL and any actual use of this bypass by updatesd remain unproven.",
+    "Lockdown, global IPv6, boot, crash, Wi-Fi reconnect and autonomous internet transport were not tested."
+  ],
+  "safeAutonomousWifiReady": false
+}

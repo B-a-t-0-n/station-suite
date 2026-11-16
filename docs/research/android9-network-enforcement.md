@@ -98,3 +98,10 @@ dependencies. Сам CI публикует отчёты и не устанавл
 совпали с established-сокетами UID0. Это уже работающий ограниченный transport.
 Принадлежность именно updatesd, OTA URL и отсутствие системных обходов этим
 не доказаны. Тестовый пакет удалён, рабочая изолированная схема сохранена.
+
+Последующий [socket-контроль](../../experimental/vpn-relay/SOCKET-ROUTE-CANARY.md)
+выявил реальный обход обычного VPN через выбор физического Network под
+системным UID Quasar. Default/source-bind запросы попали в TUN, physical
+Network bind вернул HTTP204 вне полного журнала TUN в активном окне.
+Это не root socket execution и не доказательство OTA URL; lockdown не
+включался. [Разбор системных исключений](vpn-system-bypass.md).

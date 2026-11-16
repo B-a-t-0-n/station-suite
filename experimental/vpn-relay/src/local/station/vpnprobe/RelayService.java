@@ -92,6 +92,7 @@ public final class RelayService extends VpnService {
             if (link != null) for (android.net.LinkAddress address : link.getLinkAddresses())
                 if ("192.168.77.100".equals(address.getAddress().getHostAddress())) expectedAddress = true;
             if (!expectedAddress || !"192.168.77.1".equals(ip)) throw new IOException("Exact isolated lab addresses required");
+            Log.i(TAG, "RELAY_PHYSICAL networkHandle=" + connectivity.getActiveNetwork().getNetworkHandle());
             stage = "prepare_local_transport";
             synchronized (descriptorLock) {
                 if (stopped.get()) throw new IOException("Probe is stopped");
