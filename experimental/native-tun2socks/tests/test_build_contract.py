@@ -40,6 +40,14 @@ class ElfImportContract(unittest.TestCase):
                 BUILD.inspect_elf(invalid)
 
 
+class CompilerApiContract(unittest.TestCase):
+    def test_requires_preprocessor_expanded_api28(self):
+        BUILD.verify_api_expansion('\n28\n')
+        for invalid in ('29', '__ANDROID_API__', '__ANDROID_MIN_SDK_VERSION__', '', '28\n29'):
+            with self.subTest(expansion=invalid), self.assertRaises(ValueError):
+                BUILD.verify_api_expansion(invalid)
+
+
 class PublicationGate(unittest.TestCase):
     def test_ci_uploads_reports_only_until_complete_notice_audit(self):
         workflow = MODULE.parents[2] / '.github/workflows/native-tun2socks.yml'

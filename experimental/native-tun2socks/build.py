@@ -27,6 +27,13 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def verify_api_expansion(text):
+    # Recent Clang can define __ANDROID_API__ as another predefined macro.
+    # Check its preprocessor-expanded value, rather than assuming a numeric -dM line.
+    if text.strip() != '28':
+        raise ValueError('Compiler is not targeting Android API28')
+
+
 def verify_source(source, lock):
     if run(['git', 'rev-parse', 'HEAD'], source).strip() != lock['commit']:
         raise ValueError('Upstream commit differs from source-lock')
@@ -95,9 +102,9 @@ def main():
                            'APP_SUPPORT_FLEXIBLE_PAGE_SIZES := true\n'
                            'APP_MODULES := hev-socks5-tunnel\n', encoding='ascii')
     macros = run([compiler, '-dM', '-E', '-x', 'c', '-'], current, input_text='')
-    if not re.search(r'^#define __ANDROID_API__ 28$', macros, re.MULTILINE):
-        raise ValueError('Compiler is not targeting Android API28')
     (current / 'compiler-macros.txt').write_text(macros, encoding='utf8')
+    expanded = run([compiler, '-E', '-P', '-x', 'c', '-'], current, input_text='__ANDROID_API__\n')
+    verify_api_expansion(expanded)
     command = [ndk_build, 'NDK_PROJECT_PATH=null', f'APP_BUILD_SCRIPT={source / "Android.mk"}',
                f'NDK_APPLICATION_MK={application}', f'NDK_OUT={current / "obj"}',
                f'NDK_LIBS_OUT={current / "libs"}', 'APP_PLATFORM=android-28',
