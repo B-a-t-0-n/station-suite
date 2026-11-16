@@ -17,3 +17,16 @@ jobs:
       - run: python -m unittest discover -s pc/tests -p test_panel_relay.py -v
       - run: python -m unittest discover -s pc/tests -p test_probe_local_ota.py -v
       - run: python -m unittest discover -s tools/tests -p test_private_backup.py -v
+  ring-experiment:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - run: python -m unittest discover -s experimental/ring-dimmer/tests -p 'test_*.py' -v
