@@ -37,5 +37,22 @@
     "installedVoicebridgeApkSha256": "5171e76f9152ab6db9d1c4281575302b0d74adf363af6303008a0e7ad8f89c0d",
     "installedWifiRelayApkSha256": "af4bc2195ace94e0bdb3c096a7f9e9a168aad137c2c21d6169c8a5b08d1d5ebd",
     "wifiNativeBinaryPublication": "not_published_pending_notice_audit"
-  }
+  },
+  "subsequentIncidents": [
+    {
+      "date": "2026-11-16",
+      "event": "ota_completed_after_reboot",
+      "source": "user_reported",
+      "newBuild": null,
+      "exactCause": null,
+      "otaPreventionAtReboot": "failed",
+      "followUpObservations": {
+        "adbAtFormerWifiAddress": "unavailable",
+        "agentAtFormerWifiAddress": "unavailable",
+        "wiredRecovery": "pending",
+        "currentModifiedRuntime": "not_verified"
+      },
+      "priorVerificationScope": "previous_session_before_reboot"
+    }
+  ]
 }
