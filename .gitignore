@@ -25,6 +25,8 @@ experimental/wifi-standalone/dist/
 password.txt
 password-*.txt
 deployment.json
+recovery.json
+*.recovery.json
 local-config-relay.json
 native-sync.json
 native-baseline.json

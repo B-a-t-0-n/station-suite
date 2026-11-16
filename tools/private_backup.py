@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shlex
 import subprocess
 import sys
 
@@ -144,6 +145,49 @@ def decode(args):
     return manifest, entries
 
 
+def restore_device_files(args, files):
+    """Restore allowlisted app files through ASCII stdin, never a Windows binary pipe."""
+    if not files or set(files) - set(DEVICE_FILES): raise ValueError('INVALID_DEVICE_FILE_SET')
+    if any(not isinstance(data, bytes) or len(data) > MAX_BYTES for data in files.values()): raise ValueError('INPUT_TOO_LARGE')
+    stage = 'files/.station-recovery-' + secrets.token_hex(12)
+    created = False
+    def execute(operation, *command, payload=None):
+        # Operation names are fixed here: no target, command, stderr or secret
+        # becomes part of the public error code. Keep the cause for a local
+        # debugger; CLI output remains the stage code alone.
+        try: return adb(args, *command, payload=payload)
+        except (ValueError, OSError, subprocess.SubprocessError) as error:
+            raise ValueError('PRIVATE_ADB_' + operation + '_FAILED') from error
+    def shell(operation, *command):
+        return execute(operation, 'shell', shlex.join(command)).stdout
+    try:
+        shell('CREATE_FILES', 'run-as', PACKAGE, 'sh', '-c', 'umask 077 && mkdir -p files && chmod 700 files')
+        shell('CREATE_STAGE', 'run-as', PACKAGE, 'sh', '-c', 'umask 077 && mkdir ' + stage); created = True
+        for index, (target, data) in enumerate(sorted(files.items())):
+            staged = stage + '/' + str(index)
+            command = shlex.join(['run-as', PACKAGE, 'sh', '-c', 'umask 077 && base64 -d > ' + shlex.quote(staged)])
+            execute('WRITE_STAGE', 'shell', '-T', command, payload=base64.b64encode(data))
+            actual = shell('HASH_STAGE', 'run-as', PACKAGE, 'sha256sum', staged).split()
+            if not actual or actual[0] != hashlib.sha256(data).hexdigest().encode('ascii'):
+                raise ValueError('PRIVATE_REMOTE_HASH_MISMATCH')
+        for index, (target, data) in enumerate(sorted(files.items())):
+            parent = target.split('/')[0]
+            shell('CREATE_TARGET_DIR', 'run-as', PACKAGE, 'sh', '-c', 'umask 077 && mkdir -p ' + parent + ' && chmod 700 ' + parent)
+            shell('PROMOTE', 'run-as', PACKAGE, 'mv', stage + '/' + str(index), target)
+            shell('MODE', 'run-as', PACKAGE, 'chmod', '600', target)
+    finally:
+        if created:
+            pending = sys.exc_info()[0] is not None; failed = False
+            commands = [('run-as', PACKAGE, 'rm', '-f', stage + '/' + str(i)) for i in range(len(files))]
+            commands.append(('run-as', PACKAGE, 'rmdir', stage))
+            for command in commands:
+                try: shell('CLEANUP', *command)
+                except (ValueError, OSError, subprocess.SubprocessError): failed = True
+            if failed:
+                if not pending: raise ValueError('PRIVATE_STAGE_CLEANUP_FAILED')
+                print('Private temporary stage cleanup incomplete', file=sys.stderr)
+
+
 def restore(args):
     manifest, entries = decode(args)
     if not args.apply:
@@ -159,13 +203,7 @@ def restore(args):
     # App must already be installed with compatible signer and run-as available.
     adb(args, 'shell', 'run-as', PACKAGE, 'pwd')
     adb(args, 'shell', 'am', 'force-stop', PACKAGE)
-    for name in DEVICE_FILES:
-        archive_name = 'voice/' + name
-        if archive_name not in entries:
-            continue
-        directory = name.split('/')[0]
-        command = f'umask 077; mkdir -p {directory}; chmod 700 {directory}; cat > {name}; chmod 600 {name}'
-        adb(args, 'shell', 'run-as', PACKAGE, 'sh', '-c', "'" + command + "'", payload=entries[archive_name])
+    restore_device_files(args, {name: entries['voice/' + name] for name in DEVICE_FILES if 'voice/' + name in entries})
     for name in PC_FILES:
         if name in entries:
             private_write(destination / name, entries[name])

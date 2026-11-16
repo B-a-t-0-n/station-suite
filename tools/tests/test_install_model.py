@@ -17,7 +17,7 @@ SPEC.loader.exec_module(install)
 class FakeAdb:
     def __init__(self, corrupt=False, mkdir_failure=False):
         self.files = {'files/local-sherpa-model/existing.txt': b'keep'}
-        self.dirs = {'files/local-sherpa-model'}
+        self.dirs = {'files', 'files/local-sherpa-model', '/data', '/data/local', '/data/local/tmp'}
         self.commands = []
         self.corrupt, self.mkdir_failure = corrupt, mkdir_failure
 
@@ -45,7 +45,14 @@ class FakeAdb:
         if op == 'mkdir':
             if self.mkdir_failure and command[-1].startswith('/data/local/tmp/'):
                 raise SystemExit('fixture mkdir failure')
-            self.dirs.add(command[-1])
+            directory = command[-1]
+            if '-p' in command:
+                current = directory
+                while current not in ('.', '/'):
+                    self.dirs.add(current); current = str(Path(current).parent).replace('\\', '/')
+            else:
+                assert directory.rsplit('/', 1)[0] in self.dirs, 'parent directory missing'
+                self.dirs.add(directory)
         elif op in ('umask', 'chmod', 'am'): pass
         elif op == 'cp':
             self.files[command[2]] = self.files[command[1]] + (b'bad' if self.corrupt else b'')
@@ -77,7 +84,7 @@ class InstallModelTests(unittest.TestCase):
             install.deploy_model(self.args, self.models)
 
     def assert_clean(self, fake):
-        self.assertEqual(fake.dirs, {'files/local-sherpa-model'})
+        self.assertEqual(fake.dirs, {'files', 'files/local-sherpa-model', '/data/local/tmp', '/data', '/data/local'})
         self.assertEqual(fake.files['files/local-sherpa-model/existing.txt'], b'keep')
         self.assertFalse(any('.station-model-' in path or '/station-model-' in path for path in fake.files))
 
@@ -99,6 +106,13 @@ class InstallModelTests(unittest.TestCase):
         self.assert_clean(fake)
         self.assertEqual(set(fake.files), {'files/local-sherpa-model/existing.txt'})
         self.assertFalse(any(c[:3] == ['run-as', install.PACKAGES['voicebridge'], 'mv'] for c in fake.commands))
+
+    def test_fresh_app_without_files_directory_is_provisioned(self):
+        fake = FakeAdb(); fake.files = {}; fake.dirs = {'/data', '/data/local', '/data/local/tmp'}
+        self.deploy(fake)
+        self.assertEqual(fake.dirs, {'files', 'files/local-sherpa-model', '/data', '/data/local', '/data/local/tmp'})
+        for path, _ in self.models:
+            self.assertEqual(fake.files['files/local-sherpa-model/' + path.name], path.read_bytes())
 
     def test_failed_mkdir_does_not_clean_a_stage_we_do_not_own(self):
         fake = FakeAdb(mkdir_failure=True)

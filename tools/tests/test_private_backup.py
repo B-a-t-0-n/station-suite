@@ -4,12 +4,16 @@ import importlib.util
 import json
 from pathlib import Path
 import secrets
+import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 from cryptography.exceptions import InvalidTag
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from test_recover import RecoveryAdb
 
 SPEC = importlib.util.spec_from_file_location('private_backup', Path(__file__).resolve().parents[1] / 'private_backup.py')
 backup = importlib.util.module_from_spec(SPEC)
@@ -74,6 +78,56 @@ class PrivateBackupTests(unittest.TestCase):
         nonce = secrets.token_bytes(12)
         self.archive.write_bytes(backup.MAGIC + salt + nonce + aes.encrypt(nonce, json.dumps(value).encode(), backup.MAGIC))
         with self.assertRaisesRegex(ValueError, 'INVALID_MANIFEST'): backup.decode(self.args)
+
+    def test_restore_binary_control_z_through_private_ascii_stage(self):
+        fake = RecoveryAdb({})
+        args = SimpleNamespace(adb='fake-adb', serial='station')
+        files = {'files/native-tls.p12': b'binary\x1a\x00\xfftail', 'files/config.json': b'{"fixture":true}'}
+        with patch.object(backup.subprocess, 'run', side_effect=fake.run):
+            backup.restore_device_files(args, files)
+        for name, data in files.items(): self.assertEqual(fake.files[name], data)
+        self.assertTrue(fake.private_uploads)
+        self.assertFalse(any('.station-recovery-' in name for name in fake.files))
+
+    def test_restore_remote_corruption_rejects_before_promotion_and_cleans_stage(self):
+        fake = RecoveryAdb({}, corrupt_private=True)
+        args = SimpleNamespace(adb='fake-adb', serial='station')
+        with patch.object(backup.subprocess, 'run', side_effect=fake.run):
+            with self.assertRaisesRegex(ValueError, 'PRIVATE_REMOTE_HASH_MISMATCH'):
+                backup.restore_device_files(args, {'files/native-tls.p12': b'control\x1aend'})
+        self.assertNotIn('files/native-tls.p12', fake.files)
+        self.assertFalse(any('.station-recovery-' in name for name in fake.files | {d: b'' for d in fake.dirs}))
+
+    def test_restore_reports_fixed_stage_code_and_preserves_cause_without_secret(self):
+        args = SimpleNamespace(adb='fake-adb', serial='station')
+        # Fail each operation once, then permit cleanup of only our own stage.
+        for position, code in enumerate(['CREATE_FILES', 'CREATE_STAGE', 'WRITE_STAGE', 'HASH_STAGE',
+                                        'CREATE_TARGET_DIR', 'PROMOTE', 'MODE']):
+            with self.subTest(operation=code):
+                fake = RecoveryAdb({}); calls = 0
+                original = ValueError('ADB_OPERATION_FAILED')
+                def failing(*command, **kwargs):
+                    nonlocal calls
+                    calls += 1
+                    if calls == position + 1: raise original
+                    return fake.run(*command, **kwargs)
+                with patch.object(backup.subprocess, 'run', side_effect=failing):
+                    with self.assertRaisesRegex(ValueError, '^PRIVATE_ADB_' + code + '_FAILED$') as caught:
+                        backup.restore_device_files(args, {'files/native-tls.p12': b'secret\x1a\x00payload'})
+                self.assertIs(caught.exception.__cause__, original)
+                self.assertNotIn('secret', str(caught.exception))
+                self.assertFalse(any('.station-recovery-' in name for name in fake.files | {d:b'' for d in fake.dirs}))
+
+    def test_cleanup_failure_preserves_original_stage_error(self):
+        fake = RecoveryAdb({}); args = SimpleNamespace(adb='fake-adb', serial='station')
+        def failing(command, **kwargs):
+            if '-T' in command or ' rmdir ' in ' '.join(command):
+                raise ValueError('ADB_OPERATION_FAILED')
+            return fake.run(command, **kwargs)
+        with patch.object(backup.subprocess, 'run', side_effect=failing), patch('builtins.print') as output:
+            with self.assertRaisesRegex(ValueError, '^PRIVATE_ADB_WRITE_STAGE_FAILED$'):
+                backup.restore_device_files(args, {'files/config.json': b'private payload'})
+        self.assertEqual(output.call_args.args[0], 'Private temporary stage cleanup incomplete')
 
 
 if __name__ == '__main__':

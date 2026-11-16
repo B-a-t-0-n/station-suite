@@ -36,6 +36,7 @@ def deploy_model(args, model_files):
         shell(args, 'mkdir', public_stage)
         public_created = True
         shell(args, 'chmod', '755', public_stage)
+        shell(args, 'run-as', package, 'sh', '-c', 'umask 077 && mkdir -p files && chmod 700 files')
         shell(args, 'run-as', package, 'sh', '-c',
               'umask 077 && mkdir ' + shlex.quote(private_stage))
         private_created = True

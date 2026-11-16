@@ -1,0 +1,60 @@
+{
+  "format": 1,
+  "adb": "C:/Android/platform-tools/adb.exe",
+  "aapt2": "C:/Android/build-tools/aapt2.exe",
+  "serial": "192.168.77.100:5555",
+  "firmware": {
+    "fingerprint": "Yandex/yandexstation_2/yandexstation_2:9/PPR1.180610.011/20221212:user/release-keys",
+    "sdk": 28,
+    "abi": "arm64-v8a"
+  },
+  "apps": [
+    {
+      "role": "agent",
+      "package": "local.station.agent",
+      "versionCode": 19,
+      "apk": "D:/StationSuite-Recovery/apps/station-agent.apk",
+      "sha256": "REPLACE_WITH_EXACT_APK_SHA256"
+    },
+    {
+      "role": "voicebridge",
+      "package": "local.station.voicebridge",
+      "versionCode": 22,
+      "apk": "D:/StationSuite-Recovery/apps/station-voice-bridge.apk",
+      "sha256": "REPLACE_WITH_EXACT_APK_SHA256"
+    },
+    {
+      "role": "launcher",
+      "package": "com.gathin.tvhome",
+      "versionCode": 13,
+      "apk": "D:/StationSuite-Recovery/apps/cleanyourtv.apk",
+      "sha256": "REPLACE_WITH_EXACT_APK_SHA256"
+    },
+    {
+      "role": "tv",
+      "package": "com.google.android.youtube.tv",
+      "versionCode": 1,
+      "apks": [
+        {"path": "D:/StationSuite-Recovery/apps/youtube/base.apk", "sha256": "REPLACE_WITH_EXACT_BASE_APK_SHA256"},
+        {"path": "D:/StationSuite-Recovery/apps/youtube/split_config.arm64_v8a.apk", "sha256": "REPLACE_WITH_EXACT_SPLIT_APK_SHA256"}
+      ]
+    }
+  ],
+  "modelDir": "D:/StationSuite-Recovery/model",
+  "privateFiles": [
+    {"target": "files/config.json", "source": "D:/StationSuite-Private/voice/config.json", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "files/native-sync.json", "source": "D:/StationSuite-Private/voice/native-sync.json", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "files/native-tls.p12", "source": "D:/StationSuite-Private/voice/native-tls.p12", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "files/native-tls-password.txt", "source": "D:/StationSuite-Private/voice/native-tls-password.txt", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "files/music-config.json", "source": "D:/StationSuite-Private/voice/music-config.json", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "files/display-settings.json", "source": "D:/StationSuite-Private/voice/display-settings.json", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"}
+  ],
+  "launcherFiles": [
+    {"target": "config.json", "source": "D:/StationSuite-Recovery/launcher/config.json", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "themes/index.json", "source": "D:/StationSuite-Recovery/launcher/themes/index.json", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "themes/stockholm/config.json", "source": "D:/StationSuite-Recovery/launcher/themes/stockholm/config.json", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "themes/.profiles/p20261116a/config.json", "source": "D:/StationSuite-Recovery/launcher/profiles/p20261116a/config.json", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"},
+    {"target": "themes/active", "source": "D:/StationSuite-Recovery/launcher/active", "sha256": "REPLACE_WITH_LOCAL_FILE_SHA256"}
+  ],
+  "startServices": true
+}

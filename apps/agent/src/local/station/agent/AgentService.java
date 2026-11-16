@@ -148,7 +148,7 @@ public final class AgentService extends Service implements BluetoothMediaCommand
             int current = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
             value.put("playing", playing);
             value.put("prepared", prepared);
-            value.put("version", "0.7.4");
+            value.put("version", "0.7.5");
             value.put("title", title);
             value.put("artist", artist);
             value.put("url", trackUrl);

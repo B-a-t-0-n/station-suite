@@ -16,8 +16,9 @@ jobs:
       - run: python -m unittest discover -s pc/tests -p test_giga_tunnel.py -v
       - run: python -m unittest discover -s pc/tests -p test_panel_relay.py -v
       - run: python -m unittest discover -s pc/tests -p test_probe_local_ota.py -v
-      - run: python -m unittest discover -s tools/tests -p test_private_backup.py -v
-      - run: python -m unittest discover -s tools/tests -p test_install_model.py -v
+      - run: python -m unittest discover -s tools/tests -p 'test_*.py' -v
+      - run: python -m unittest discover -s pc/tests -p test_pc_start.py -v
+      - run: python -m unittest discover -s pc/tests -p test_bootstrap_recovery.py -v
   ring-experiment:
     runs-on: windows-latest
     timeout-minutes: 5

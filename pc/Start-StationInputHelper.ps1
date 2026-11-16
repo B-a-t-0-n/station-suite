@@ -11,8 +11,15 @@ $apkHash = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerIn
 if ($apkHash -notmatch '^[a-f0-9]{64}$') { throw 'Invalid APK hash' }
 $remoteApk = "/data/local/tmp/station-input/agent-$apkHash.apk"
 function Invoke-StationAdb([string[]]$Arguments) {
-    $output = & $adbPath -s $Target @Arguments 2>&1
-    if ($LASTEXITCODE -ne 0) { throw 'Station input helper ADB step failed' }
+    # Windows PowerShell 5 treats even successful adb push progress on stderr
+    # as an error record. Use the native exit code to decide whether it failed.
+    $previousPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $output = & $adbPath -s $Target @Arguments 2>&1
+        $adbExitCode = $LASTEXITCODE
+    } finally { $ErrorActionPreference = $previousPreference }
+    if ($adbExitCode -ne 0) { throw 'Station input helper ADB step failed' }
     return ($output -join "`n")
 }
 Invoke-StationAdb -Arguments @('shell', 'mkdir', '-p', '/data/local/tmp/station-input') | Out-Null

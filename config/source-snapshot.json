@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "apps/agent/AndroidManifest.xml",
-      "sha256": "25b5375a010fcf57858487d2319b5fbca5e9086f7780a5cf67dafd03f5b57f73"
+      "sha256": "5e2ddf1508701e6b36b6d32d5da30a6a0a695399e1d03fc5072cba289fa3bcfd"
     },
     {
       "path": "apps/agent/assets/index.html",
@@ -23,7 +23,7 @@
     },
     {
       "path": "apps/agent/build.py",
-      "sha256": "34df4bcb922f00a256a5f3f658562361d98f2d268e23bb26b81e7a27ed72ec24"
+      "sha256": "3d247359404a60ad03d000cc40ada2dc823bcd458f1ba5ace2790c19896c3754"
     },
     {
       "path": "apps/agent/res/xml/network_security_config.xml",
@@ -55,7 +55,7 @@
     },
     {
       "path": "apps/agent/src/local/station/agent/AgentService.java",
-      "sha256": "c337a2f80caa474a6f7551b531739158ed7590c65d568abde87e0c5cc02ba081"
+      "sha256": "3fb70a68fbeae162ee64b66afab00e0727ce1f36a812979003bd6eea90f101ba"
     },
     {
       "path": "apps/agent/src/local/station/agent/AndroidAgentEqualizer.java",
@@ -79,7 +79,7 @@
     },
     {
       "path": "apps/agent/src/local/station/agent/LocalDiagnostics.java",
-      "sha256": "a60a743739a5ca57502d08b07e9750a1636d3ac44f742258dce7d48fe36a293f"
+      "sha256": "62540bb8ae34f28d9a22ed9c20bf4eac0af562fdedba7ce2e5863aa89326b37c"
     },
     {
       "path": "apps/agent/src/local/station/agent/LocalProxyServer.java",
@@ -91,7 +91,7 @@
     },
     {
       "path": "apps/agent/src/local/station/agent/MainActivity.java",
-      "sha256": "947a5f3e03d94fb310a6f89d4501b7a16c1e6ded67220b3dfa9b625561cd6026"
+      "sha256": "0658cf8b14719f9c65f38cfdd7c54a7f978fcc975fc2ac566d1c3b46a6d4ab07"
     },
     {
       "path": "apps/agent/src/local/station/agent/MusicSpectrumFrames.java",
@@ -136,6 +136,10 @@
     {
       "path": "apps/agent/src/local/station/agent/ScheduleSignal.java",
       "sha256": "4e1b36542d64630d655e5a1f03a9a88315c0abe43c4b42244b91c1ce57ba88c5"
+    },
+    {
+      "path": "apps/agent/src/local/station/agent/StationBluetoothPairing.java",
+      "sha256": "a6bd9e62b337f05783d89c87fbf9424a51eb549ab6e8a99c4d7e6b23718d9e39"
     },
     {
       "path": "apps/agent/src/local/station/agent/StationDisplaySettings.java",
@@ -391,7 +395,7 @@
     },
     {
       "path": "apps/voicebridge/AndroidManifest.xml",
-      "sha256": "7e6eb4e8fbc18ef33aa56fa1228a5dc23410958677e744c76125c145b661faaf"
+      "sha256": "5204924fb90055a06e0ddfaeee6ddb6e87374e25bac36467888d111da33fde12"
     },
     {
       "path": "apps/voicebridge/assets/asr_fixture.wav",
@@ -547,7 +551,7 @@
     },
     {
       "path": "apps/voicebridge/build.py",
-      "sha256": "0294c354d48346d0a670eae38dd17632663f76358292671a2be2487b12e9597d"
+      "sha256": "abf4b6f66c486972d89aa589fda876a99b961d50311eb7497ce014f0309bb0ef"
     },
     {
       "path": "apps/voicebridge/res/values/strings.xml",
@@ -568,6 +572,10 @@
     {
       "path": "apps/voicebridge/src/local/station/voicebridge/CloudClient.java",
       "sha256": "83367342300923e89c28291de0392f93ad00760686b5e88f6005eea223e8266c"
+    },
+    {
+      "path": "apps/voicebridge/src/local/station/voicebridge/DirectWifiNetwork.java",
+      "sha256": "f3bfbbebc2bd9cfde8123d25915a96052fd30fad09438b850a37f3f3b92888b7"
     },
     {
       "path": "apps/voicebridge/src/local/station/voicebridge/LegacyPipelineHandler.java",
@@ -603,7 +611,7 @@
     },
     {
       "path": "apps/voicebridge/src/local/station/voicebridge/LocalMusicServer.java",
-      "sha256": "c11f72d00c0ee1dc04f79cff70a82e432fd7e2fa699fbc5a5959af32284bfa28"
+      "sha256": "9964dcd23493f1aab6acf02c39523e337f3b40b2c5efc9a9e786822c2acd3440"
     },
     {
       "path": "apps/voicebridge/src/local/station/voicebridge/LocalMusicUrls.java",
@@ -611,7 +619,7 @@
     },
     {
       "path": "apps/voicebridge/src/local/station/voicebridge/LocalServicesService.java",
-      "sha256": "7c5be3020afcc9583e24865a9cce4cbd4c9683d7631de0f4eb539548401e872f"
+      "sha256": "237b30ca141bb317f2ba51e023cbb24ef092c72172af0e551e537f2139e7d265"
     },
     {
       "path": "apps/voicebridge/src/local/station/voicebridge/LocalSpeechRecognizer.java",
