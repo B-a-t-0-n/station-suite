@@ -1,0 +1,119 @@
+{
+  "date": "2026-11-17",
+  "scope": "read_only_device_facts_and_offline_plan",
+  "observations": {
+    "schemaVersion": 1,
+    "device": {
+      "build": "20221212",
+      "api": 28
+    },
+    "principal": {
+      "uid": 2000,
+      "capEffHex": "0000000000000000",
+      "selinux": "Enforcing"
+    },
+    "firewall": {
+      "ipv4": "binary_present",
+      "ipv6": "binary_present"
+    },
+    "management": {
+      "kind": "wired_ip"
+    }
+  },
+  "policy": {
+    "schemaVersion": 1,
+    "blockedNativeUids": [
+      0,
+      10005
+    ],
+    "apiBrokerUid": 10032,
+    "managementInterface": "eth0",
+    "wirelessInterface": "wlan0",
+    "localTcpPorts": [
+      17682,
+      17683,
+      17684,
+      17685,
+      17686
+    ]
+  },
+  "assessment": {
+    "schemaVersion": 1,
+    "scope": "offline_declared_plan_only",
+    "planValid": true,
+    "eligibility": "blocked_by_observed_facts",
+    "runtimeProtection": "unverified",
+    "wifiMayBeEnabled": false,
+    "deviceMutationsPerformed": false,
+    "observedBlockers": [
+      "PRIVILEGED_PRINCIPAL_MISSING",
+      "CAP_NET_ADMIN_MISSING"
+    ],
+    "requiredVerification": [
+      "INDEPENDENT_RECOVERY_UNVERIFIED",
+      "SELINUX_NETFILTER_AUTHORIZATION_UNVERIFIED",
+      "KERNEL_IPV4_AND_IPV6_FILTER_SUPPORT_UNVERIFIED",
+      "EARLY_BOOT_BARRIER_UNVERIFIED",
+      "LOCAL_CONFIG_VOICE_DNS_TIME_READINESS_UNVERIFIED",
+      "IPV4_AND_IPV6_DENY_CANARIES_UNVERIFIED",
+      "PHYSICAL_NETWORK_BIND_CANARY_UNVERIFIED",
+      "EXISTING_CONNECTION_DENY_CANARY_UNVERIFIED",
+      "CRASH_AND_NETD_RECONNECT_RETENTION_UNVERIFIED",
+      "COLD_BOOT_ENFORCEMENT_UNVERIFIED"
+    ],
+    "blockers": [
+      "PRIVILEGED_PRINCIPAL_MISSING",
+      "CAP_NET_ADMIN_MISSING",
+      "INDEPENDENT_RECOVERY_UNVERIFIED",
+      "SELINUX_NETFILTER_AUTHORIZATION_UNVERIFIED",
+      "KERNEL_IPV4_AND_IPV6_FILTER_SUPPORT_UNVERIFIED",
+      "EARLY_BOOT_BARRIER_UNVERIFIED",
+      "LOCAL_CONFIG_VOICE_DNS_TIME_READINESS_UNVERIFIED",
+      "IPV4_AND_IPV6_DENY_CANARIES_UNVERIFIED",
+      "PHYSICAL_NETWORK_BIND_CANARY_UNVERIFIED",
+      "EXISTING_CONNECTION_DENY_CANARY_UNVERIFIED",
+      "CRASH_AND_NETD_RECONNECT_RETENTION_UNVERIFIED",
+      "COLD_BOOT_ENFORCEMENT_UNVERIFIED"
+    ],
+    "plannedStages": [
+      {
+        "name": "SEALED",
+        "requires": [
+          "independent recovery proven in isolated network",
+          "both IP families closed before physical network can provide WAN",
+          "policy present before native updater has an external route"
+        ]
+      },
+      {
+        "name": "LOCAL_READY",
+        "requires": [
+          "local config/voice/music/DNS/time services measured ready",
+          "package identities and current runtime UIDs independently verified",
+          "native UIDs retain no direct external access"
+        ]
+      },
+      {
+        "name": "GUARDED",
+        "requires": [
+          "effective IPv4 and IPv6 deny rules verified under enforcing SELinux",
+          "deny checked before any general ESTABLISHED acceptance",
+          "direct IP, cached DNS, physical bind and existing connections denied",
+          "owned policy retained across helper crash, netd and network reconnect"
+        ]
+      },
+      {
+        "name": "WIFI_ALLOWED",
+        "requires": [
+          "early bootstrap and fresh per-boot readiness barrier verified",
+          "cold boot and failure matrix measured in isolated canary network",
+          "only separately controlled API/TV principals receive planned WAN access"
+        ]
+      }
+    ]
+  },
+  "runtimeFirewallInstalled": false,
+  "wifiEnabledByThisStage": false,
+  "earlyBootIntegrationInstalled": false,
+  "kernelExploitExecuted": false,
+  "limits": "Binary presence and kernel config are not an enforcement test; no claim of OTA protection."
+}

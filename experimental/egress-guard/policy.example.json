@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "blockedNativeUids": [0, 10005],
+  "apiBrokerUid": 10046,
+  "managementInterface": "eth0",
+  "wirelessInterface": "wlan0",
+  "localTcpPorts": [17682, 17683, 17684, 17685, 17686]
+}

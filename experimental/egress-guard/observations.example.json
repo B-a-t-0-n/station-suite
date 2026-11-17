@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "device": {"build": "20221212", "api": 28},
+  "principal": {"uid": 2000, "capEffHex": "0000000000000000", "selinux": "Enforcing"},
+  "firewall": {"ipv4": "unknown", "ipv6": "unknown"},
+  "management": {"kind": "wired_ip"}
+}
