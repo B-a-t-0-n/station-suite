@@ -246,13 +246,107 @@
       "agentHttpStatus": 200
     }
   },
-  "filterEnforcementTestConclusive": false,
+  "filterEnforcementTestConclusive": true,
   "correction": {
     "separateGlobalApplyHandlerFound": true,
     "priorScriptsSentGlobalApply": false,
     "persistedPageRequestsApply": true,
-    "runtimeApplyRetestPerformed": false,
+    "runtimeApplyRetestPerformed": true,
     "templateSha256": "25dd73cca3c1b71b5ce9508d14499df14f64258e4f9210555fa1db5e0db176db",
-    "nextTest": "save -> global Apply -> network probe; rollback: delete -> global Apply -> restored network probe"
+    "nextTest": "station-specific allow/deny policy, UDP/DNS, IPv6, established connections, router reboot persistence"
+  },
+  "enforcementScope": "one phone-source IPv4 /32 to one destination IPv4 /32, HSI output, TCP443; not a complete OTA policy",
+  "appliedCanary": {
+    "association": "HSI",
+    "direction": "ouput",
+    "phoneOnly": true,
+    "targetPort": 443,
+    "globalFirewallModeChanged": false,
+    "groupSaved": true,
+    "pendingApplyAfterSave": true,
+    "persistedDropRule": true,
+    "targetBeforeApply": {
+      "bound": true,
+      "connected": true,
+      "localWifiMatch": true,
+      "httpStatus": 301,
+      "tlsVerified": true,
+      "certificateHostnameVerified": true,
+      "stage": "complete",
+      "error": "",
+      "elapsedMs": 328,
+      "target": "target_tls",
+      "processExit": 0,
+      "reachable": true
+    },
+    "globalApplySent": true,
+    "pendingApplyMessageCleared": true,
+    "targetAfterApply": {
+      "bound": true,
+      "connected": false,
+      "localWifiMatch": false,
+      "httpStatus": 0,
+      "tlsVerified": false,
+      "certificateHostnameVerified": false,
+      "stage": "connect",
+      "error": "ConnectException",
+      "elapsedMs": 7,
+      "target": "target_tls",
+      "processExit": 0,
+      "reachable": false
+    },
+    "controlAfterApply": {
+      "bound": true,
+      "connected": true,
+      "localWifiMatch": true,
+      "httpStatus": 301,
+      "tlsVerified": true,
+      "certificateHostnameVerified": true,
+      "stage": "complete",
+      "error": "",
+      "elapsedMs": 319,
+      "target": "control_tls",
+      "processExit": 0,
+      "reachable": true
+    },
+    "targetAfterApplyRepeat": {
+      "bound": true,
+      "connected": false,
+      "localWifiMatch": false,
+      "httpStatus": 0,
+      "tlsVerified": false,
+      "certificateHostnameVerified": false,
+      "stage": "connect",
+      "error": "ConnectException",
+      "elapsedMs": 58,
+      "target": "target_tls",
+      "processExit": 0,
+      "reachable": false
+    },
+    "adminAfterApply": true,
+    "rollback": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true,
+      "temporaryGroupRemoved": true,
+      "unrelatedGroupsPreserved": true,
+      "advancedFieldsMatchBaseline": true,
+      "targetRestored": true,
+      "controlRestored": true
+    }
+  },
+  "appliedCanaryFinalHealth": {
+    "checkedAtMs": 1794911048672,
+    "filterGroupsEmpty": true,
+    "noPendingApply": true,
+    "blackWhiteListsEmpty": true,
+    "stationWifiOff": true,
+    "stationLocalHealthy": true,
+    "pcTransportReady": true,
+    "agentHttpStatus": 200
+  },
+  "appliedCanaryCleanup": {
+    "temporaryRelayStopped": true,
+    "ownedForwardRemoved": true,
+    "temporaryDexRemoved": true
   }
 }
