@@ -36,6 +36,32 @@ firewall для root/system: backend может освобождать сист�
 [NetworkManagementService](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-9.0.0_r1/services/core/java/com/android/server/NetworkManagementService.java#2299),
 [netd FirewallController](https://android.googlesource.com/platform/system/netd/+/refs/tags/android-9.0.0_r1/server/FirewallController.cpp).
 
+## IPv6 отдельного интерфейса
+
+17 ноября на этой же прошивке getter `checkUidPermission` подтвердил
+`CONNECTIVITY_INTERNAL` для shell UID2000. Reflection подтвердил оба
+метода `INetworkManagementService.enableIpv6(String)` / `disableIpv6(String)`,
+сервис и типизированный proxy. Сетевые setters в этом проходе не вызывались;
+проверяемое исходное состояние совпало после завершения.
+
+Затем отдельная ограниченная проба при **выключенном Wi-Fi** проверила
+реальные setters только для `wlan0`: `disable_ipv6` изменился с 1 на 0
+и вернулся к 1. Независимый процесс повторил восстановление; Wi-Fi
+остался выключен, proxy/SELinux/IPv4 rules/IPv6 rules совпали с исходными.
+Временный JAR удалён. Root, включение Wi-Fi и изменения роутера не требовались.
+[Результат](results/ipv6-interface-canary-2026-11-17.json).
+
+В AOSP9 `disableIpv6` проверяет `CONNECTIVITY_INTERNAL`, без требования
+UID1000; это отличается от firewall API. Однако IpClient по умолчанию
+включает IPv6 при новом provisioning. Статический IPv4 сам по себе не
+вызывает `withoutIPv6`. Один успешный setter не доказывает запрет до
+первого подключения, при пересоздании интерфейса, reconnect или reboot.
+Сохраняемого способа менять эту provisioning-конфигурацию для штатного
+Wi-Fi без root пока нет. Периодический helper оставляет окно до реакции.
+[NetworkManagementService](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-9.0.0_r1/services/core/java/com/android/server/NetworkManagementService.java#1129),
+[IpClient](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-9.0.0_r1/services/net/java/android/net/ip/IpClient.java#1363),
+[WifiStateMachine](https://android.googlesource.com/platform/frameworks/opt/net/wifi/+/refs/tags/android-9.0.0_r1/service/java/com/android/server/wifi/WifiStateMachine.java#5007).
+
 ## Почему не назначен Device Owner
 
 DPC с ролью Device Owner получает штатный `DevicePolicyManager`

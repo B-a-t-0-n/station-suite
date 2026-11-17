@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "dateUtc": "2026-11-17T11:57:36.757116+00:00",
+  "scope": "Station wlan0 only; Wi-Fi remains disabled",
+  "stationIdentityPinned": true,
+  "jarSha256": "ead92e31e0b3138c76563f0e3b34fea1b7a1c9ebf5ed4b4d63d56e1fdd34b1c1",
+  "homeRouterWrites": 0,
+  "rootCommands": 0,
+  "wifiEnableCalls": 0,
+  "independentRestoreArmed": true,
+  "probe": {
+    "mode": "probe",
+    "wifiOffBefore": true,
+    "enableReadback": true,
+    "restoredDisabled": true,
+    "wifiOffAfter": true
+  },
+  "guard": {
+    "mode": "restore",
+    "restoredDisabled": true
+  },
+  "completed": true,
+  "baselineUnchanged": true,
+  "wifiStillOff": true,
+  "wlanIpv6RestoredDisabled": true,
+  "temporaryJarRemoved": true,
+  "proofLimit": "Setter round trip on an isolated disabled WLAN only. No Wi-Fi provisioning/reconnect/boot persistence or IPv6 internet/OTA coverage proof."
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "dateUtc": "2026-11-17T11:52:22.721767+00:00",
+  "mode": "permission_getter_and_reflection_only",
+  "ipv6SetterInvocations": 0,
+  "networkSettingsWrites": 0,
+  "deviceRootCommands": 0,
+  "proofLimit": "Permission getter and reflected runtime signatures only. No proof that an IPv6 setter succeeds, that IPv6 changes, or that any state persists through connection, interface recreation, or boot.",
+  "javaSourceSha256": "a15213cc80f4692a67ae05b07f87dd400a8a6535b4d3c9acd505a75b62bab402",
+  "dexJarSha256": "d6f2bc4ffe14d328ebdcee528c29b586aee812418784b23d36732f42926691ea",
+  "stationIdentityPinned": true,
+  "audit": {
+    "uid": 2000,
+    "connectivityInternal": {
+      "status": "ok",
+      "permission": "android.permission.CONNECTIVITY_INTERNAL",
+      "resultCode": 0,
+      "granted": true
+    },
+    "disableIpv6": {
+      "status": "reflected_only",
+      "name": "disableIpv6",
+      "parameterType": "java.lang.String",
+      "returnType": "void",
+      "invoked": false
+    },
+    "enableIpv6": {
+      "status": "reflected_only",
+      "name": "enableIpv6",
+      "parameterType": "java.lang.String",
+      "returnType": "void",
+      "invoked": false
+    },
+    "networkManagementServicePresent": true,
+    "typedProxyAvailable": true,
+    "interfaceDescriptorMatches": true,
+    "ipv6SetterInvocations": 0,
+    "networkSettingsWrites": 0
+  },
+  "status": "completed",
+  "temporaryDeviceArtifactCreated": true,
+  "temporaryDeviceArtifactRemoved": true,
+  "baselineUnchanged": true
+}

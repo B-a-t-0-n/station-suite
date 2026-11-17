@@ -348,5 +348,176 @@
     "temporaryRelayStopped": true,
     "ownedForwardRemoved": true,
     "temporaryDexRemoved": true
+  },
+  "orderedPolicyCanary": {
+    "phoneOnly": true,
+    "oneDestinationOnly": true,
+    "sourceGroup": "HSI/output",
+    "globalFirewallModeChanged": false,
+    "bothGroupsSaved": true,
+    "firstApply": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true
+    },
+    "allowThenDeny": {
+      "targetTls": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 798,
+        "target": "target_tls",
+        "processExit": 0,
+        "reachable": true
+      },
+      "controlTls": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 561,
+        "target": "control_tls",
+        "processExit": 0,
+        "reachable": true
+      },
+      "targetUdpDns": {
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": false,
+        "rcode": -1,
+        "minTtl": 0,
+        "error": "SocketException",
+        "answerCount": 0,
+        "reachable": false
+      },
+      "controlUdpDns": {
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": true,
+        "rcode": 0,
+        "minTtl": 63,
+        "error": "",
+        "answerCount": 2,
+        "reachable": true
+      }
+    },
+    "removeAllowApply": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true
+    },
+    "denyOnly": {
+      "targetTls": {
+        "bound": true,
+        "connected": false,
+        "localWifiMatch": false,
+        "httpStatus": 0,
+        "tlsVerified": false,
+        "certificateHostnameVerified": false,
+        "stage": "connect",
+        "error": "ConnectException",
+        "elapsedMs": 1045,
+        "target": "target_tls",
+        "processExit": 0,
+        "reachable": false
+      },
+      "controlTls": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 278,
+        "target": "control_tls",
+        "processExit": 0,
+        "reachable": true
+      },
+      "targetUdpDns": {
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": false,
+        "rcode": -1,
+        "minTtl": 0,
+        "error": "SocketException",
+        "answerCount": 0,
+        "reachable": false
+      },
+      "controlUdpDns": {
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": true,
+        "rcode": 0,
+        "minTtl": 37,
+        "error": "",
+        "answerCount": 2,
+        "reachable": true
+      }
+    },
+    "rollback": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true,
+      "ownedGroupsRemoved": true,
+      "baselineGroupsRestored": true,
+      "advancedFieldsMatchBaseline": true,
+      "allProbesRestored": true
+    }
+  },
+  "externalDependenciesSnapshot": {
+    "allowedHostCount": 38,
+    "validAnswers": 38,
+    "exactIpv4Count": 47,
+    "losslessCidrCount": 42,
+    "minimumTtlSeconds": 8,
+    "snapshotIsPersistentPolicy": false,
+    "autoRuleRefreshImplemented": false,
+    "hostnameOrProcessIsolation": false
+  },
+  "nonGlobalIpv6Investigation": {
+    "userConstraint": "Preserve IPv6 for other home devices",
+    "homeIpv6Disabled": false,
+    "guestSeparateIpv6IsolationConfirmed": false,
+    "subnetContextInspection": {
+      "subnet2": {
+        "h_subnet_select": "1",
+        "h_sub_lan_en": "0",
+        "h_ipv6_managed_flag": "0",
+        "h_ipv6_other_flag": "1",
+        "h_lan_ipv6_en": "1",
+        "h_dhcp_src_if_keyword": ""
+      },
+      "contextChanged": true,
+      "mainFieldsUnchanged": true,
+      "noPendingApply": true,
+      "cleanup": {
+        "stopped": true,
+        "forwardRemoved": true,
+        "relayDexRemoved": true
+      }
+    },
+    "stationInterfaceRoundTripVerified": true,
+    "stationIpv6BootBarrierVerified": false,
+    "latestRouterHealth": {
+      "mainLanIpv6Enabled": true,
+      "mainLanContextRestored": true,
+      "filterGroupsEmpty": true,
+      "blackWhiteListsEmpty": true,
+      "noPendingApply": true,
+      "checkedAtMs": 1794916767553,
+      "cleanup": {
+        "stopped": true,
+        "forwardRemoved": true,
+        "relayDexRemoved": true
+      }
+    }
   }
 }
