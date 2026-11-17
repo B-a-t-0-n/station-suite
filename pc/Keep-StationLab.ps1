@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $deploymentPath = (Resolve-Path -LiteralPath $Deployment).Path
 $settings = Get-Content -LiteralPath $deploymentPath -Raw | ConvertFrom-Json
-$arguments = @('-B', (Join-Path $PSScriptRoot 'start.py'), '--deployment', $deploymentPath, '--ensure')
+$arguments = @('-B', (Join-Path $PSScriptRoot 'keepalive.py'), '--deployment', $deploymentPath)
 if ($ExternalDhcp) { $arguments += '--external-dhcp' }
 & $settings.python @arguments
 exit $LASTEXITCODE
