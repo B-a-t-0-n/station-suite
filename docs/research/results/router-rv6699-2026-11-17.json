@@ -1,0 +1,241 @@
+{
+  "date": "2026-11-17",
+  "model": "RV6699",
+  "firmware": "v4.4.59",
+  "otaBlockAchieved": false,
+  "stationUsedForWifiTests": false,
+  "cases": [
+    {
+      "case": "canary-result",
+      "mode": "Medium",
+      "ruleSaved": true,
+      "ruleEnabled": true,
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "temporaryRuleRemoved": true
+    },
+    {
+      "case": "ip-canary-result-LAN",
+      "mode": "Medium",
+      "association": "LAN",
+      "groupSaved": true,
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "temporaryRuleRemoved": true
+    },
+    {
+      "case": "ip-canary-result-LAN-input",
+      "mode": "Medium",
+      "association": "LAN",
+      "direction": "input",
+      "groupSaved": true,
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "temporaryRuleRemoved": true
+    },
+    {
+      "case": "ip-canary-result-HSI",
+      "mode": "Medium",
+      "association": "HSI",
+      "groupSaved": true,
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "temporaryRuleRemoved": true
+    },
+    {
+      "case": "ip-canary-result-LAN-single",
+      "mode": "Medium",
+      "association": "LAN",
+      "direction": "ouput",
+      "groupSaved": true,
+      "persistedDropRule": true,
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "reachable": true
+      },
+      "temporaryRuleRemoved": true
+    },
+    {
+      "case": "ip-canary-result-LAN-single-tls",
+      "mode": "Medium",
+      "association": "LAN",
+      "direction": "ouput",
+      "groupSaved": true,
+      "persistedDropRule": true,
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "reachable": true
+      },
+      "temporaryRuleRemoved": true
+    },
+    {
+      "case": "ip-canary-result-HSI-single-tls",
+      "mode": "Medium",
+      "association": "HSI",
+      "direction": "ouput",
+      "groupSaved": true,
+      "persistedDropRule": true,
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "reachable": true
+      },
+      "temporaryRuleRemoved": true
+    },
+    {
+      "case": "custom-both-input-output-tls",
+      "mode": "Custom",
+      "customConfirmed": true,
+      "groupSaved": true,
+      "persistedDropRule": true,
+      "association": "BOTH",
+      "direction": "both",
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "reachable": true
+      },
+      "temporaryRuleRemoved": true,
+      "intermediateRollbackAllHiddenParametersRestored": false
+    }
+  ],
+  "finalRestore": {
+    "originalBackupImported": true,
+    "routerRestarted": true,
+    "advancedFields": {
+      "reachable": true,
+      "securityMode": "3",
+      "baselineHiddenFieldsMatch": true,
+      "differences": {}
+    },
+    "filterTables": {
+      "groupsEmpty": true,
+      "listsEmpty": true,
+      "checkedAtMs": 1794908538694
+    },
+    "wifiInternet": {
+      "target": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "reachable": true
+      },
+      "control": {
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "reachable": true
+      }
+    },
+    "station": {
+      "wifiOff": true,
+      "localServicesHealthy": true,
+      "pcTransportReady": true,
+      "agentHttpStatus": 200
+    }
+  }
+}
