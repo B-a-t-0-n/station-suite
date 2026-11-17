@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-17",
+  "deviceBuild": "20221212",
+  "routerModel": "RV6699",
+  "routerFirmware": "v4.4.59",
+  "stage": "temporary exact-IPv4 TCP service permits prepared; Wi-Fi probes not started",
+  "authorityCount": 38,
+  "addressPortRuleCount": 47,
+  "destinationPrefixLength": 32,
+  "sourcePrefixLength": 32,
+  "destinationPorts": [
+    443,
+    9443
+  ],
+  "wildcardHostsAllowed": false,
+  "wideProviderCidrsAllowed": false,
+  "dnsInventory": {
+    "resolvedAllowedHosts": 38,
+    "boundToPhoneHomeWifi": true,
+    "snapshotOverlapWithCheckedYandexNames": false,
+    "minimumObservedTtlSeconds": 4
+  },
+  "attempts": [
+    {
+      "result": "router transport failed during preparation",
+      "stationWifiEnabledByTest": false
+    },
+    {
+      "result": "preparation deadline reached during complete rule readback",
+      "stationWifiEnabledByTest": false,
+      "primaryWaitTimedOut": true,
+      "automaticRouterCleanupConfirmed": false,
+      "automaticCleanupErrorClass": "PermissionError",
+      "manualProtectiveCleanupConfirmed": true
+    }
+  ],
+  "protectiveCleanup": {
+    "closedRulesRestored": true,
+    "groupsPreserved": true,
+    "advancedFieldsUnchanged": true,
+    "globalApplySent": true,
+    "pendingApplyMessageCleared": true
+  },
+  "nativeOtaCoverageProven": false,
+  "routerRebootTested": false,
+  "authenticatedGigaChatThroughWifiTested": false,
+  "pipelineThroughWifiTested": false,
+  "freshMusicThroughWifiTested": false,
+  "currentLastObservation": {
+    "stationEthernetPhysicalLink": "Disconnected",
+    "pcRuntimePhase": "failed",
+    "pcRuntimeReason": "WIFI_GUARD_COMMAND_FAILED",
+    "stationWifiOffLastVerifiedByRecovery": true,
+    "profileDisabledLastVerifiedByRecovery": true,
+    "privateConfigsRestoredByRecovery": true,
+    "routerClosedPolicyVerified": true,
+    "householdIpv6Changed": false
+  },
+  "controllerRepairsNotYetDeviceValidated": [
+    "compare live private-config hashes before writing an existing backup",
+    "check direct Wi-Fi ownership and remaining lifetime before and after every API/music probe",
+    "retry Windows atomic status-file replacement on sharing violations",
+    "remove owned permits while retaining deny even if Station ADB is unavailable",
+    "avoid re-entering the group for each rule read and save each cleanup group once",
+    "extend preparation/recovery budgets while retaining the 85-second on-device Wi-Fi cutoff"
+  ],
+  "limits": [
+    "No successful service-egress canary in this stage",
+    "DNS answers can change during router preparation",
+    "Static IP permits do not filter TLS hostnames or paths",
+    "IPv6 and cold-boot protection not tested"
+  ]
+}
