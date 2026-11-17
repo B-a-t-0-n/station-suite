@@ -3,7 +3,7 @@
   "model": "RV6699",
   "firmware": "v4.4.59",
   "otaBlockAchieved": false,
-  "stationUsedForWifiTests": false,
+  "stationUsedForWifiTests": true,
   "cases": [
     {
       "case": "canary-result",
@@ -820,5 +820,6 @@
     "updatedAtMs": 1794934775048,
     "agentHttpStatus": 200,
     "panelHttpStatus": 200
-  }
+  },
+  "stationClosedEgressResult": "router-station-closed-egress-2026-11-17.json"
 }

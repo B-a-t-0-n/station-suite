@@ -1,0 +1,126 @@
+{
+  "date": "2026-11-17",
+  "deviceBuild": "20221212",
+  "routerModel": "RV6699",
+  "routerFirmware": "v4.4.59",
+  "stationUsedForWifiTests": true,
+  "nativeOtaCoverageProven": false,
+  "routerRebootTested": false,
+  "routerPolicy": {
+    "source": "prepared Station IPv4 /32",
+    "dhcpReservationVerified": true,
+    "profile": "single static IPv4 profile",
+    "orderedGroups": [
+      "allow home LAN TCP/UDP",
+      "deny other IPv4 TCP/UDP"
+    ],
+    "sourceAndDestinationPorts": "0-65535",
+    "externalAllowRulesAdded": false,
+    "globalApplyConfirmedBeforeWifi": true,
+    "householdIpv6Changed": false,
+    "scopeIsMacFirewall": false
+  },
+  "guards": {
+    "independentPcRecoveryArmed": true,
+    "onDeviceWifiOffDeadlineSeconds": 45,
+    "onDeviceWifiOffGuardArmed": true
+  },
+  "stationJoin": {
+    "wifiEnabled": true,
+    "configuredNetworkCount": 1,
+    "staticConfigurationApiAvailable": true,
+    "wifiLinkAddressCount": 2,
+    "wifiHasDefaultRoute": true,
+    "joined": true,
+    "staticAddressMatches": true
+  },
+  "liveWifiMacAndAddressVerified": true,
+  "localGateway": {
+    "localGatewayHttpReached": true,
+    "sourceAddressMatches": true
+  },
+  "agentFromPhoneWifi": {
+    "sourceWifiMatches": true,
+    "http200": true
+  },
+  "pcViaPhoneTetherAgentError": "ConnectTimeout",
+  "probes": {
+    "externalHttps": {
+      "sourcePortVerified": true,
+      "bound": true,
+      "connected": false,
+      "localWifiMatch": false,
+      "httpStatus": 0,
+      "tlsVerified": false,
+      "certificateHostnameVerified": false,
+      "stage": "connect",
+      "error": "ConnectException",
+      "elapsedMs": 4,
+      "answerCount": 0
+    },
+    "externalDns": {
+      "sourcePortVerified": true,
+      "bound": true,
+      "localWifiMatch": true,
+      "validReply": false,
+      "rcode": -1,
+      "minTtl": 0,
+      "error": "SocketException",
+      "answerCount": 0
+    }
+  },
+  "closedEgressCanaryPassed": true,
+  "wifiManagementCanaryPassed": true,
+  "recovery": {
+    "wifiOffVerified": true,
+    "profileDisabled": true,
+    "stationProbeDexRemoved": true,
+    "phoneProbeDexRemoved": true
+  },
+  "finalHealth": {
+    "onlyStationGroupsPresent": true,
+    "noPendingApply": true,
+    "stationReservationVerified": true,
+    "unrelatedLanFieldsUnchanged": true,
+    "advancedFirewallUnchanged": true,
+    "stationWifiOff": true,
+    "trialProcessesExited": true,
+    "temporaryStationHelpersRemoved": true,
+    "stopMarkerAbsent": true,
+    "wiredRuntimeReady": true,
+    "tunnelSupervisorReady": true,
+    "agentHttpStatus": 200,
+    "panelHttpStatus": 200
+  },
+  "retainedState": {
+    "routerStationGroupsPresent": true,
+    "routerStationReservationPresent": true,
+    "preparedWifiProfilePresent": true,
+    "preparedWifiProfileDisabled": true,
+    "stationWifiEnabled": false
+  },
+  "rollbackOfflineChecks": {
+    "alreadyOff": {
+      "ownedGroupsRemovedInSafeOrder": true,
+      "baselineReadbackChecked": true
+    },
+    "asynchronousWifiOff": {
+      "ownedGroupsRemovedInSafeOrder": true,
+      "baselineReadbackChecked": true
+    },
+    "wifiOffFailure": {
+      "refusedRouterMutation": true
+    },
+    "liveRouterMutation": false
+  },
+  "limits": [
+    "Only two new bound IPv4 TCP/UDP probes; not all protocols or destinations",
+    "TCP bind/source-port checked but connect failed before localWifiMatch could be established",
+    "Native OTA, IPv6, existing connections and cold boot not tested",
+    "Ethernet remained physically connected; not a PC-free autonomy test",
+    "LAN allowance permits local services, including potential LAN proxies",
+    "Router filtering is IPv4-source based; prepared address must remain unchanged",
+    "Needed external APIs/media not yet allowed; DNS inventory can expire in seconds",
+    "Router policy persistence across reboot not tested"
+  ]
+}
