@@ -43,6 +43,8 @@ class TunnelOnlyTests(unittest.TestCase):
         self.panel=Mock(); self.panel.alive.return_value=True
         panel_patch=patch.object(m,'FixedPanelRelay',return_value=self.panel)
         panel_patch.start(); self.addCleanup(panel_patch.stop)
+        network_patch=patch.object(m.network_guard,'ensure_wifi_off',return_value=False)
+        self.network_guard=network_patch.start();self.addCleanup(network_patch.stop)
         self.real_recovery=m.request_station_services
         recovery_patch=patch.object(m,'request_station_services')
         recovery_patch.start(); self.addCleanup(recovery_patch.stop)
@@ -211,6 +213,33 @@ class TunnelOnlyTests(unittest.TestCase):
         ready=next(item for item in observed if item['phase']=='ready')
         self.assertTrue(ready['localServicesReady']);self.assertFalse(ready['internetSourceReady']);self.assertFalse(ready['appReady'])
         self.assertEqual((active.read_bytes(),policy.read_bytes()),before)
+
+    def test_network_failure_closes_lease_even_when_apps_would_be_ready(self):
+        active,policy,relay,store=(self.root/name for name in ('active','policy','relay','store'))
+        active.write_bytes(b'active');policy.write_bytes(b'policy')
+        transport=Mock();transport.alive.return_value=True
+        reverse=Mock();reverse.owned=True;forwards=Mock();forwards.owned=set(m.FORWARDS)
+        leases=[];observed=[];save=m.runtime.save_json
+        self.network_guard.side_effect=m.network_guard.NetworkGuardError('WIFI_GUARD_COMMAND_FAILED')
+        def lease(path,enabled,**kwargs):
+            leases.append(enabled)
+            if len(leases)==2:(store/'stop').touch()
+        def record(path,value):
+            if Path(path).name=='status.json':observed.append(copy.deepcopy(value))
+            save(path,value)
+        with patch.object(m.FILES,'protect_directory'),patch.object(m,'check_legacy_stopped'), \
+             patch.object(m.runtime,'recover_reverse'),patch.object(m,'recover_forwards'), \
+             patch.object(m.runtime,'PersistentTransport',return_value=transport), \
+             patch.object(m.runtime,'Reverse',return_value=reverse),patch.object(m,'Forwards',return_value=forwards), \
+             patch.object(m,'inspect_apps',return_value=(True,'READY',True,True)) as apps, \
+             patch.object(m,'write_lease',side_effect=lease),patch.object(m.runtime,'save_json',side_effect=record):
+            m.run(store=store,relay=relay,active=active,policy=policy,
+                  active_sha=m.FILES.digest(b'active'),policy_sha=m.FILES.digest(b'policy'))
+        self.assertEqual(leases,[False,False,False]);apps.assert_not_called()
+        self.assertFalse(any(item.get('wifiOffVerified') for item in observed))
+        self.assertTrue(any(item.get('phase')=='closed' for item in observed))
+        self.assertTrue(any(item.get('reason')=='WIFI_GUARD_COMMAND_FAILED' for item in observed))
+        m.request_station_services.assert_not_called()
 
 
 if __name__=='__main__':unittest.main()

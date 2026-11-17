@@ -18,6 +18,11 @@ jobs:
       - run: python -m unittest discover -s pc/tests -p test_probe_local_ota.py -v
       - run: python -m unittest discover -s tools/tests -p 'test_*.py' -v
       - run: python -m unittest discover -s pc/tests -p test_pc_start.py -v
+      - run: python -m unittest discover -s pc/tests -p test_station_network_guard.py -v
+      - run: python -m unittest discover -s pc/tests -p test_tunnel_only_supervisor.py -v
+        env:
+          STATION_WAN_INTERFACE: '11'
+          STATION_WAN_NETWORK: '10.70.91.0/24'
       - run: python -m unittest discover -s pc/tests -p test_bootstrap_recovery.py -v
       - run: python -m unittest discover -s experimental/egress-guard/tests -p 'test_*.py' -v
   ring-experiment:

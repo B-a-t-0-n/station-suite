@@ -1,7 +1,8 @@
 """Own DHCP + fixed native relay + allowlisted tunnel; no PC voice processing.
 
 First configure the dedicated cable with Install-StationLab.ps1. This entry point
-does not configure NICs, NAT, Wi-Fi, factory firmware or native certificate trust.
+does not configure NICs, NAT, Wi-Fi credentials, factory firmware or native trust.
+It enforces Wi-Fi off while the managed wired transport is available.
 """
 from __future__ import annotations
 import argparse
@@ -16,6 +17,7 @@ import time
 
 from deployment import SUITE, environment, load
 import native_config_window as lifecycle
+import station_network_guard as network_guard
 
 HIDDEN = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
 
@@ -38,6 +40,14 @@ def _run_owned(value, status, *, external_dhcp=False):
             capture_output=True, timeout=15, creationflags=HIDDEN)
         if required and result.returncode: raise ValueError('ADB_OPERATION_FAILED')
         return result
+    def enforce_wired():
+        def close_relay():
+            status('starting', 'WIRED_SAFETY_REPAIR', len(children))
+            (state / 'local-config-relay.json').write_text(
+                '{"version":1,"enabled":false,"expiresAtMs":0}', encoding='ascii')
+        return network_guard.ensure_wifi_off(
+            lambda *arguments: adb(*arguments).stdout.decode('ascii'),
+            before_repair=close_relay)
     # Claim no shared stop/lease files before listener collision checks have passed.
     stale_ready = check_shared_owners(value)
     check_listeners(value)
@@ -52,7 +62,7 @@ def _run_owned(value, status, *, external_dhcp=False):
             ini.write_text(template.replace('{LAB_IP}', value['labIp']).replace('{STATION_IP}', value['stationIp']), encoding='ascii')
             spawn([value['dhcpExecutable']], 'dhcp', dict(env, TFTP_INI=str(ini)), runtime_dir)
         adb('connect', value['serial'], required=False)
-        adb('shell', 'svc', 'wifi', 'disable')
+        enforce_wired()
         adb('shell', 'am', 'start', '-n', 'local.station.agent/.MainActivity')
         adb('shell', 'am', 'broadcast', '-n', 'local.station.voicebridge/.RuntimeReceiver', '--es', 'operation', 'local_services_start')
         adb('shell', 'am', 'broadcast', '-n', 'local.station.voicebridge/.RuntimeReceiver', '--es', 'operation', 'runtime_enable')
@@ -60,7 +70,12 @@ def _run_owned(value, status, *, external_dhcp=False):
         helper = ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
             str(SUITE / 'pc/Start-StationInputHelper.ps1'), '-Adb', value['adb'],
             '-Target', value['serial'], '-Apk', value['agentApk']]
-        subprocess.run(helper, capture_output=True, timeout=30, check=True, creationflags=HIDDEN)
+        # A launcher running under PowerShell 7 can export a PSModulePath that
+        # prevents Windows PowerShell 5 from finding Get-FileHash/ConvertFrom-Json.
+        # Scope its built-in module path to this child without changing the host.
+        helper_env = {key: val for key, val in env.items() if key.upper() != 'PSMODULEPATH'}
+        helper_env['PSMODULEPATH'] = str(Path(os.environ['SystemRoot']) / 'System32/WindowsPowerShell/v1.0/Modules')
+        subprocess.run(helper, env=helper_env, capture_output=True, timeout=30, check=True, creationflags=HIDDEN)
         spawn([value['python'], '-B', str(SUITE / 'pc/tunnel_only_supervisor.py'), 'run'], 'tunnel')
         arguments = [value['python'], '-B', str(SUITE / 'pc/LocalConfigServer.py')]
         for flag, path in [('cert', private / 'pc/fullchain.pem'), ('key', private / 'pc/quasar-all.key'),
@@ -76,6 +91,8 @@ def _run_owned(value, status, *, external_dhcp=False):
             if any(child.poll() is not None for child in children): raise ValueError('OWNED_PROCESS_EXITED')
             if time.monotonic() >= next_guard:
                 next_guard = time.monotonic() + 30
+                # The child owns all runtime Wi-Fi repair/lease writes. A second
+                # repair writer here could race a child publishing a fresh lease.
                 # Any OTA response/pin mismatch closes the whole relay. No WAN fallback.
                 result = subprocess.run([value['python'], '-B', str(SUITE / 'pc/probe_local_ota.py')],
                     env=env, capture_output=True, timeout=8, creationflags=HIDDEN)

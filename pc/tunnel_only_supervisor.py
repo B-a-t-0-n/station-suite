@@ -14,6 +14,7 @@ import re
 import time
 
 import runtime_supervisor as runtime
+import station_network_guard as network_guard
 from panel_relay import FixedPanelRelay
 from suite_paths import private_root
 
@@ -27,6 +28,7 @@ REASONS = {'STARTING', 'READY', 'STOPPED', 'CHECK_FAILED', 'POLICY_HASH_MISMATCH
            'REVERSE_CONFLICT', 'REVERSE_NOT_READY', 'FORWARD_CONFLICT', 'FORWARD_NOT_READY',
            'LOCAL_STATUS_INVALID', 'LOCAL_STATUS_STALE', 'LOCAL_HEARTBEAT_PENDING',
            'LOCAL_HEARTBEAT_STALE', 'LOCAL_NOT_READY', 'APP_PROCESS_MISMATCH'} | runtime.REASONS
+REASONS |= network_guard.ERROR_CODES
 
 
 def store_path():
@@ -229,14 +231,16 @@ def safe_status(store):
         return {'phase': 'stopped', 'running': False}
     result = {'phase': raw.get('phase') if raw.get('phase') in PHASES else 'failed'}
     for name in ('running', 'transportReady', 'reverseOwned', 'forwardsOwned', 'appReady',
-                 'localServicesReady', 'internetSourceReady', 'panelRelayReady', 'policyIntact', 'activeIntact'):
+                 'localServicesReady', 'internetSourceReady', 'panelRelayReady', 'policyIntact', 'activeIntact',
+                 'wifiOffVerified'):
         if type(raw.get(name)) is bool:
             result[name] = raw[name]
-    for name in ('supervisorPid', 'updatedAtMs'):
+    for name in ('supervisorPid', 'updatedAtMs', 'wifiCheckedAtMs', 'wifiRepairCount'):
         if type(raw.get(name)) is int and raw[name] >= 0:
             result[name] = raw[name]
     result['running'] = bool(result.get('running') and FILES.process_alive(result.get('supervisorPid')))
     result['reason'] = raw.get('reason') if raw.get('reason') in REASONS else 'CHECK_FAILED'
+    result['networkGuardScope'] = 'reactive_pc_polling_with_adb'
     return result
 
 
@@ -272,7 +276,8 @@ def run(*, store=None, relay=None, active=None, policy=runtime.POLICY,
         next_recovery = 0.0
         local_health, voice_health = LocalServicesHealth(), runtime.Health()
         status = {'phase': 'starting', 'running': True, 'supervisorPid': os.getpid(),
-                  'reason': 'STARTING', 'policyIntact': True, 'activeIntact': True}
+                  'reason': 'STARTING', 'policyIntact': True, 'activeIntact': True,
+                  'wifiOffVerified': False, 'wifiRepairCount': 0}
         try:
             write_lease(relay, False)
             runtime.recover_reverse(store)
@@ -281,9 +286,15 @@ def run(*, store=None, relay=None, active=None, policy=runtime.POLICY,
             while not (store / 'stop').exists():
                 ready, reason, local_ok, voice_ok = False, 'CHECK_FAILED', False, False
                 internet_ok = False
+                wifi_off = False
                 fatal = False
                 try:
                     check_pins(active, policy, active_sha, policy_sha)
+                    repaired = network_guard.ensure_wifi_off(runtime.adb,
+                        before_repair=lambda: write_lease(relay, False))
+                    wifi_off = True
+                    status['wifiCheckedAtMs'] = int(time.time() * 1000)
+                    if repaired: status['wifiRepairCount'] += 1
                     if not transport.alive():
                         raise runtime.SupervisorError('TRANSPORT_UNAVAILABLE')
                     reverse.ensure(); forwards.ensure()
@@ -296,6 +307,8 @@ def run(*, store=None, relay=None, active=None, policy=runtime.POLICY,
                         internet_ok = True
                     except Exception:
                         pass  # A lost WAN uplink must not close working local config/display.
+                except network_guard.NetworkGuardError as error:
+                    reason = str(error) if str(error) in REASONS else 'CHECK_FAILED'
                 except runtime.SupervisorError as error:
                     reason = str(error) if str(error) in REASONS else 'CHECK_FAILED'
                     fatal = reason in {'POLICY_HASH_MISMATCH', 'ACTIVE_FILE_DRIFT', 'TRANSPORT_UNAVAILABLE'}
@@ -303,7 +316,7 @@ def run(*, store=None, relay=None, active=None, policy=runtime.POLICY,
                     if reason == 'ACTIVE_FILE_DRIFT': status['activeIntact'] = False
                 except Exception:
                     reason = 'CHECK_FAILED'
-                if (not fatal and not local_ok and reverse.owned and forwards.owned == set(FORWARDS)
+                if (wifi_off and not fatal and not local_ok and reverse.owned and forwards.owned == set(FORWARDS)
                         and time.monotonic() >= next_recovery):
                     next_recovery = time.monotonic() + 30
                     try: request_station_services()
@@ -313,6 +326,7 @@ def run(*, store=None, relay=None, active=None, policy=runtime.POLICY,
                               transportReady=transport.alive(), reverseOwned=reverse.owned,
                               forwardsOwned=forwards.owned == set(FORWARDS), appReady=voice_ok,
                               localServicesReady=local_ok, internetSourceReady=internet_ok,
+                              wifiOffVerified=wifi_off, networkGuardScope='reactive_pc_polling_with_adb',
                               panelRelayReady=panel.alive(),
                               updatedAtMs=int(time.time() * 1000))
                 runtime.save_json(store / 'status.json', status)
@@ -332,6 +346,7 @@ def run(*, store=None, relay=None, active=None, policy=runtime.POLICY,
                 if transport is not None: transport.stop()
                 panel.stop()
                 status.update(phase='stopped', running=False, reason='STOPPED', appReady=False,
+                              wifiOffVerified=False,
                               localServicesReady=False, internetSourceReady=False, transportReady=False, panelRelayReady=False, reverseOwned=reverse.owned,
                               forwardsOwned=bool(forwards.owned), updatedAtMs=int(time.time() * 1000))
                 runtime.save_json(store / 'status.json', status)

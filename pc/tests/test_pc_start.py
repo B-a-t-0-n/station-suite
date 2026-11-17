@@ -37,6 +37,7 @@ class PcStartTests(unittest.TestCase):
         self.popen = patch.object(m.subprocess, 'Popen', side_effect=self.spawn).start()
         self.addCleanup(patch.stopall)
         patch.object(m, 'environment', return_value={'FIXTURE': 'yes'}).start()
+        patch.object(m.network_guard, 'ensure_wifi_off', return_value=False).start()
         patch.object(m, 'check_listeners').start()
         patch.object(m.lifecycle, 'protect_directory').start()
         patch.object(m.subprocess, 'run', return_value=SimpleNamespace(returncode=0)).start()
@@ -132,6 +133,36 @@ class PcStartTests(unittest.TestCase):
         self.assertEqual(len(self.children), 1); self.assertTrue(self.children[0].waited)
         with m.lifecycle.mutation_lock(self.store, timeout=0): pass
         self.assertEqual(json.loads((self.store / 'status.json').read_text())['reason'], 'STARTUP_FAILED')
+    def test_unverified_wired_network_cannot_start_tunnel_or_publish_ready(self):
+        m.network_guard.ensure_wifi_off.side_effect=m.network_guard.NetworkGuardError('WIFI_GUARD_COMMAND_FAILED')
+        with self.assertRaisesRegex(ValueError, '^WIFI_GUARD_COMMAND_FAILED$'):
+            m.run(self.value,self.profile,external_dhcp=True)
+        self.assertFalse(self.children)
+        status=json.loads((self.store / 'status.json').read_text())
+        self.assertEqual(status['phase'],'failed')
+        self.assertEqual(status['reason'],'WIFI_GUARD_COMMAND_FAILED')
+    def test_runtime_probe_cannot_compete_with_child_wifi_repair_lease_writer(self):
+        ticks=iter([0,16,16])
+        clock=SimpleNamespace(monotonic=lambda:next(ticks),sleep=self.stop_loop,time=m.time.time)
+        with patch.object(m, 'time', clock):
+            m.run(self.value,self.profile,external_dhcp=True)
+        # Startup enforces Wi-Fi before the child exists. Even when the timed
+        # runtime probe runs, only the child may repair Wi-Fi and revoke its lease.
+        m.network_guard.ensure_wifi_off.assert_called_once()
+        self.assertTrue(any('probe_local_ota.py' in str(call.args)
+                            for call in m.subprocess.run.call_args_list))
+    def test_input_helper_uses_builtin_windows_modules_without_mutating_host_environment(self):
+        inherited={'FIXTURE':'yes','PSModulePath':'fixture-pwsh7-modules','PSMODULEPATH':'other-fixture'}
+        before=dict(inherited)
+        with patch.object(m, 'environment', return_value=inherited), \
+             patch.dict(m.os.environ, {'SystemRoot':str(self.private/'Windows')}), \
+             patch.object(m.time, 'sleep', side_effect=self.stop_loop):
+            m.run(self.value,self.profile,external_dhcp=True)
+        helper=next(call for call in m.subprocess.run.call_args_list
+                    if call.args[0][0]=='powershell.exe')
+        self.assertEqual(helper.kwargs['env'],{
+            'FIXTURE':'yes','PSMODULEPATH':str(self.private/'Windows/System32/WindowsPowerShell/v1.0/Modules')})
+        self.assertEqual(inherited,before)
     def test_preflight_and_status_validate_profile_without_starting_or_printing_paths(self):
         with patch.object(m, 'load', return_value=self.value) as validate, patch('builtins.print') as output:
             self.assertEqual(m.main(['--deployment', str(self.profile), '--check', '--external-dhcp']), 0)
