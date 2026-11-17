@@ -7,7 +7,6 @@
   "cases": [
     {
       "case": "canary-result",
-      "mode": "Medium",
       "ruleSaved": true,
       "ruleEnabled": true,
       "target": {
@@ -24,11 +23,12 @@
         "httpStatus": 301,
         "reachable": true
       },
-      "temporaryRuleRemoved": true
+      "temporaryRuleRemoved": true,
+      "savedFirewallMode": "Medium",
+      "globalApplySent": false
     },
     {
       "case": "ip-canary-result-LAN",
-      "mode": "Medium",
       "association": "LAN",
       "groupSaved": true,
       "target": {
@@ -45,11 +45,12 @@
         "httpStatus": 301,
         "reachable": true
       },
-      "temporaryRuleRemoved": true
+      "temporaryRuleRemoved": true,
+      "savedFirewallMode": "Medium",
+      "globalApplySent": false
     },
     {
       "case": "ip-canary-result-LAN-input",
-      "mode": "Medium",
       "association": "LAN",
       "direction": "input",
       "groupSaved": true,
@@ -67,11 +68,12 @@
         "httpStatus": 301,
         "reachable": true
       },
-      "temporaryRuleRemoved": true
+      "temporaryRuleRemoved": true,
+      "savedFirewallMode": "Medium",
+      "globalApplySent": false
     },
     {
       "case": "ip-canary-result-HSI",
-      "mode": "Medium",
       "association": "HSI",
       "groupSaved": true,
       "target": {
@@ -88,11 +90,12 @@
         "httpStatus": 301,
         "reachable": true
       },
-      "temporaryRuleRemoved": true
+      "temporaryRuleRemoved": true,
+      "savedFirewallMode": "Medium",
+      "globalApplySent": false
     },
     {
       "case": "ip-canary-result-LAN-single",
-      "mode": "Medium",
       "association": "LAN",
       "direction": "ouput",
       "groupSaved": true,
@@ -111,11 +114,12 @@
         "httpStatus": 301,
         "reachable": true
       },
-      "temporaryRuleRemoved": true
+      "temporaryRuleRemoved": true,
+      "savedFirewallMode": "Medium",
+      "globalApplySent": false
     },
     {
       "case": "ip-canary-result-LAN-single-tls",
-      "mode": "Medium",
       "association": "LAN",
       "direction": "ouput",
       "groupSaved": true,
@@ -138,11 +142,12 @@
         "certificateHostnameVerified": true,
         "reachable": true
       },
-      "temporaryRuleRemoved": true
+      "temporaryRuleRemoved": true,
+      "savedFirewallMode": "Medium",
+      "globalApplySent": false
     },
     {
       "case": "ip-canary-result-HSI-single-tls",
-      "mode": "Medium",
       "association": "HSI",
       "direction": "ouput",
       "groupSaved": true,
@@ -165,11 +170,12 @@
         "certificateHostnameVerified": true,
         "reachable": true
       },
-      "temporaryRuleRemoved": true
+      "temporaryRuleRemoved": true,
+      "savedFirewallMode": "Medium",
+      "globalApplySent": false
     },
     {
       "case": "custom-both-input-output-tls",
-      "mode": "Custom",
       "customConfirmed": true,
       "groupSaved": true,
       "persistedDropRule": true,
@@ -194,7 +200,9 @@
         "reachable": true
       },
       "temporaryRuleRemoved": true,
-      "intermediateRollbackAllHiddenParametersRestored": false
+      "intermediateRollbackAllHiddenParametersRestored": false,
+      "savedFirewallMode": "Custom",
+      "globalApplySent": false
     }
   ],
   "finalRestore": {
@@ -237,5 +245,14 @@
       "pcTransportReady": true,
       "agentHttpStatus": 200
     }
+  },
+  "filterEnforcementTestConclusive": false,
+  "correction": {
+    "separateGlobalApplyHandlerFound": true,
+    "priorScriptsSentGlobalApply": false,
+    "persistedPageRequestsApply": true,
+    "runtimeApplyRetestPerformed": false,
+    "templateSha256": "25dd73cca3c1b71b5ce9508d14499df14f64258e4f9210555fa1db5e0db176db",
+    "nextTest": "save -> global Apply -> network probe; rollback: delete -> global Apply -> restored network probe"
   }
 }
