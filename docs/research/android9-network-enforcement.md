@@ -62,6 +62,27 @@ Wi-Fi без root пока нет. Периодический helper остав�
 [IpClient](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-9.0.0_r1/services/net/java/android/net/ip/IpClient.java#1363),
 [WifiStateMachine](https://android.googlesource.com/platform/frameworks/opt/net/wifi/+/refs/tags/android-9.0.0_r1/service/java/com/android/server/wifi/WifiStateMachine.java#5007).
 
+Дополнительно разобраны точные live `wifi-service.vdex`, `services.vdex`,
+`boot-framework.vdex` и `wifi-events.rc` со сборки `20221212`; SHA-256
+зафиксированы в [результате аудита](results/ipv6-persistence-offline-2026-11-17.json).
+Этот разбор выполнялся офлайн, без сетевых setters.
+
+- Обычный Wi-Fi запускает provisioning с IPv6 по умолчанию.
+- Вызов `withoutIPv6()` найден только в `WifiP2pServiceImpl.startIpClient`,
+  то есть Wi-Fi Direct; к обычной домашней сети это не относится.
+- Сохраняемая `IpConfiguration` и её Wi-Fi XML-сериализатор не имеют
+  параметра отключения IPv6. `IWifiManager` не предоставляет нужного setter.
+- `IpClient` здесь внутренний `StateMachine`, а не доступный Binder-сервис.
+  Wi-Fi shell-команды требуют root и не содержат команды управления IPv6.
+- В исследованных framework-файлах не найден соответствующий постоянный
+  property/settings key; `wifi-events.rc` не устанавливает такую политику.
+
+Следовательно, временный вызов `disableIpv6(wlan0)` не превращается в
+сохраняемую настройку обычного Wi-Fi. Результат ограничен перечисленными
+файлами: он не исключает все неизвестные vendor-службы и не заменяет
+проверку защиты при загрузке. Произвольный settings key или цикл повторного
+отключения IPv6 не считаются решением раннего сетевого доступа.
+
 ## Почему не назначен Device Owner
 
 DPC с ролью Device Owner получает штатный `DevicePolicyManager`

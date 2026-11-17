@@ -253,9 +253,9 @@
     "persistedPageRequestsApply": true,
     "runtimeApplyRetestPerformed": true,
     "templateSha256": "25dd73cca3c1b71b5ce9508d14499df14f64258e4f9210555fa1db5e0db176db",
-    "nextTest": "station-specific allow/deny policy, UDP/DNS, IPv6, established connections, router reboot persistence"
+    "nextTest": "station Wi-Fi MAC/IP binding, real service allowlist, full Station policy, established connections, IPv6 and router reboot persistence"
   },
-  "enforcementScope": "one phone-source IPv4 /32 to one destination IPv4 /32, HSI output, TCP443; not a complete OTA policy",
+  "enforcementScope": "one phone-source IPv4 /32, HSI output, allow one target TCP443/UDP53 before wildcard TCP/UDP destination deny, all source ports; fresh connections only, not a Station OTA policy",
   "appliedCanary": {
     "association": "HSI",
     "direction": "ouput",
@@ -512,12 +512,313 @@
       "filterGroupsEmpty": true,
       "blackWhiteListsEmpty": true,
       "noPendingApply": true,
-      "checkedAtMs": 1794916767553,
+      "checkedAtMs": 1794934776699,
+      "networkSettingsChanged": false,
       "cleanup": {
         "stopped": true,
         "forwardRemoved": true,
         "relayDexRemoved": true
       }
     }
+  },
+  "wildcardDestinationSourcePortCanary": {
+    "phoneSourceOnly": true,
+    "fixedProbeSourcePortsOnly": "24041-24052",
+    "probePortsOutsideAutomaticEphemeralRange": true,
+    "wildcardDestinationDeny": true,
+    "routerGlobalSettingsChanged": false,
+    "exactRulesReadbackVerified": true,
+    "applied": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true
+    },
+    "during": {
+      "target_tls": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 486,
+        "answerCount": 0,
+        "reachable": true
+      },
+      "control_tls": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "connected": false,
+        "localWifiMatch": false,
+        "httpStatus": 0,
+        "tlsVerified": false,
+        "certificateHostnameVerified": false,
+        "stage": "connect",
+        "error": "ConnectException",
+        "elapsedMs": 8,
+        "answerCount": 0,
+        "reachable": false
+      },
+      "target_dns": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": true,
+        "rcode": 0,
+        "minTtl": 141,
+        "error": "",
+        "answerCount": 2,
+        "reachable": true
+      },
+      "control_dns": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": false,
+        "rcode": -1,
+        "minTtl": 0,
+        "error": "SocketException",
+        "answerCount": 0,
+        "reachable": false
+      }
+    },
+    "rollback": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true,
+      "baselineGroupsRestored": true,
+      "advancedFieldsMatchBaseline": true
+    },
+    "afterRollback": {
+      "target_tls": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 362,
+        "answerCount": 0,
+        "reachable": true
+      },
+      "control_tls": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 209,
+        "answerCount": 0,
+        "reachable": true
+      },
+      "target_dns": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": true,
+        "rcode": 0,
+        "minTtl": 127,
+        "error": "",
+        "answerCount": 2,
+        "reachable": true
+      },
+      "control_dns": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": true,
+        "rcode": 0,
+        "minTtl": 39,
+        "error": "",
+        "answerCount": 2,
+        "reachable": true
+      }
+    }
+  },
+  "allSourcePortsCanary": {
+    "phoneSourceOnly": true,
+    "sourceMask32": true,
+    "policySourcePorts": "0-65535",
+    "probeSourcePorts": "24061-24072",
+    "probePortsOutsideAutomaticEphemeralRange": true,
+    "wildcardDestinationDeny": true,
+    "routerGlobalSettingsChanged": false,
+    "existingConnectionsChecked": false,
+    "ipv6EnforcementChecked": false,
+    "routerRebootPersistenceChecked": false,
+    "exactRulesReadbackVerified": true,
+    "applied": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true
+    },
+    "during": {
+      "target_tls": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 217,
+        "answerCount": 0,
+        "reachable": true
+      },
+      "control_tls": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "connected": false,
+        "localWifiMatch": false,
+        "httpStatus": 0,
+        "tlsVerified": false,
+        "certificateHostnameVerified": false,
+        "stage": "connect",
+        "error": "ConnectException",
+        "elapsedMs": 25,
+        "answerCount": 0,
+        "reachable": false
+      },
+      "target_dns": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": true,
+        "rcode": 0,
+        "minTtl": 285,
+        "error": "",
+        "answerCount": 2,
+        "reachable": true
+      },
+      "control_dns": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": false,
+        "rcode": -1,
+        "minTtl": 0,
+        "error": "SocketException",
+        "answerCount": 0,
+        "reachable": false
+      }
+    },
+    "expectedCanaryResultsObserved": true,
+    "rollback": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true,
+      "baselineGroupsRestored": true,
+      "advancedFieldsMatchBaseline": true
+    },
+    "afterRollback": {
+      "target_tls": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 368,
+        "answerCount": 0,
+        "reachable": true
+      },
+      "control_tls": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "connected": true,
+        "localWifiMatch": true,
+        "httpStatus": 301,
+        "tlsVerified": true,
+        "certificateHostnameVerified": true,
+        "stage": "complete",
+        "error": "",
+        "elapsedMs": 237,
+        "answerCount": 0,
+        "reachable": true
+      },
+      "target_dns": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": true,
+        "rcode": 0,
+        "minTtl": 228,
+        "error": "",
+        "answerCount": 2,
+        "reachable": true
+      },
+      "control_dns": {
+        "sourcePortVerified": true,
+        "bound": true,
+        "localWifiMatch": true,
+        "validReply": true,
+        "rcode": 0,
+        "minTtl": 208,
+        "error": "",
+        "answerCount": 2,
+        "reachable": true
+      }
+    },
+    "allProbesRestored": true
+  },
+  "allSourcePortsCanaryCleanup": {
+    "controllerExit": 0,
+    "expectedCanaryResultsObserved": true,
+    "allProbesRestored": true,
+    "rollback": {
+      "globalApplySent": true,
+      "pendingApplyMessageCleared": true,
+      "baselineGroupsRestored": true,
+      "advancedFieldsMatchBaseline": true
+    },
+    "error": null,
+    "duringReachable": {
+      "target_tls": true,
+      "control_tls": false,
+      "target_dns": true,
+      "control_dns": false
+    },
+    "probeDexRemoved": true,
+    "relayCleanup": {
+      "stopped": true,
+      "forwardRemoved": true,
+      "relayDexRemoved": true
+    }
+  },
+  "wanIpVersionInspection": {
+    "currentWanIpVersion": "IPv4",
+    "modeLabels": {
+      "1": "IPv4",
+      "2": "IPv6",
+      "3": "IPv4&IPv6"
+    },
+    "wanProfile": "HSI",
+    "lanIpv6Enabled": true,
+    "routerIpVersionChanged": false,
+    "onlyOneConfiguredWanProfile": true,
+    "ipv6ExternalUnavailableObserved": true,
+    "proofLimit": "Current saved configuration, not future changes or reboot verification. LAN IPv6 remains enabled."
+  },
+  "stationIpv6PersistenceAudit": "ipv6-persistence-offline-2026-11-17.json",
+  "continuedFinalStationHealth": {
+    "stationWifiOff": true,
+    "transportPhase": "ready",
+    "transportReason": "READY",
+    "localServicesReady": true,
+    "panelRelayReady": true,
+    "updatedAtMs": 1794934775048,
+    "agentHttpStatus": 200,
+    "panelHttpStatus": 200
   }
 }

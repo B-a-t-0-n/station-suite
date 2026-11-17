@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "liveBuild": "20221212",
+  "analysisMode": "offline_exact_live_vdex_metadata_and_instructions",
+  "deviceCommandsByThisAudit": 0,
+  "networkSettersByThisAudit": 0,
+  "files": [
+    {
+      "liveFile": "system__framework__oat__arm64__wifi-service.vdex",
+      "bytes": 2178916,
+      "sha256": "1831e677ef13dd3d63517d116c75eef15b610ec97b4184af688bf9bade8073e9",
+      "matchesArchive20221226": true
+    },
+    {
+      "liveFile": "system__framework__oat__arm64__services.vdex",
+      "bytes": 9642116,
+      "sha256": "db5ec84247616ac4404cd485666cd563e255bf280c2fb7d431297e75e01b75b2",
+      "matchesArchive20221226": true
+    },
+    {
+      "liveFile": "system__framework__boot-framework.vdex",
+      "bytes": 20632964,
+      "sha256": "7106da5cd00fb9134273c5e099a7431aefe5ce09aa40b57440c0293a7350d32b",
+      "matchesArchive20221226": true
+    },
+    {
+      "liveFile": "system__etc__init__wifi-events.rc",
+      "bytes": 3577,
+      "sha256": "3ccbfdac0927cb7a90825736e262ddb015d7e3bd301222a90a6d02862614caa3",
+      "matchesArchive20221226": true
+    }
+  ],
+  "facts": {
+    "ipClientIsBinderService": false,
+    "ipClientSuperclass": "com.android.internal.util.StateMachine",
+    "ipClientInterfaces": [],
+    "ipClientDefaultEnableIPv6": true,
+    "withoutIPv6Exists": true,
+    "wifiWithoutIpv6Callers": [
+      "com.android.server.wifi.p2p.WifiP2pServiceImpl.startIpClient"
+    ],
+    "ordinaryWifiProvisioningCallsWithoutIpv6": false,
+    "savedIpConfigurationHasIpv6DisableMember": false,
+    "wifiIpXmlSerializerHasIpv6DisableMember": false,
+    "iWifiManagerProvidesProvisioningConfigurationOrIpv6Setter": false,
+    "wifiShellCommandRequiresRoot": true,
+    "wifiShellCommandProvidesIpv6Control": false,
+    "ipv6RelatedPersistentPropertyOrSettingKeyFoundInInspectedVdex": false,
+    "wifiEventsInitChangesIpv6Policy": false
+  },
+  "conclusion": "Temporary per-interface IPv6 Binder control is confirmed separately, but no durable root-free per-network or pre-provisioning IPv6-disable control was found in the exact live Android Wi-Fi/IP implementation.",
+  "proofLimit": "This is an implementation audit of the listed live framework files and matching init sources. It does not exclude every unrelated privileged vendor daemon, prove retention across interface lifecycle, or constitute a boot-time enforcement test.",
+  "nextSafeStep": "No new network setter is justified by this finding. If extending the search, read-only inspect exact vendor connectivity service contracts/property consumers; do not treat a new arbitrary settings key, repeated disable loop, or Wi-Fi Direct withoutIPv6 as normal-Wi-Fi boot protection."
+}
