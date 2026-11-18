@@ -31,7 +31,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /** Bounded public web search. Only results with a known provider's content URL leave this class. */
 final class TvVideoSearch {
     private static final int MAX_BYTES = 192 * 1024;
-    private static final int MAX_OKKO_HEAD = 1024 * 1024;
+    static final int MAX_OKKO_CARD = 2 * 1024 * 1024;
     private static final byte[] HEAD_END = "</head>".getBytes(StandardCharsets.US_ASCII);
     private static final OkkoIndexCache OKKO_MOVIES = new OkkoIndexCache(false, "sitemap_movie.xml");
     private static final OkkoIndexCache OKKO_SERIALS_FIRST = new OkkoIndexCache(true, "sitemap_serial_1.xml");
@@ -43,6 +43,9 @@ final class TvVideoSearch {
     private static final Pattern OKKO_LINK = Pattern.compile(
             "okko://(movie|serial|series)\\?uid=([a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12})"
                     + "&type=(movie|serial|series)(?:&[a-zA-Z]+=[a-zA-Z0-9_-]{1,60}){0,5}");
+    private static final Pattern STRUCTURED_CARD = Pattern.compile(
+            "<script\\s+[^>]{0,1024}type=['\"]application/ld\\+json['\"][^>]{0,1024}>(.*?)</script>",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern VK_PAGE = Pattern.compile("/video(-?\\d{1,12}_\\d{1,12})/?");
     private static final Pattern RUTUBE_PAGE = Pattern.compile("/video/([0-9a-f]{32})/?");
     private static final Pattern YOUTUBE_ID = Pattern.compile("[a-zA-Z0-9_-]{11}");
@@ -50,6 +53,8 @@ final class TvVideoSearch {
     private static final Pattern YEAR = Pattern.compile("(?:^| )(" + YEAR_NUMBER + ")(?: |$)");
     private static final Pattern CARD_YEAR = Pattern.compile(
             "^(.+?)\\s+\\((" + YEAR_NUMBER + ")(?:\\s*[–—-]\\s*(?:" + YEAR_NUMBER + ")?)?\\)\\s*$");
+    private static final Pattern LOCAL_PREMIERE = Pattern.compile(
+            ">Премьера в России</div>\\s*\\d{1,2}\\s+[а-яё]+\\s+(" + YEAR_NUMBER + ") г\\.</div>");
     private static final String FULL_FILM = "(?:полный (?:мультфильм|фильм)|полнометражный (?:мультфильм|фильм)"
             + "|(?:мультфильм|фильм) целиком|full (?:movie|film))";
     private static final String SERIES = "(?:сериал|телесериал|мультсериал|сезон|серия|эпизод|series|season|episode)";
@@ -57,6 +62,8 @@ final class TvVideoSearch {
     private static final Pattern FULL_FILM_LABEL = label(FULL_FILM);
     private static final Pattern SERIES_LABEL = label(SERIES);
     private static final Pattern FILM_LABEL = label(FILM);
+    private static final Pattern ANIMATION_LABEL = label("(?:мультик|мультфильм|мультсериал|animation|cartoon)");
+    private static final Pattern ANIMATION_GENRE = label("(?:мультфильмы?|мультсериалы?|анимация|animation)");
     private static final Pattern SHORT_CONTENT = label("(?:трейлер\\p{L}*|тизер\\p{L}*|обзор\\p{L}*|нарезк\\p{L}*"
             + "|реакци\\p{L}*|фрагмент\\p{L}*|пересказ\\p{L}*|анонс\\p{L}*|отзыв\\p{L}*|рецензи\\p{L}*"
             + "|trailer|teaser|review|reaction|clip)");
@@ -64,7 +71,7 @@ final class TvVideoSearch {
             + "|(?:окко|okko|rutube|рутуб|youtube|vk видео|vk video))$");
     private static final Pattern VIDEO_METADATA = Pattern.compile("(?:"
             + YEAR_NUMBER + "(?: г(?:од(?:а|у)?)?)?|" + FILM + "|" + SERIES + "(?: \\d{1,3})?"
-            + "|\\d{1,3} (?:сезон|серия|эпизод)|(?:full )?hd|uhd|[248]k|\\d{3,4}p|без рекламы)(?: |$)");
+            + "|\\d{1,3} (?:сезон|серия|эпизод)|мультик|animation|cartoon|(?:full )?hd|uhd|[248]k|\\d{3,4}p|без рекламы)(?: |$)");
 
     static final class Hit {
         final TvVoiceCommand.Provider provider;
@@ -84,6 +91,15 @@ final class TvVideoSearch {
             this.score = score;
             this.year = year;
             this.mediaType = mediaType;
+        }
+
+        String launchTarget(boolean play) {
+            if (!play || provider != TvVoiceCommand.Provider.OKKO || !"film".equals(mediaType) || target == null)
+                return target;
+            Matcher verifiedLink = OKKO_LINK.matcher(target);
+            if (!verifiedLink.matches() || !"movie".equals(verifiedLink.group(1))
+                    || !"movie".equals(verifiedLink.group(3))) return target;
+            return target + "&extraElementToPlay=" + verifiedLink.group(2) + "&extraPlayVideo=true";
         }
     }
 
@@ -111,7 +127,7 @@ final class TvVideoSearch {
             }
         }
         String hint = "film".equals(mediaType) ? " фильм"
-                : "series".equals(mediaType) ? " сериал" : "";
+                : "series".equals(mediaType) ? " сериал" : "animation".equals(mediaType) ? " мультфильм" : "";
         List<Hit> hits = indexedSearch(provider, title, mediaType, year, year, hint, cancelled);
         if (hits.isEmpty() && year != 0 && !cancelled.getAsBoolean())
             return indexedSearch(provider, title, mediaType, year, 0, hint, cancelled);
@@ -120,26 +136,39 @@ final class TvVideoSearch {
 
     private static List<Hit> searchOkko(String title, String mediaType, int year, BooleanSupplier cancelled)
             throws Exception {
-        List<Hit> hits = searchOkkoType(title, "series".equals(mediaType), year, cancelled);
-        if ((mediaType == null || "video".equals(mediaType)) && hits.isEmpty() && !cancelled.getAsBoolean())
-            return searchOkkoType(title, true, year, cancelled);
-        return hits;
+        boolean animation = "animation".equals(mediaType);
+        boolean seriesFirst = animation || "series".equals(mediaType);
+        boolean acceptsBothTypes = animation || mediaType == null || "video".equals(mediaType);
+        List<Hit> hits;
+        try {
+            hits = searchOkkoType(title, seriesFirst, animation, year, cancelled);
+        } catch (IOException unavailable) {
+            if (!acceptsBothTypes || cancelled.getAsBoolean()) throw unavailable;
+            hits = Collections.emptyList();
+        }
+        if (!acceptsBothTypes || !hits.isEmpty() || cancelled.getAsBoolean()) return hits;
+        return searchOkkoType(title, !seriesFirst, animation, year, cancelled);
     }
 
-    private static List<Hit> searchOkkoType(String title, boolean series, int year, BooleanSupplier cancelled)
+    private static List<Hit> searchOkkoType(String title, boolean series, boolean animation, int year, BooleanSupplier cancelled)
             throws Exception {
         String type = series ? "series" : "film";
         String hint = series ? " сериал" : " фильм";
         long started = System.nanoTime();
         List<Hit> verified = new ArrayList<>();
         Set<String> checked = new HashSet<>();
+        String slug = OkkoPublicIndex.simpleSlug(title);
+        if (series && !slug.isEmpty()) {
+            verifySlug(title, slug, type, animation, year, checked, verified, cancelled);
+            if (!verified.isEmpty()) return verified;
+        }
         Exception indexFailure = null;
         try {
             // Adding a year to the query can hide the correct card. The official card filters the requested year.
             List<Hit> indexed = indexedSearch(TvVoiceCommand.Provider.OKKO, title, type, 0, 0, hint, cancelled);
             indexed.sort(Comparator.comparingInt((Hit hit) -> hit.score).reversed());
             for (int i = 0; i < Math.min(3, indexed.size()) && !cancelled.getAsBoolean(); i++) {
-                verifyCandidate(indexed.get(i), title, year, checked, verified, cancelled);
+                verifyCandidate(indexed.get(i), title, animation, year, checked, verified, cancelled);
                 if (enough(verified, year, started)) return verified;
             }
         } catch (Exception unavailable) {
@@ -147,11 +176,8 @@ final class TvVideoSearch {
         }
         if (cancelled.getAsBoolean() || series && !verified.isEmpty() || enough(verified, year, started))
             return verified;
-        String slug = OkkoPublicIndex.simpleSlug(title);
-        if (verified.isEmpty() && !slug.isEmpty()) {
-            String path = series ? "/serial/" : "/movie/";
-            Hit candidate = candidate(TvVoiceCommand.Provider.OKKO, title, type, 0, title, "https://okko.tv" + path + slug);
-            if (candidate != null) verifyCandidate(candidate, title, year, checked, verified, cancelled);
+        if (verified.isEmpty() && !series && !slug.isEmpty()) {
+            verifySlug(title, slug, type, animation, year, checked, verified, cancelled);
             if (enough(verified, year, started)) return verified;
         }
         try {
@@ -163,7 +189,7 @@ final class TvVideoSearch {
                     if (checked.size() >= 8 || cancelled.getAsBoolean()) break;
                     Hit candidate = candidate(TvVoiceCommand.Provider.OKKO, title, type, 0, title, page);
                     if (candidate == null) continue;
-                    verifyCandidate(candidate, title, year, checked, verified, cancelled);
+                    verifyCandidate(candidate, title, animation, year, checked, verified, cancelled);
                     if (enough(verified, year, started)) return verified;
                 }
             }
@@ -173,7 +199,7 @@ final class TvVideoSearch {
         if (verified.isEmpty() && year != 0 && !cancelled.getAsBoolean()) {
             for (Hit hit : indexedSearch(TvVoiceCommand.Provider.OKKO, title, type, 0, year, hint, cancelled)) {
                 if (checked.size() >= 8 || cancelled.getAsBoolean()) break;
-                verifyCandidate(hit, title, year, checked, verified, cancelled);
+                verifyCandidate(hit, title, animation, year, checked, verified, cancelled);
                 if (!verified.isEmpty()) break;
             }
         }
@@ -184,14 +210,28 @@ final class TvVideoSearch {
         return !verified.isEmpty() && (year != 0 || verified.size() >= 3 || System.nanoTime() - started > 4_000_000_000L);
     }
 
-    private static void verifyCandidate(Hit candidate, String title, int year, Set<String> checked,
+    private static void verifySlug(String title, String slug, String type, boolean animation, int year,
+                                   Set<String> checked, List<Hit> verified, BooleanSupplier cancelled) {
+        String path = "series".equals(type) ? "/serial/" : "/movie/";
+        Hit candidate = candidate(TvVoiceCommand.Provider.OKKO, title, type, 0, title, "https://okko.tv" + path + slug);
+        if (candidate != null) verifyCandidate(candidate, title, animation, year, checked, verified, cancelled);
+    }
+
+    private static void verifyCandidate(Hit candidate, String title, boolean animation, int year, Set<String> checked,
                                         List<Hit> verified, BooleanSupplier cancelled) {
         if (!checked.add(candidate.page) || cancelled.getAsBoolean()) return;
         try {
             byte[] head = fetch(new URL(candidate.page), "html", "text/html", cancelled,
                     verified.isEmpty() ? 2200 : 1000);
-            Hit confirmed = verifyOkko(head, candidate, title, year);
-            if (confirmed != null) verified.add(confirmed);
+            Hit confirmed = verifyOkko(head, candidate, title, 0, animation);
+            if (confirmed == null) return;
+            if (year == 0 || year == confirmed.year) {
+                verified.add(confirmed);
+            } else if (isEligiblePremiereYear(confirmed, year) && !cancelled.getAsBoolean()) {
+                byte[] card = fetch(new URL(candidate.page), "html", "text/html", cancelled, 1700, MAX_OKKO_CARD, false);
+                Hit matched = verifyOkko(card, candidate, title, year, animation);
+                if (matched != null) verified.add(matched);
+            }
         } catch (IOException unavailable) {
             // The indexed URL needs its own official confirmation.
         }
@@ -266,11 +306,16 @@ final class TvVideoSearch {
 
     private static byte[] fetch(URL url, String type, String accept, BooleanSupplier cancelled,
                                 int timeoutMs) throws IOException {
-        return fetch(url, type, accept, cancelled, timeoutMs, "html".equals(type) ? MAX_OKKO_HEAD : MAX_BYTES);
+        return fetch(url, type, accept, cancelled, timeoutMs, "html".equals(type) ? MAX_OKKO_CARD : MAX_BYTES);
     }
 
     private static byte[] fetch(URL url, String type, String accept, BooleanSupplier cancelled,
                                 int timeoutMs, int limit) throws IOException {
+        return fetch(url, type, accept, cancelled, timeoutMs, limit, "html".equals(type));
+    }
+
+    private static byte[] fetch(URL url, String type, String accept, BooleanSupplier cancelled,
+                                int timeoutMs, int limit, boolean headOnly) throws IOException {
         if (cancelled.getAsBoolean() || Thread.currentThread().isInterrupted()) throw new IOException("cancelled");
         HttpsURLConnection request = (HttpsURLConnection) url.openConnection(Proxy.NO_PROXY);
         request.setConnectTimeout(timeoutMs);
@@ -279,42 +324,58 @@ final class TvVideoSearch {
         request.setUseCaches(false);
         request.setRequestProperty("Accept", accept);
         long deadline = System.nanoTime() + 4_500_000_000L;
-        boolean headOnly = "html".equals(type);
         try {
             if (request.getResponseCode() != 200) throw new IOException("search_http");
             String typeHeader = request.getContentType();
             if (typeHeader == null || !typeHeader.contains(type))
                 throw new IOException("search_content_type");
             try (InputStream input = request.getInputStream()) {
-                ByteArrayOutputStream body = new ByteArrayOutputStream();
-                byte[] buffer = new byte[4096];
-                int closingTag = 0;
-                for (int n; (n = input.read(buffer)) != -1; ) {
-                    if (cancelled.getAsBoolean() || Thread.currentThread().isInterrupted() || System.nanoTime() > deadline)
-                        throw new IOException("cancelled_or_timeout");
-                    if (n > limit - body.size()) throw new IOException("search_response_size");
-                    body.write(buffer, 0, n);
-                    if (headOnly) {
-                        for (int i = 0; i < n; i++) {
-                            byte next = buffer[i];
-                            closingTag = next == HEAD_END[closingTag] ? closingTag + 1 : next == '<' ? 1 : 0;
-                            if (closingTag == HEAD_END.length) return body.toByteArray();
-                        }
-                    }
-                }
-                return body.toByteArray();
+                return readResponse(input, limit, headOnly, "html".equals(type) && !headOnly, cancelled, deadline);
             }
         } finally {
             request.disconnect();
         }
     }
 
+    static byte[] readResponse(InputStream input, int limit, boolean headOnly, boolean allowPrefix,
+                               BooleanSupplier cancelled, long deadline) throws IOException {
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int closingTag = 0;
+        for (int count; (count = input.read(buffer)) != -1; ) {
+            if (cancelled.getAsBoolean() || Thread.currentThread().isInterrupted() || System.nanoTime() > deadline)
+                throw new IOException("cancelled_or_timeout");
+            int accepted = Math.min(count, limit - body.size());
+            if (headOnly) {
+                for (int i = 0; i < accepted; i++) {
+                    byte next = buffer[i];
+                    closingTag = next == HEAD_END[closingTag] ? closingTag + 1 : next == '<' ? 1 : 0;
+                    if (closingTag == HEAD_END.length) {
+                        body.write(buffer, 0, i + 1);
+                        return body.toByteArray();
+                    }
+                }
+            }
+            body.write(buffer, 0, accepted);
+            if (accepted != count) {
+                if (allowPrefix) return body.toByteArray();
+                throw new IOException("search_response_size");
+            }
+        }
+        return body.toByteArray();
+    }
+
     static Hit verifyOkko(byte[] body, Hit hit, String requestedTitle, int requestedYear) {
+        return verifyOkko(body, hit, requestedTitle, requestedYear, false);
+    }
+
+    static Hit verifyOkko(byte[] body, Hit hit, String requestedTitle, int requestedYear, boolean animation) {
         String html = new String(body, StandardCharsets.UTF_8);
         int end = html.indexOf("</head>");
         if (end < 0) return null;
+        String head = html.substring(0, end);
         java.util.Map<String, String> fields = new java.util.HashMap<>();
-        Matcher meta = META.matcher(html.substring(0, end));
+        Matcher meta = META.matcher(head);
         while (meta.find()) {
             String property = null;
             String content = null;
@@ -335,7 +396,6 @@ final class TvVideoSearch {
             name = annotatedTitle.group(1);
             cardYear = Integer.parseInt(annotatedTitle.group(2));
         }
-        if (requestedYear != 0 && cardYear != requestedYear) return null;
         String canonical = fields.getOrDefault("og:url", "");
         if (!canonical.replaceFirst("/$", "").equals(hit.page.replaceFirst("/$", ""))) return null;
         Matcher link = OKKO_LINK.matcher(fields.getOrDefault("al:android:url", ""));
@@ -343,8 +403,40 @@ final class TvVideoSearch {
         boolean film = hit.page.startsWith("https://okko.tv/movie/");
         if (film && !("movie".equals(link.group(1)) && "movie".equals(link.group(3)))
                 || !film && "movie".equals(link.group(3))) return null;
+        if (animation && !isOfficialAnimation(head, name, hit.page)) return null;
         String target = "okko://" + link.group(1) + "?uid=" + link.group(2) + "&type=" + link.group(3);
-        return new Hit(hit.provider, hit.page, target, name, hit.score + 10, cardYear, film ? "film" : "series");
+        Hit confirmed = new Hit(hit.provider, hit.page, target, name, hit.score + 10, cardYear, film ? "film" : "series");
+        if (requestedYear == 0 || cardYear == requestedYear) return confirmed;
+        if (isEligiblePremiereYear(confirmed, requestedYear)) {
+            Matcher premiere = LOCAL_PREMIERE.matcher(html).region(end + "</head>".length(), html.length());
+            if (premiere.find() && Integer.parseInt(premiere.group(1)) == requestedYear) return confirmed;
+        }
+        return null;
+    }
+
+    private static boolean isEligiblePremiereYear(Hit confirmed, int year) {
+        return "film".equals(confirmed.mediaType) && confirmed.year != 0 && year == confirmed.year + 1;
+    }
+
+    private static boolean isOfficialAnimation(String head, String title, String page) {
+        String path = URI.create(page).getPath();
+        String normalizedTitle = normalize(title);
+        Matcher structured = STRUCTURED_CARD.matcher(head);
+        for (int i = 0; i < 8 && structured.find(); i++) {
+            if (structured.end(1) - structured.start(1) > 262144) continue;
+            try {
+                JSONObject item = new JSONObject(structured.group(1));
+                String declaredUrl = item.optString("url", "");
+                String name = item.optString("name", "");
+                if (!normalizedTitle.equals(normalize(name))
+                        || !declaredUrl.isEmpty() && !declaredUrl.equals(path) && !declaredUrl.equals(page)) continue;
+                String genre = normalize(item.optString("genre", ""));
+                if (ANIMATION_GENRE.matcher(genre).find()) return true;
+            } catch (org.json.JSONException ignored) {
+                // Other metadata records may contain the description of the exact card.
+            }
+        }
+        return false;
     }
 
     static List<Hit> parse(byte[] xml, TvVoiceCommand.Provider provider, String title, String mediaType, int year)
@@ -411,7 +503,8 @@ final class TvVideoSearch {
             boolean fullFilm = FULL_FILM_LABEL.matcher(metadata).find()
                     || (duration >= 40 * 60 && FILM_LABEL.matcher(metadata).find());
             if ("film".equals(mediaType) && (series || !fullFilm)
-                    || "series".equals(mediaType) && !series) return null;
+                    || "series".equals(mediaType) && !series
+                    || "animation".equals(mediaType) && !ANIMATION_LABEL.matcher(metadata).find()) return null;
             locatedType = series ? "series" : fullFilm ? "film" : "video";
         }
         String page;

@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.SystemClock;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,13 +32,16 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
             + TvVoiceCommand.MAX_TITLE_CHARS + "}");
     private static final Pattern NUMBERS = Pattern.compile("\\p{N}+");
     private final Context app;
+    private final TvVoiceCommand.YearFollowUp yearFollowUp = new TvVoiceCommand.YearFollowUp();
 
     TvVoiceControl(Context context) { this.app = context.getApplicationContext(); }
 
     @Override public VoicePipeline.TvResult handle(String transcript, VoicePipeline.Chat chat, BooleanSupplier cancelled)
             throws Exception {
-        TvVoiceCommand command = TvVoiceCommand.parse(transcript);
+        if (cancelled.getAsBoolean()) return null;
+        TvVoiceCommand command = yearFollowUp.resolve(transcript, SystemClock.elapsedRealtime());
         if (command == null) return null;
+        boolean yearReply = TvVoiceCommand.followUpYear(transcript) != 0;
         PackageManager pm = app.getPackageManager();
         Map<TvVoiceCommand.Provider, Intent> installed = new LinkedHashMap<>();
         for (TvVoiceCommand.Provider provider : TvVoiceCommand.Provider.values()) {
@@ -74,16 +78,26 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         for (TvVideoSearch.Hit hit : hits) {
             if (hit.target == null) continue;
             String years = command.year == 0 ? conflictingYears(hits, hit) : "";
-            if (!years.isEmpty())
-                return result("Нашла версии " + years + " годов. Повтори название и добавь год.", "year_ambiguous", false);
+            if (!years.isEmpty()) {
+                yearFollowUp.remember(command, SystemClock.elapsedRealtime());
+                return result("Нашла версии " + years + " годов. Скажи, какой год нужен.", "year_ambiguous", false);
+            }
             boolean play = command.kind == TvVoiceCommand.Kind.PLAY;
-            String target = play && hit.provider == TvVoiceCommand.Provider.OKKO ? hit.target + "&play=true" : hit.target;
+            String target = hit.launchTarget(play);
             Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse(target))
                     .setPackage(hit.provider.packageName).addCategory(Intent.CATEGORY_BROWSABLE);
             if (play) view.putExtra("android.intent.extra.START_PLAYBACK", true);
             if (pm.resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY) != null && launch(view, cancelled)) {
+                if (play && !target.equals(hit.target))
+                    return result("Включаю «" + hit.displayTitle + "» в Окко.", "playback_requested", true);
                 return result("Нашла «" + hit.displayTitle + "» в " + hit.provider.label + ". Открываю.", "title_opened", true);
             }
+        }
+        if (yearReply) {
+            if (cancelled.getAsBoolean()) return result("Поиск отменён.", "cancelled", false);
+            yearFollowUp.remember(command.withYear(0), SystemClock.elapsedRealtime());
+            return result("Не нашла «" + title + "» за " + command.year + " год. Можешь назвать другой год.",
+                    "year_no_match", false);
         }
         if (requested != null) {
             Intent search = requested == TvVoiceCommand.Provider.OKKO

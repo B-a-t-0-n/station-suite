@@ -6,7 +6,11 @@ public final class TvVoiceCommandHostTest {
 
     private static void route(String text, TvVoiceCommand.Kind kind, TvVoiceCommand.Provider provider,
                               String title, String type, int year) {
-        TvVoiceCommand actual = TvVoiceCommand.parse(text);
+        assertCommand(TvVoiceCommand.parse(text), text, kind, provider, title, type, year);
+    }
+
+    private static void assertCommand(TvVoiceCommand actual, String text, TvVoiceCommand.Kind kind,
+                                      TvVoiceCommand.Provider provider, String title, String type, int year) {
         require(actual != null && actual.kind == kind, text, "wrong kind");
         require(actual.provider == provider, text, "wrong provider");
         require(title.equals(actual.title), text, "wrong title");
@@ -17,6 +21,50 @@ public final class TvVoiceCommandHostTest {
     private static void require(boolean good, String text, String issue) {
         checked++;
         if (!good) throw new AssertionError(issue + " for " + text);
+    }
+
+    private static void checkYear(String reply, int year) {
+        require(TvVoiceCommand.followUpYear(reply) == year, reply, "wrong standalone year");
+    }
+
+    private static void yearFollowUp() {
+        checkYear("2023", 2023);
+        checkYear("2023 года", 2023);
+        checkYear("Алиса, в 2023-м году.", 2023);
+        checkYear("(2023)", 2023);
+        checkYear("２０２３", 2023);
+        checkYear("две тысячи двадцать третьего года", 2023);
+        checkYear("две тысячи двадцать третий", 2023);
+        checkYear("тысяча девятьсот восемьдесят четвертого года", 1984);
+        checkYear("двухтысячного года", 2000);
+        for (String text : new String[] {null, "", "включи фильм 2023 года", "2023 или 1969", "2023?",
+                "2023 года и включи музыку", "двухтысячный или другой", "2023\n", "сказка 2023", "1234"})
+            checkYear(text, 0);
+
+        TvVoiceCommand.YearFollowUp pending = new TvVoiceCommand.YearFollowUp();
+        require(pending.resolve("2023", 1) == null, "2023", "year treated as a new TV action");
+        TvVoiceCommand play = TvVoiceCommand.parse("Алиса, включи на Окко мультик Чебурашку");
+        pending.remember(play, 10);
+        require(pending.resolve("какая погода", 20) == null, "weather", "unrelated utterance was hijacked");
+        assertCommand(pending.resolve("2023 года", 30), "play continuation", TvVoiceCommand.Kind.PLAY,
+                TvVoiceCommand.Provider.OKKO, "Чебурашка", "animation", 2023);
+        require(play.year == 0, "original command", "year continuation mutated the original command");
+        require(pending.resolve("2023", 40) == null, "repeat year", "year continuation was replayed");
+
+        TvVoiceCommand find = TvVoiceCommand.parse("найди Чебурашку");
+        pending.remember(find, 50);
+        assertCommand(pending.resolve("1969", 180_049), "find continuation", TvVoiceCommand.Kind.FIND,
+                null, "Чебурашка", null, 1969);
+        pending.remember(find, 200_000);
+        require(pending.resolve("2023", 380_000) == null, "expired year", "expired continuation was accepted");
+        pending.remember(find, 400_000);
+        assertCommand(pending.resolve("найди фильм Дюна 1984", 400_001), "new TV request",
+                TvVoiceCommand.Kind.FIND, null, "Дюна", "film", 1984);
+        require(pending.resolve("2023", 400_002) == null, "year after new TV request",
+                "pending original request was not cleared");
+        pending.remember(play, 400_003);
+        pending.clear();
+        require(pending.resolve("2023", 400_004) == null, "cleared year", "explicit clear lost");
     }
 
     public static void main(String[] args) {
@@ -50,7 +98,17 @@ public final class TvVoiceCommandHostTest {
         route("найди фильм Пример две тысячи кошачьего года", TvVoiceCommand.Kind.FIND,
                 null, "Пример две тысячи кошачьего года", "film", 0);
         route("Алиса, найди, пожалуйста, мультфильм «Трое в Простоквашино» на Окко", TvVoiceCommand.Kind.FIND,
-                TvVoiceCommand.Provider.OKKO, "Трое в Простоквашино", "film", 0);
+                TvVoiceCommand.Provider.OKKO, "Трое в Простоквашино", "animation", 0);
+        route("Алиса, найди Чебурашку", TvVoiceCommand.Kind.FIND, null, "Чебурашка", null, 0);
+        route("включи Чебурашку 2023 года", TvVoiceCommand.Kind.PLAY, null, "Чебурашка", null, 2023);
+        route("найди смешарики", TvVoiceCommand.Kind.FIND, null, "Смешарики", "animation", 0);
+        route("включи смешариков", TvVoiceCommand.Kind.PLAY, null, "Смешарики", "animation", 0);
+        route("найди смешариков на Окко", TvVoiceCommand.Kind.FIND,
+                TvVoiceCommand.Provider.OKKO, "Смешарики", "animation", 0);
+        route("найди мультик Смешарики", TvVoiceCommand.Kind.FIND, null, "Смешарики", "animation", 0);
+        route("найди фильм Смешарики", TvVoiceCommand.Kind.FIND, null, "Смешарики", "film", 0);
+        route("включи мультсериал Смешарики в Окко", TvVoiceCommand.Kind.PLAY,
+                TvVoiceCommand.Provider.OKKO, "Смешарики", "series", 0);
         route("покажи фильм Кошмар на улице Вязов (1984)", TvVoiceCommand.Kind.PLAY,
                 null, "Кошмар на улице Вязов", "film", 1984);
         route("найди фильм Один дома на ВК Видео", TvVoiceCommand.Kind.FIND,
@@ -76,6 +134,8 @@ public final class TvVoiceCommandHostTest {
         route("найди на окко", TvVoiceCommand.Kind.AMBIGUOUS, TvVoiceCommand.Provider.OKKO, "", null, 0);
         for (String text : new String[] {
                 "включи песню группа крови", "включи песню на ютубе", "найди на окко музыку группа крови",
+                "поставь песню Смешарики", "включи Чебурашку и останови музыку", "найди Чебурашку песню",
+                "найди Дюну", "алиса включи группу Кино", "2023",
                 "алиса включи музыку", "поставь таймер на пять минут", "не включи фильм простоквашино",
                 "включи фильм Простоквашино и поставь таймер", "покажи фильм простоквашино выключи звук",
                 "что есть на окко", "найди фильм Дюна?", "найди фильм Дюна？", "можешь включить на окко дюну",
@@ -85,6 +145,7 @@ public final class TvVoiceCommandHostTest {
         require(TvVoiceCommand.Provider.OKKO.packageName.equals("tv.okko.androidtv"), "Okko", "wrong package");
         require(TvVoiceCommand.Provider.YOUTUBE.packageName.equals("com.google.android.youtube.tv"),
                 "YouTube", "TV package must take precedence");
+        yearFollowUp();
         System.out.println(checked + " TV admission assertions passed; no network or app launches");
     }
 }

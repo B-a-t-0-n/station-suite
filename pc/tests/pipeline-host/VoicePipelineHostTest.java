@@ -1,5 +1,6 @@
 package local.station.voicebridge;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -45,7 +46,8 @@ public final class VoicePipelineHostTest {
         JSONObject recognized, answered, understood;
         VoicePipeline.Speech spoken=speech();
         String prompt, text;
-        int validations, transcriptions, understandings, answers, syntheses;
+        JSONArray messages;
+        int validations, transcriptions, understandings, answers, syntheses, contextualAnswers;
         Exception validateError, asrError, answerError, ttsError;
         boolean interruptAfterAsr;
         Fake() throws Exception { recognized=asr("Вопрос без личных данных.");answered=answer("Короткий ответ."); }
@@ -62,6 +64,11 @@ public final class VoicePipelineHostTest {
         }
         public JSONObject ask(JSONObject settings,String input) throws Exception {
             answers++;prompt=input;if(answerError!=null)throw answerError;return answered;
+        }
+        @Override public JSONObject askConversation(JSONObject settings, JSONArray input) throws Exception {
+            contextualAnswers++;
+            messages = input;
+            return VoicePipeline.Backend.super.askConversation(settings, input);
         }
         public JSONObject understandAudio(JSONObject settings,byte[] bytes) throws Exception {
             understandings++;
@@ -371,6 +378,79 @@ public final class VoicePipelineHostTest {
         check(fake.transcriptions==0&&fake.understandings==0&&fake.answers==0&&fake.streams==0,
                 "cancelled local final text has no API calls");
     }
+
+    private static void checkMessage(JSONArray messages, int index, String role, String content) throws Exception {
+        JSONObject message = messages.getJSONObject(index);
+        check(role.equals(message.getString("role")), "conversation message role at index " + index);
+        check(content.equals(message.getString("content")), "conversation message content at index " + index);
+    }
+
+    private static void recentConversation() throws Exception {
+        StreamingFake fake = new StreamingFake();
+        long[] now = {0};
+        VoicePipeline pipeline = new VoicePipeline(fake, () -> now[0], (transcript, chat, cancelled) -> {
+            if (!"synthetic TV request".equals(transcript)) return null;
+            chat.ask("synthetic title correction");
+            return new VoicePipeline.TvResult("Телевизор", "tv_test", true);
+        });
+
+        for (int i = 1; i <= 4; i++) {
+            now[0] = i * 1000L;
+            fake.answered = answer("Synthetic assistant message " + i);
+            VoicePipeline.Result completed = pipeline.runTranscript(config(), "Synthetic user message " + i, new Capture());
+            if (i == 1) check(fake.messages.length() == 2, "first turn has only system and user");
+            check(!completed.summary.toString().contains("Synthetic"), "conversation excluded from summary");
+            pipeline.rememberCompletedConversation(completed);
+            pipeline.rememberCompletedConversation(completed);
+        }
+
+        VoicePipeline.Result unanswered = pipeline.runTranscript(config(), PRIVATE, null);
+        JSONArray latest = fake.messages;
+        check(latest.length() == 8, "history includes exactly the last three completed pairs");
+        check("system".equals(latest.getJSONObject(0).getString("role")), "system instruction goes first");
+        for (int i = 2; i <= 4; i++) {
+            checkMessage(latest, 2 * i - 3, "user", "Synthetic user message " + i);
+            checkMessage(latest, 2 * i - 2, "assistant", "Synthetic assistant message " + i);
+        }
+        checkMessage(latest, 7, "user", PRIVATE);
+        check(!unanswered.summary.toString().contains(PRIVATE), "current text excluded from summary");
+
+        Capture broken = new Capture();
+        broken.failFinish = true;
+        try {
+            pipeline.runTranscript(config(), "unsent audio", broken);
+            throw new AssertionError("broken output accepted");
+        } catch (VoicePipeline.PipelineException error) {
+            check("tts".equals(error.stage) && !error.summary.toString().contains("unsent audio"),
+                    "failed output does not persist its transcript in the summary");
+        }
+        int contextCalls = fake.contextualAnswers;
+        VoicePipeline.Result television = pipeline.runTranscript(config(), "synthetic TV request", new Capture());
+        pipeline.rememberCompletedConversation(television);
+        check(fake.contextualAnswers == contextCalls && "synthetic title correction".equals(fake.prompt),
+                "TV title correction remains stateless");
+        pipeline.rememberCompletedConversation(pipeline.runFeedback(config(), "synthetic timer",
+                VoicePipeline.LocalFeedback.TIMER_CREATED, new Capture()));
+        pipeline.rememberCompletedConversation(pipeline.run(config(), input(44)));
+        check(fake.contextualAnswers == contextCalls, "fixed commands and cloud ASR remain stateless");
+
+        now[0] = 302000;
+        pipeline.runTranscript(config(), "Synthetic follow-up", new Capture());
+        JSONArray remaining = fake.messages;
+        check(remaining.length() == 6, "pairs expire five minutes after their own completion");
+        checkMessage(remaining, 1, "user", "Synthetic user message 3");
+        checkMessage(remaining, 3, "user", "Synthetic user message 4");
+        checkMessage(remaining, 5, "user", "Synthetic follow-up");
+        check(!remaining.toString().contains(PRIVATE), "unconfirmed buffered turn excluded");
+
+        now[0] = 304000;
+        VoicePipeline.Result stale = pipeline.runTranscript(config(), "Synthetic before refresh", new Capture());
+        check(fake.messages.length() == 2, "no remembered turns after expiry");
+        pipeline.clearConversation();
+        pipeline.rememberCompletedConversation(stale);
+        pipeline.runTranscript(config(), "Synthetic after refresh", new Capture());
+        check(fake.messages.length() == 2, "a reset blocks pending replies from restoring old history");
+    }
     private static void fixedLocalFailureFeedback() throws Exception {
         String transcript = "  " + PRIVATE + " включи https://example.invalid/private-song  ";
         String[] phrases = {"Сейчас не получается включить музыку.", "Не удалось найти эту музыку.",
@@ -491,7 +571,7 @@ public final class VoicePipelineHostTest {
     }
     public static void main(String[] args)throws Exception{
         happyAndSummary();rejectedInputs();deletionAndAsr();answerAndTtsErrors();interruptionAndProviderErrors();concurrentRun();
-        streamingContract();streamingCancellationAndCleanup();combinedAudioAnswer();finalLocalTranscript();
+        streamingContract();streamingCancellationAndCleanup();combinedAudioAnswer();finalLocalTranscript();recentConversation();
         fixedLocalFailureFeedback();
         warmupIsSameBackendAndPreemptible();
         System.out.println("VoicePipelineHostTest: "+assertions+" assertions passed; artificial providers only, no sockets/API requests");

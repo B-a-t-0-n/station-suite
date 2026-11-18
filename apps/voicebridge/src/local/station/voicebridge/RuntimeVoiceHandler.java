@@ -116,7 +116,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
     public boolean refreshConfiguration() {
         try { settings(); changed(); return true; }
         catch (Exception ignored) {
-            synchronized (this) { credentialsReady = false; }
+            synchronized (this) { credentialsReady = false; pipeline.clearConversation(); }
             changed(); return false;
         }
     }
@@ -251,6 +251,8 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
             if (!streaming) writer.reply(metadata, result.transcript, result.answer, result.audio);
             replySent = true;
             synchronized (this) {
+                if (!closed && generation == turn && settings.identity.equals(configIdentity))
+                    pipeline.rememberCompletedConversation(result);
                 completed++; failures = 0; backoffUntil = 0; code = ""; stage = ""; provider = ""; status = 0; retryAfter = -1;
             }
         } catch (NativeOggInput.InputException invalid) {
@@ -307,6 +309,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
         synchronized (this) {
             credentialsReady = true;
             if (!key.equals(configIdentity)) {
+                pipeline.clearConversation();
                 configIdentity = key; failures = 0; backoffUntil = 0; code = ""; stage = ""; provider = ""; status = 0; retryAfter = -1;
             }
         }
@@ -356,7 +359,10 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
     /** Stops admission and reply only. Never interrupt upload/delete cleanup. */
     public void close() {
         LoopbackVoiceServer.ReplyWriter writer;
-        synchronized (this) { closed = true; generation++; writer = currentWriter; }
+        synchronized (this) {
+            closed = true; generation++; writer = currentWriter;
+            pipeline.clearConversation();
+        }
         cancelWarmup();
         if (writer != null) writer.cancelReply();
         changed();

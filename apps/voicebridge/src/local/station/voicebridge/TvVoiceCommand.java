@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 final class TvVoiceCommand {
     static final int MAX_TITLE_CHARS = 160;
     private static final int MAX_UTTERANCE_CHARS = 320;
-    private static final String VIDEO_TYPES = "фильм|кино|мультфильм|мультик|сериал|видео|ролик";
+    private static final String VIDEO_TYPES = "фильм|кино|мультфильм|мультик|мультсериал|сериал|видео|ролик";
     private static final String UNSUPPORTED_NAMES = "кино ?поиск(?:е|а)?|netflix|нетфликс(?:е)?|иви|ivi|"
             + "kion|кион(?:е)?|премьер(?:е)?|premier|more ?tv|море ?тв|wink|винк(?:е)?|"
             + "start|старт(?:е)?|amediateka|амедиатек[ае]|apple ?tv|эпл ?тв|prime ?video|"
@@ -45,6 +45,9 @@ final class TvVoiceCommand {
     private static final Pattern EXPLICIT_DIGIT_YEAR = words("^(.*?)[ ,]+(?:\\((" + YEAR_DIGITS + ")\\)"
             + "|(?:(?:в|от) +)?(" + YEAR_DIGITS + ")(?:-?(?:го|м))? +год(?:а|у)?)$");
     private static final Pattern BARE_DIGIT_YEAR = Pattern.compile("^(.*?)[ ,]+(" + YEAR_DIGITS + ")$");
+    private static final Pattern YEAR_REPLY = words("^(?:(?:в|от) +)?(.+?)(?: +год(?:а|у)?)?$");
+    private static final Pattern DIGIT_YEAR_REPLY = words("^(?:\\((" + YEAR_DIGITS + ")\\)|(" + YEAR_DIGITS
+            + ")(?:[-–—]?(?:й|го|м))?)$");
     private static final Pattern SPOKEN_YEAR = words("^(.*?)[ ,]+(?:(?:в|от) +)?("
             + "тысяча (?:восемьсот|девятьсот)(?: [а-яё]+){0,2}"
             + "|тысяча (?:восьмисот|девятисот|восемьсот|девятьсот)(?:ый|ого|ом)"
@@ -107,12 +110,60 @@ final class TvVoiceCommand {
         this.year = year;
     }
 
+    TvVoiceCommand withYear(int year) {
+        return new TvVoiceCommand(kind, provider, title, mediaType, year);
+    }
+
+    static int followUpYear(String transcript) {
+        String text = normalizeUtterance(transcript);
+        if (text == null) return 0;
+        text = text.trim().replaceFirst("[.!]+$", "").trim();
+        text = WAKE.matcher(text).replaceFirst("");
+        Matcher reply = YEAR_REPLY.matcher(text);
+        if (!reply.matches()) return 0;
+        String value = reply.group(1);
+        Matcher digits = DIGIT_YEAR_REPLY.matcher(value);
+        if (digits.matches()) {
+            return Integer.parseInt(digits.group(1) == null ? digits.group(2) : digits.group(1));
+        }
+        return spokenReleaseYear(value);
+    }
+
+    static final class YearFollowUp {
+        private static final long REPLY_TIMEOUT_MS = 180_000;
+        private TvVoiceCommand pending;
+        private long expiresAt;
+
+        synchronized TvVoiceCommand resolve(String transcript, long now) {
+            TvVoiceCommand command = parse(transcript);
+            if (command != null) {
+                clear();
+                return command;
+            }
+            if (now >= expiresAt) clear();
+            if (pending == null) return null;
+            int year = followUpYear(transcript);
+            if (year == 0) return null;
+            command = pending.withYear(year);
+            clear();
+            return command;
+        }
+
+        synchronized void remember(TvVoiceCommand command, long now) {
+            pending = command;
+            expiresAt = now + REPLY_TIMEOUT_MS;
+        }
+
+        synchronized void clear() {
+            pending = null;
+        }
+    }
+
     static TvVoiceCommand parse(String transcript) {
-        if (transcript == null || transcript.length() > MAX_UTTERANCE_CHARS) return null;
-        String text = Normalizer.normalize(transcript, Normalizer.Form.NFKC);
-        if (text.length() > MAX_UTTERANCE_CHARS || !safeText(text)) return null;
+        String text = normalizeUtterance(transcript);
+        if (text == null) return null;
         boolean questionMark = maskQuotes(text).indexOf('?') >= 0;
-        text = text.replaceAll("[ \\p{Zs}]+", " ").trim().replaceFirst("[.!?]+$", "").trim();
+        text = text.trim().replaceFirst("[.!?]+$", "").trim();
         text = WAKE.matcher(text).replaceFirst("");
         if (LIST_APPS.matcher(text).matches()) return command(Kind.LIST, null);
         String unquotedText = maskQuotes(text);
@@ -167,9 +218,9 @@ final class TvVoiceCommand {
             mediaType = type(media.group(1));
             body = media.group(2).trim();
         }
-        if (source == null && mediaType == null) return null;
         if (EXTRA_ACTION.matcher(maskQuotes(body)).find()) return null;
-        if (body.isEmpty() || body.matches("(?iu)" + VIDEO_TYPES)) return command(Kind.AMBIGUOUS, source);
+        if (body.isEmpty() || body.matches("(?iu)" + VIDEO_TYPES))
+            return source == null && mediaType == null ? null : command(Kind.AMBIGUOUS, source);
         int year = 0;
         String unquotedTitle = maskQuotes(body);
         Matcher explicitYear = EXPLICIT_DIGIT_YEAR.matcher(unquotedTitle);
@@ -191,6 +242,10 @@ final class TvVoiceCommand {
             }
         }
         String title = stripTitleQuotes(body.substring(0, titleEnd).trim());
+        String canonicalFranchise = franchiseTitle(title);
+        if (source == null && mediaType == null && canonicalFranchise == null) return null;
+        if (canonicalFranchise != null) title = canonicalFranchise;
+        if (mediaType == null && "Смешарики".equals(canonicalFranchise)) mediaType = "animation";
         if (title.isEmpty() || title.length() > MAX_TITLE_CHARS || !title.codePoints().anyMatch(Character::isLetterOrDigit))
             return command(Kind.AMBIGUOUS, source);
         return new TvVoiceCommand(find ? Kind.FIND : Kind.PLAY, source, title, mediaType, year);
@@ -198,7 +253,7 @@ final class TvVoiceCommand {
 
     private static int spokenReleaseYear(String phrase) {
         String normalized = phrase.toLowerCase(Locale.ROOT).replace('ё', 'е');
-        if (normalized.startsWith("двухтысячн")) return 2000;
+        if (normalized.matches("двухтысячн(?:ый|ого|ом)")) return 2000;
         if (normalized.matches("тысяча (?:восьмисот|восемьсот)(?:ый|ого|ом)")) return 1800;
         if (normalized.matches("тысяча (?:девятисот|девятьсот)(?:ый|ого|ом)")) return 1900;
         String[] centuries = {"тысяча восемьсот", "тысяча девятьсот", "две тысячи"};
@@ -237,9 +292,23 @@ final class TvVoiceCommand {
     }
 
     private static String type(String value) {
-        if (value.equalsIgnoreCase("сериал")) return "series";
+        if (value.equalsIgnoreCase("сериал") || value.equalsIgnoreCase("мультсериал")) return "series";
+        if (value.equalsIgnoreCase("мультфильм") || value.equalsIgnoreCase("мультик")) return "animation";
         if (value.equalsIgnoreCase("видео") || value.equalsIgnoreCase("ролик")) return "video";
         return "film";
+    }
+
+    private static String franchiseTitle(String title) {
+        switch (title.toLowerCase(Locale.ROOT)) {
+            case "смешарики":
+            case "смешариков":
+                return "Смешарики";
+            case "чебурашка":
+            case "чебурашку":
+                return "Чебурашка";
+            default:
+                return null;
+        }
     }
 
     private static boolean hasSourceAlternative(String text) {
@@ -271,6 +340,13 @@ final class TvVoiceCommand {
         if (text.length() >= 2 && (text.startsWith("\"") && text.endsWith("\"")
                 || text.startsWith("«") && text.endsWith("»"))) return text.substring(1, text.length() - 1).trim();
         return text;
+    }
+
+    private static String normalizeUtterance(String transcript) {
+        if (transcript == null || transcript.length() > MAX_UTTERANCE_CHARS) return null;
+        String text = Normalizer.normalize(transcript, Normalizer.Form.NFKC);
+        if (text.length() > MAX_UTTERANCE_CHARS || !safeText(text)) return null;
+        return text.replaceAll("[ \\p{Zs}]+", " ");
     }
 
     private static boolean safeText(String text) {

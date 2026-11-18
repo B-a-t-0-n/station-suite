@@ -275,13 +275,27 @@ public final class CloudClient {
 
     /** One user message, max_tokens=128, no history, tools, streaming, or automatic retry. */
     public JSONObject ask(JSONObject config, String prompt) throws CloudException {
+        requireConfig(config, GIGA);
+        input(prompt, 4096, GIGA);
         try {
-            requireConfig(config, GIGA);
-            input(prompt, 4096, GIGA);
+            return sendChat(config, new JSONArray().put(new JSONObject()
+                    .put("role", "user").put("content", prompt)));
+        } catch (JSONException e) {
+            throw error(GIGA, "BAD_RESPONSE");
+        }
+    }
+
+    /** Bounded role messages assembled by the local voice pipeline. */
+    JSONObject askConversation(JSONObject config, JSONArray messages) throws CloudException {
+        requireConfig(config, GIGA);
+        return sendChat(config, messages);
+    }
+
+    private JSONObject sendChat(JSONObject config, JSONArray messages) throws CloudException {
+        try {
             String model = model(config);
             JSONObject body = new JSONObject().put("model", model)
-                    .put("messages", new JSONArray().put(new JSONObject()
-                            .put("role", "user").put("content", prompt)))
+                    .put("messages", messages)
                     .put("max_tokens", 128).put("stream", false);
             JSONObject response = json(request(config, GIGA, CHAT_URL, "POST",
                     bearer(token(config)), "application/json; charset=utf-8",

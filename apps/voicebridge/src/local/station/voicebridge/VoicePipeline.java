@@ -1,8 +1,11 @@
 package local.station.voicebridge;
 
 import android.content.Context;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.function.BooleanSupplier;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,12 +33,16 @@ public final class VoicePipeline {
             "Ответь на следующую реплику по-русски одним коротким предложением без Markdown, "
             + "не длиннее 300 символов. Ты только формулируешь ответ и не управляешь устройствами. "
             + "Не утверждай, что выполнил действие, включил музыку или поставил таймер. "
-            + "Если просят действие, кратко поясни, что этот тест пока не выполняет команды. Реплика:\n";
+            + "Если просят действие, кратко поясни, что этот тест пока не выполняет команды.";
+    private static final int CONVERSATION_TURNS = 3;
+    private static final long CONVERSATION_TTL_MS = 5 * 60 * 1000L;
     private final Backend backend;
     private final Clock clock;
     private final TvHandler tv;
     private final AtomicBoolean running = new AtomicBoolean();
     private final AtomicReference<CloudClient.Warmup> warming = new AtomicReference<>();
+    private final ArrayDeque<Exchange> conversation = new ArrayDeque<>(CONVERSATION_TURNS);
+    private long conversationRevision;
 
     /** No configuration reads or network activity occur in the constructor. */
     public VoicePipeline(Context context) {
@@ -91,6 +98,9 @@ public final class VoicePipeline {
             throw new IOException("combined_audio_not_implemented");
         }
         JSONObject ask(JSONObject config, String prompt) throws Exception;
+        default JSONObject askConversation(JSONObject config, JSONArray messages) throws Exception {
+            return ask(config, INSTRUCTION + " Реплика:\n" + messages.getJSONObject(messages.length() - 1).getString("content"));
+        }
         Speech synthesize(JSONObject config, String answer) throws Exception;
         default StreamSpeech synthesizeStreaming(JSONObject config, String answer, AudioSink sink) throws Exception {
             // Offline/fallback backends retain their old implementation. Production overrides this
@@ -148,6 +158,9 @@ public final class VoicePipeline {
         }
         @Override public JSONObject ask(JSONObject config, String prompt) throws Exception {
             return cloud.ask(config, prompt);
+        }
+        @Override public JSONObject askConversation(JSONObject config, JSONArray messages) throws Exception {
+            return cloud.askConversation(config, messages);
         }
         @Override public Speech synthesize(JSONObject config, String answer) throws Exception {
             SpeechifyClient.Result result = speechify.synthesizeOgg(config, answer);
@@ -260,6 +273,7 @@ public final class VoicePipeline {
             backend.validate(snapshot);
             checkInterrupted(stage, summary);
             final String transcript, answer;
+            long replyRevision = -1;
             if (feedback != null) {
                 transcript = validatedLocal;
                 answer = feedback.answer;
@@ -305,7 +319,14 @@ public final class VoicePipeline {
                     answer = text(television.answer, MAX_ANSWER_CHARS, stage, "INVALID_ANSWER", summary);
                 } else {
                     stage = "llm";
-                    JSONObject response = directAudio ? asr : backend.ask(snapshot, INSTRUCTION + transcript);
+                    JSONObject response;
+                    if (localText != null) {
+                        JSONArray messages = new JSONArray();
+                        replyRevision = addConversation(messages, transcript);
+                        response = backend.askConversation(snapshot, messages);
+                    } else {
+                        response = directAudio ? asr : backend.ask(snapshot, INSTRUCTION + " Реплика:\n" + transcript);
+                    }
                     put(summary, "llmMs", elapsed(llmStarted));
                     if (response == null || !Boolean.TRUE.equals(response.opt("ok")))
                         throw failure(stage, "BAD_ANSWER_RESPONSE", summary);
@@ -352,7 +373,7 @@ public final class VoicePipeline {
                 put(summary, "audioFormat", "ogg"); put(summary, "audioBytes", speech.audioBytes);
                 put(summary, "billableCharacters", speech.billableCharacters);
                 put(summary, "elapsedMs", elapsed(started)); put(summary, "ok", true);
-                return new Result(summary, null, transcript, answer);
+                return new Result(summary, null, transcript, answer, replyRevision);
             }
             Speech speech = backend.synthesize(snapshot, answer);
             put(summary, "ttsMs", elapsed(stepStarted));
@@ -368,7 +389,7 @@ public final class VoicePipeline {
             put(summary, "billableCharacters", speech.billableCharacters);
             put(summary, "elapsedMs", elapsed(started));
             put(summary, "ok", true);
-            return new Result(summary, speech.audio, transcript, answer);
+            return new Result(summary, speech.audio, transcript, answer, replyRevision);
         } catch (PipelineException error) {
             put(error.summary, "elapsedMs", elapsed(started));
             throw error;
@@ -383,6 +404,52 @@ public final class VoicePipeline {
                     ? "CANCELLED" : "STAGE_FAILED", summary);
         } finally {
             running.set(false);
+        }
+    }
+
+    private synchronized long addConversation(JSONArray messages, String transcript) throws JSONException {
+        expireConversation(clock.millis());
+        messages.put(message("system", INSTRUCTION));
+        for (Exchange exchange : conversation) {
+            messages.put(message("user", exchange.transcript));
+            messages.put(message("assistant", exchange.answer));
+        }
+        messages.put(message("user", transcript));
+        return conversationRevision;
+    }
+
+    /** Called by the live runtime after the complete reply reached the native output. */
+    synchronized void rememberCompletedConversation(Result result) {
+        if (result.conversationRevision != conversationRevision) return;
+        result.conversationRevision = -1;
+        long now = clock.millis();
+        expireConversation(now);
+        if (conversation.size() == CONVERSATION_TURNS) conversation.removeFirst();
+        conversation.addLast(new Exchange(result.transcript, result.answer, now));
+    }
+
+    synchronized void clearConversation() {
+        conversation.clear();
+        conversationRevision++;
+    }
+
+    private void expireConversation(long now) {
+        while (!conversation.isEmpty() && now - conversation.getFirst().completedAt >= CONVERSATION_TTL_MS)
+            conversation.removeFirst();
+    }
+
+    private static JSONObject message(String role, String content) throws JSONException {
+        return new JSONObject().put("role", role).put("content", content);
+    }
+
+    private static final class Exchange {
+        final String transcript, answer;
+        final long completedAt;
+
+        Exchange(String transcript, String answer, long completedAt) {
+            this.transcript = transcript;
+            this.answer = answer;
+            this.completedAt = completedAt;
         }
     }
 
@@ -447,8 +514,10 @@ public final class VoicePipeline {
         public final byte[] audio;
         /** In-memory reply data only; callers must not write these into logs or reports. */
         public final String transcript, answer;
-        private Result(JSONObject summary, byte[] audio, String transcript, String answer) {
+        private long conversationRevision;
+        private Result(JSONObject summary, byte[] audio, String transcript, String answer, long conversationRevision) {
             this.summary = summary; this.audio = audio; this.transcript = transcript; this.answer = answer;
+            this.conversationRevision = conversationRevision;
         }
     }
     public static final class PipelineException extends IOException {

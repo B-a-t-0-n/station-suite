@@ -1,5 +1,6 @@
 package local.station.voicebridge;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -33,6 +34,9 @@ public final class TvVideoSearchHostTest {
         TvVideoSearch.Hit validated = TvVideoSearch.verifyOkko(bytes(card), film.get(0), TITLE, 2026);
         check(validated != null && validated.target.equals("okko://movie?uid=" + UID + "&type=movie"), "exact Android link");
         check("film".equals(validated.mediaType) && validated.year == 2026, "official movie metadata");
+        check(validated.launchTarget(true).equals(validated.target + "&extraElementToPlay=" + UID + "&extraPlayVideo=true"),
+                "autoplay asks for the exact verified movie");
+        check(validated.launchTarget(false).equals(validated.target), "find opens a movie's card");
         check(TvVideoSearch.verifyOkko(bytes(card), film.get(0), TITLE, 2024) == null, "official release year is strict");
         check(TvVideoSearch.verifyOkko(bytes(card.replace(TITLE + " (2026)", TITLE + ": Новый сезон (2026)")),
                 film.get(0), TITLE, 2026) == null, "official title must match completely");
@@ -44,6 +48,8 @@ public final class TvVideoSearchHostTest {
                 "untyped same-name series remains distinguishable from the movie");
         check(TvVideoSearch.verifyOkko(bytes(serialCard), series, TITLE, 2026) == null,
                 "the final season's year is not the release year of the series");
+        check(confirmedSeries.launchTarget(true).equals(confirmedSeries.target), "series opens its card");
+        officialAnimationAndPremiere();
         TvVideoSearch.Hit numericTitle = TvVideoSearch.candidate(OKKO, "2012", "film", 2009,
                 "2012 смотреть онлайн", MOVIE);
         check(numericTitle != null, "numeric title must not be mistaken for an indexed year");
@@ -93,4 +99,47 @@ public final class TvVideoSearchHostTest {
     }
     private static byte[] bytes(String text) { return text.getBytes(StandardCharsets.UTF_8); }
     private static void check(boolean condition, String reason) { if (!condition) throw new AssertionError(reason); }
+
+    private static void officialAnimationAndPremiere() throws Exception {
+        String page = "https://okko.tv/serial/smeshariki";
+        String title = "Смешарики";
+        TvVideoSearch.Hit hit = TvVideoSearch.candidate(OKKO, title, "animation", 0, title, page);
+        String structuredGenre = "<script type=\"application/ld+json\">{\"@type\":\"VideoObject\","
+                + "\"name\":\"Смешарики\",\"genre\":\"Мультфильмы, Семейное\"}</script>";
+        String serial = "<html><head>" + structuredGenre
+                + meta("og:title", "Смешарики (2004-2011)") + meta("og:type", "video.tv_show")
+                + meta("og:url", page) + meta("al:android:url", "okko://movie?uid=" + UID + "&amp;type=serial")
+                + "</head></html>";
+        TvVideoSearch.Hit animated = TvVideoSearch.verifyOkko(bytes(serial), hit, title, 2004, true);
+        check(animated != null && "series".equals(animated.mediaType), "animated TV series matches animation query");
+        String largeHead = serial.replace("</head>", new String(new char[1_050_000]).replace('\0', ' ') + "</head>");
+        byte[] payload = TvVideoSearch.readResponse(new ByteArrayInputStream(bytes(largeHead)),
+                TvVideoSearch.MAX_OKKO_CARD, true, false, () -> false, Long.MAX_VALUE);
+        check(payload.length > 1_048_576 && new String(payload, StandardCharsets.UTF_8).endsWith("</head>"),
+                "a long official head is read through its closing tag");
+        check(TvVideoSearch.verifyOkko(payload, hit, title, 2004, true) != null,
+                "large animated series card still provides a verified link");
+        check(TvVideoSearch.verifyOkko(bytes(serial.replace(structuredGenre, "")), hit, title, 2004, true) == null,
+                "matching title is insufficient without animation evidence");
+        check(TvVideoSearch.verifyOkko(bytes(serial.replace("Смешарики\",\"genre", "Пин-код\",\"genre")),
+                hit, title, 0, true) == null, "another title's genre is ignored");
+        check(TvVideoSearch.candidate(OKKO, title, "film", 0, title, page) == null,
+                "an explicit feature film remains a film-only search");
+        check(TvVideoSearch.candidate(RUTUBE, title, "animation", 0, "Смешарики (мультсериал, 2004)", VIDEO) != null,
+                "video host must describe the candidate as animation");
+        check(TvVideoSearch.candidate(RUTUBE, title, "animation", 0, "Смешарики (фильм, 2004)", VIDEO) == null,
+                "regular videos do not stand in for animation");
+
+        String movie = "https://okko.tv/movie/cheburashka-93168361";
+        TvVideoSearch.Hit firstFilm = TvVideoSearch.candidate(OKKO, "Чебурашка", "film", 0, "Чебурашка (2022)", movie);
+        String feature = "<html><head>" + meta("og:title", "Чебурашка (2022)") + meta("og:url", movie)
+                + meta("al:android:url", "okko://movie?uid=" + UID + "&amp;type=movie") + "</head>"
+                + "<body><div><div class=\"info-label\">Премьера в России</div>1 января 2023 г.</div></body></html>";
+        TvVideoSearch.Hit premiere = TvVideoSearch.verifyOkko(bytes(feature), firstFilm, "Чебурашка", 2023);
+        check(premiere != null && premiere.year == 2022, "official next-year local premiere is a release-year alias");
+        check(TvVideoSearch.verifyOkko(bytes(feature.replace("Премьера в России", "Премьера в мире")),
+                firstFilm, "Чебурашка", 2023) == null, "local premiere needs an explicit official label");
+        check(TvVideoSearch.verifyOkko(bytes(feature.replace("2023 г.", "2026 г.")),
+                firstFilm, "Чебурашка", 2026) == null, "a later year cannot substitute a different release");
+    }
 }
