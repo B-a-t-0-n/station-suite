@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-17",
+  "deviceBuild": "20221212",
+  "routerModel": "RV6699",
+  "stage": "bounded API and fresh music canary completed behind IPv4 default deny",
+  "authorityCount": 38,
+  "exactAddressPortRuleCount": 47,
+  "sourcePrefixLength": 32,
+  "destinationPrefixLength": 32,
+  "destinationPorts": [443, 9443],
+  "exactPermitAndDenyReadbackVerified": true,
+  "globalApplySent": true,
+  "minimumObservedDnsTtlSeconds": 38,
+  "onDeviceWifiDeadlineSeconds": 85,
+  "wifiJoinedWithPreparedAddress": true,
+  "voicebridgeDirectWifiBound": true,
+  "negativeExternalHttps": {
+    "boundToWifi": true,
+    "sourcePortVerified": true,
+    "connected": false,
+    "failureStage": "connect"
+  },
+  "gigaChatProbe": {
+    "ok": true,
+    "transport": "direct",
+    "modelAvailable": true,
+    "elapsedMs": 362,
+    "directWifiWindowVerified": true
+  },
+  "pipelineProbe": {
+    "ok": true,
+    "transport": "direct",
+    "syntheticFixtureOnly": true,
+    "microphoneCaptured": false,
+    "audioPlayed": false,
+    "cloudAudioUploaded": true,
+    "localAsr": false,
+    "audioBytes": 18739,
+    "audioFormat": "ogg",
+    "asrMs": 1001,
+    "llmMs": 174,
+    "ttsMs": 1470,
+    "elapsedMs": 2646,
+    "uploadedFileDeleted": true,
+    "directWifiWindowVerified": true
+  },
+  "musicProbe": {
+    "catalogHttp": 200,
+    "trackCount": 1,
+    "audioCachedBefore": false,
+    "audioHttp": 206,
+    "audioPrefixBytes": 4096,
+    "freshAudioDownloadConfirmed": true,
+    "audioPlayed": false,
+    "directWifiWindowVerified": true
+  },
+  "recovery": {
+    "wifiOffVerified": true,
+    "closedRulesRestored": true,
+    "groupsPreserved": true,
+    "advancedFieldsUnchanged": true,
+    "pendingApplyMessageCleared": true,
+    "profileDisabled": true,
+    "originalPrivateConfigsRestored": true,
+    "wiredRuntimeReadyAfterRecovery": true
+  },
+  "householdIpv6Changed": false,
+  "nativeOtaCoverageProven": false,
+  "coldBootTested": false,
+  "routerRebootTested": false,
+  "limits": [
+    "No microphone capture or audible playback in these probes",
+    "Synthetic pipeline uses cloud ASR; normal runtime configuration was restored unchanged",
+    "Ethernet remained connected for control and recovery",
+    "Permits were removed; permanent no-PC operation was not enabled",
+    "Exact IPv4 permits do not inspect TLS hostnames or paths",
+    "DNS refresh, shared-IP destinations, native updater traffic and future IPv6 remain separate checks"
+  ]
+}

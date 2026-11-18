@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-17",
+  "deviceBuild": "20221212",
+  "routerModel": "RV6699",
+  "stage": "bounded core API canary completed behind IPv4 default deny",
+  "authorityCount": 3,
+  "exactAddressPortRuleCount": 3,
+  "sourcePrefixLength": 32,
+  "destinationPrefixLength": 32,
+  "destinationPorts": [443, 9443],
+  "exactPermitAndDenyReadbackVerified": true,
+  "globalApplySent": true,
+  "onDeviceWifiDeadlineSeconds": 85,
+  "wifiJoinedWithPreparedAddress": true,
+  "voicebridgeDirectWifiBound": true,
+  "negativeExternalHttps": {
+    "boundToWifi": true,
+    "sourcePortVerified": true,
+    "connected": false,
+    "failureStage": "connect"
+  },
+  "pipelineProbe": {
+    "ok": true,
+    "transport": "direct",
+    "syntheticFixtureOnly": true,
+    "microphoneCaptured": false,
+    "audioPlayed": false,
+    "cloudAudioUploaded": true,
+    "localAsr": false,
+    "audioBytes": 40185,
+    "audioFormat": "ogg",
+    "asrMs": 1368,
+    "llmMs": 206,
+    "ttsMs": 3220,
+    "elapsedMs": 4795,
+    "uploadedFileDeleted": true,
+    "directWifiWindowVerified": true
+  },
+  "recovery": {
+    "wifiOffVerified": true,
+    "closedRulesRestored": true,
+    "groupsPreserved": true,
+    "advancedFieldsUnchanged": true,
+    "pendingApplyMessageCleared": true,
+    "profileDisabled": true,
+    "originalPrivateConfigsRestored": true,
+    "wiredRuntimeReadyAfterRecovery": true
+  },
+  "currentWanModeReadOnly": "IPv4",
+  "householdIpv6Changed": false,
+  "nativeOtaCoverageProven": false,
+  "coldBootTested": false,
+  "routerRebootTested": false,
+  "limits": [
+    "This synthetic probe uses cloud ASR; it does not change the normal local-ASR runtime",
+    "No microphone recording or sound playback in this test",
+    "Ethernet remained connected for control and recovery",
+    "Permits were temporary; permanent no-PC operation was not enabled",
+    "Exact IP permits do not inspect TLS hostnames or paths",
+    "DNS answers can change; shared-IP and future IPv6 bypasses are not excluded"
+  ]
+}

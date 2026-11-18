@@ -13,12 +13,21 @@ import java.nio.charset.StandardCharsets;
 
 /** Shell-only control. Credentials come from a private one-use file, never intent extras/logs. */
 public final class ControlActivity extends Activity {
+    private static final int CONSENT_ONLY = 52;
+    private static final String CONSENT_PENDING = "consent_pending";
+    private boolean consentPending;
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         String code="invalid_action";
         try {
             String action=getIntent().getStringExtra("command");
-            if("start".equals(action)) {
+            if("prepare".equals(action)) {
+                if(state!=null&&state.getBoolean(CONSENT_PENDING,false)){consentPending=true;return;}
+                Files.deleteIfExists(new File(getFilesDir(),"control-status.json").toPath());
+                Intent consent=VpnService.prepare(this);
+                if(consent!=null){consentPending=true;startActivityForResult(consent,CONSENT_ONLY);return;}
+                code="consent_ready";
+            } else if("start".equals(action)) {
                 if(VpnService.prepare(this)!=null) code="consent_required";
                 else {
                     long duration=getIntent().getLongExtra("durationMs",600000L);
@@ -44,6 +53,18 @@ public final class ControlActivity extends Activity {
             }
         }catch(Exception failure){code="control_failed";}
         try{Files.write(new File(getFilesDir(),"control-status.json").toPath(),new JSONObject().put("code",code).toString().getBytes(StandardCharsets.UTF_8));}catch(Exception ignored){}
+        finish();
+    }
+    @Override protected void onSaveInstanceState(Bundle state) {
+        state.putBoolean(CONSENT_PENDING,consentPending);
+        super.onSaveInstanceState(state);
+    }
+    @Override protected void onActivityResult(int request,int result,Intent data) {
+        super.onActivityResult(request,result,data);
+        if(request!=CONSENT_ONLY||!consentPending)return;
+        consentPending=false;
+        try{Files.write(new File(getFilesDir(),"control-status.json").toPath(),new JSONObject()
+                .put("code",result==RESULT_OK?"consent_ready":"consent_declined").toString().getBytes(StandardCharsets.UTF_8));}catch(Exception ignored){}
         finish();
     }
     private String join() throws Exception {
