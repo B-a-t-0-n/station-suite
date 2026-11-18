@@ -50,6 +50,8 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         if (cancelled.getAsBoolean()) return null;
         TvVoiceCommand.Playback control = TvVoiceCommand.playback(transcript);
         if (control != null) return controlPlayback(control, cancelled);
+        TvChannelCommand channel = TvChannelCommand.parse(transcript);
+        if (channel != null) return playChannel(channel, cancelled);
         long now = SystemClock.elapsedRealtime();
         if (recentSeries != null && now >= recentSeries.expiresAt) recentSeries = null;
         TvVoiceCommand command = yearFollowUp.resolve(transcript, now);
@@ -184,6 +186,24 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
                         "provider_opened_no_match", true);
         }
         return result("Не нашла «" + title + "» среди подключённых видеосервисов.", "no_match", false);
+    }
+
+    private VoicePipeline.TvResult playChannel(TvChannelCommand command, BooleanSupplier cancelled) {
+        if (command.kind == TvChannelCommand.Kind.UNSUPPORTED_SOURCE)
+            return result("Для прямого эфира могу открыть телеканал в Окко.", "channel_source_unsupported", false);
+        if (command.kind == TvChannelCommand.Kind.ASK_NAME)
+            return result("Назови телеканал. Например: «Включи Первый канал».", "channel_name_missing", false);
+        OkkoChannels.Channel channel = OkkoChannels.find(command.name);
+        if (channel == null)
+            return result("В моём списке Окко нет телеканала «" + command.name + "».",
+                    "channel_not_found", false);
+        Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse(channel.uri()))
+                .setPackage(TvVoiceCommand.Provider.OKKO.packageName).addCategory(Intent.CATEGORY_BROWSABLE);
+        if (app.getPackageManager().resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY) == null
+                || !launch(view, cancelled))
+            return result("Не удалось открыть телеканал в Окко.", "channel_launch_unavailable", false);
+        playback.clearOkkoVideo();
+        return result("Включаю «" + channel.title + "» в Окко.", "channel_playback_requested", true);
     }
 
     private static OkkoEpisodeCatalog loadEpisodes(TvVideoSearch.Hit hit, BooleanSupplier cancelled) {

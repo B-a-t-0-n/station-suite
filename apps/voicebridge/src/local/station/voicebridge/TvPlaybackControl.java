@@ -21,6 +21,10 @@ final class TvPlaybackControl {
                 : new Video(title, episodeTitle, durationMs, previousPlayer, SystemClock.elapsedRealtime());
     }
 
+    void clearOkkoVideo() {
+        video = null;
+    }
+
     boolean hasVideo() {
         TvPlaybackAccessibilityService service = TvPlaybackAccessibilityService.connected();
         return service != null && service.hasVideo();

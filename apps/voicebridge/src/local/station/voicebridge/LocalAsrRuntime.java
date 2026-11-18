@@ -267,7 +267,8 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
                 turn.writer.finishInput(turn.metadata, transcript);
                 if (closed.get() || turn.stale() || current.get() != turn) { cancelled++; return; }
             }
-            if (TvVoiceCommand.parse(transcript) != null || TvVoiceCommand.playback(transcript) != null) {
+            if (TvChannelCommand.parse(transcript) != null || TvVoiceCommand.parse(transcript) != null
+                    || TvVoiceCommand.playback(transcript) != null) {
                 answers.transcriptReady(transcript, turn.metadata, turn.writer);
                 transferred = true; completed++; lastCode = "";
                 return;

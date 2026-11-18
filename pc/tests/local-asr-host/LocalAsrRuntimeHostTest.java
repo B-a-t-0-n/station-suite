@@ -225,6 +225,28 @@ public final class LocalAsrRuntimeHostTest {
             writer.close();
         }finally{fixture.close();LocalSpeechRecognizer.finalText="PRIVATE_TRANSCRIPT";FakeAgent.reset(FakeAgent.Mode.NONE);}
     }
+    private static void televisionChannelPrecedesMusicSearch()throws Exception {
+        LocalSpeechRecognizer.finalText = "включи нтв";
+        FakeAgent.reset(FakeAgent.Mode.MUSIC_MISSING);
+        Fixture fixture = new Fixture();
+        try {
+            LoopbackVoiceServer.ReplyWriter writer = new LoopbackVoiceServer.ReplyWriter();
+            check(fixture.runtime.offerStart(metadata(0), writer), "television channel turn admitted");
+            check(fixture.runtime.offerChunk(writer, new byte[8]), "television channel audio admitted");
+            check(fixture.runtime.offerEnd(metadata(8), writer), "television channel input ended");
+            await(() -> fixture.runtime.snapshot().optLong("completed") == 1, "television channel routed");
+            check(fixture.answers.transcripts.get() == 1 && fixture.answers.lastWriter == writer,
+                    "television receives the finalized transcription");
+            check(FakeAgent.opens.get() == 0 && fixture.answers.feedbacks.get() == 0,
+                    "television tuning never searches for a song");
+            writer.close();
+        } finally {
+            fixture.close();
+            LocalSpeechRecognizer.finalText = "PRIVATE_TRANSCRIPT";
+            FakeAgent.reset(FakeAgent.Mode.NONE);
+        }
+    }
+
     private static void timerFinalizationAckAndOwnership()throws Exception {
         LocalSpeechRecognizer.finalText="Алиса поставь таймер на одну минуту";
         FakeAgent.reset(FakeAgent.Mode.TIMER_BLOCKED);
@@ -328,6 +350,7 @@ public final class LocalAsrRuntimeHostTest {
         passiveEndpointObservation();
         explicitServerEndpoint();
         musicFailureFeedback();
+        televisionChannelPrecedesMusicSearch();
         timerFinalizationAckAndOwnership();
         failedTimerCannotClaimSuccess();
         staleTimerDoesNotActOrConfirm();
@@ -341,7 +364,7 @@ final class RuntimeVoiceHandler {
     volatile VoicePipeline.LocalFeedback lastFeedback;
     void recordLocal(String text, String code, boolean executed, long elapsedMs) { }
     void transcriptReady(String text,LegacyVoiceSession.Metadata metadata,LoopbackVoiceServer.ReplyWriter writer){
-        if(!"PRIVATE_TRANSCRIPT".equals(text))throw new AssertionError("wrong final text");
+        if(!LocalSpeechRecognizer.finalText.equals(text))throw new AssertionError("wrong final text");
         lastWriter=writer;transcripts.incrementAndGet();
     }
     void commandFailed(String text,VoicePipeline.LocalFeedback feedback,LegacyVoiceSession.Metadata metadata,LoopbackVoiceServer.ReplyWriter writer){

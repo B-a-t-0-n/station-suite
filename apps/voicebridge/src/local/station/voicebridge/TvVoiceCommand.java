@@ -317,10 +317,7 @@ final class TvVoiceCommand {
                 source = matched;
                 sourceStart = start;
                 sourceEnd = end;
-            } else if (UNKNOWN_SOURCE.matcher(unquoted).region(end, unquoted.length()).lookingAt()
-                    || SOURCE_WORD.matcher(unquoted.substring(start, end)).find()
-                    || unquoted.substring(start, end).trim().regionMatches(true, 0, "через ", 0, 6)
-                    || start == 0 && find) {
+            } else if (explicitUnknownSource(unquoted, start, end) || start == 0 && find) {
                 return command(Kind.UNSUPPORTED_SOURCE, null);
             }
         }
@@ -496,14 +493,14 @@ final class TvVoiceCommand {
         }
     }
 
-    private static String commandText(String transcript) {
+    static String commandText(String transcript) {
         String text = normalizeUtterance(transcript);
         if (text == null) return null;
         return WAKE.matcher(text.trim().replaceFirst("[.!]+$", "").trim()).replaceFirst("")
                 .replaceFirst("(?iu),? +пожалуйста$", "").toLowerCase(Locale.ROOT).replace('ё', 'е');
     }
 
-    private static String cleanTitle(String title) {
+    static String cleanTitle(String title) {
         return title.trim().replaceFirst("^[ ,:]+", "").replaceFirst("[ ,:]+$", "").replaceAll(" {2,}", " ");
     }
 
@@ -640,8 +637,44 @@ final class TvVoiceCommand {
         return false;
     }
 
+    static boolean hasOtherVideoSource(String text) {
+        Matcher prefixes = SOURCE_PREFIX.matcher(text);
+        while (prefixes.find()) {
+            int start = prefixes.start(), end = prefixes.end();
+            if (otherNamedVideoSourceEnd(text, end) >= 0 || explicitUnknownSource(text, start, end)) return true;
+        }
+        return false;
+    }
+
+    static String afterLeadingOtherVideoSource(String text) {
+        Matcher prefix = SOURCE_PREFIX.matcher(text);
+        int end = prefix.lookingAt() ? otherNamedVideoSourceEnd(text, prefix.end()) : -1;
+        return end < 0 ? text : cleanTitle(text.substring(end));
+    }
+
+    private static int otherNamedVideoSourceEnd(String text, int from) {
+        for (Provider provider : Provider.values()) {
+            if (provider == Provider.OKKO) continue;
+            Matcher source = provider.sourceName.matcher(text).region(from, text.length());
+            if (source.lookingAt()) return source.end();
+        }
+        Matcher unknown = UNKNOWN_SOURCE.matcher(text).region(from, text.length());
+        return unknown.lookingAt() ? unknown.end() : -1;
+    }
+
+    private static boolean explicitUnknownSource(String text, int start, int end) {
+        String prefix = text.substring(start, end);
+        return UNKNOWN_SOURCE.matcher(text).region(end, text.length()).lookingAt()
+                || SOURCE_WORD.matcher(prefix).find()
+                || prefix.trim().regionMatches(true, 0, "через ", 0, 6);
+    }
+
+    static boolean hasSeveralActions(String text) {
+        return MULTIPLE_ACTIONS.matcher(text).find() || EXTRA_ACTION.matcher(text).find();
+    }
+
     /** Hide quoted titles while finding clauses and source names, preserving string offsets. */
-    private static String maskQuotes(String text) {
+    static String maskQuotes(String text) {
         StringBuilder masked = new StringBuilder(text);
         for (int i = 0; i < text.length(); i++) {
             char first = text.charAt(i);
@@ -653,7 +686,7 @@ final class TvVoiceCommand {
         return masked.toString();
     }
 
-    private static String stripTitleQuotes(String text) {
+    static String stripTitleQuotes(String text) {
         if (text.length() >= 2 && (text.startsWith("\"") && text.endsWith("\"")
                 || text.startsWith("«") && text.endsWith("»"))) return text.substring(1, text.length() - 1).trim();
         return text;
