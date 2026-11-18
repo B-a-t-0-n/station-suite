@@ -21,7 +21,9 @@ public final class ControlActivity extends Activity {
         String code="invalid_action";
         try {
             String action=getIntent().getStringExtra("command");
-            if("prepare".equals(action)) {
+            if("socket_owner_probe".equals(action)) {
+                SocketOwnerProbe.start(this,getIntent().getStringExtra("nonce"));return;
+            } else if("prepare".equals(action)) {
                 if(state!=null&&state.getBoolean(CONSENT_PENDING,false)){consentPending=true;return;}
                 Files.deleteIfExists(new File(getFilesDir(),"control-status.json").toPath());
                 Intent consent=VpnService.prepare(this);

@@ -125,6 +125,77 @@ Host-тесты проверяют реальные DNS/TCP пакеты, нап
 остаются локальными: [вопросы публикации native binary](../native-tun2socks/NOTICE-AUDIT.md)
 этот эксперимент не снимает.
 
+### Loopback-проверка владельца TCP-сокета
+
+`ControlActivity` поддерживает отдельную команду `socket_owner_probe` в UID
+самого APK. Она требует уже выключенных Wi-Fi и VPN, не запускает VPN,
+не меняет профиль или автозапуск. Единственное соединение:
+`127.0.0.1:24110 → 127.0.0.1:24111`, без отправки payload. Клиент
+[StationSocketOwnerClient.java](tests/device/StationSocketOwnerClient.java)
+проверяет свой UID, повторяет connect до 4 секунд, держит соединение до EOF
+не более 3 секунд и принудительно завершает процесс через 7 секунд.
+
+Сборка клиента из корня репозитория, PowerShell. `JAVAC_HOME` указывает на
+JDK 8, `JAVA_HOME` — на JDK для D8, `ANDROID_PARTS` — на локальные
+`platform/android.jar` и `build-tools/d8.jar`. Команды создают только
+выходные файлы в фиксированном относительном каталоге; APK не собирается
+и ничего на устройство автоматически не устанавливается.
+
+```powershell
+$ownerBuild = 'experimental/wifi-standalone/build/socket-owner-client'
+New-Item -ItemType Directory -Force -Path "$ownerBuild/classes", "$ownerBuild/dex" | Out-Null
+& "$env:JAVAC_HOME/bin/javac" -source 8 -target 8 -encoding UTF-8 -cp "$env:ANDROID_PARTS/platform/android.jar" -d "$ownerBuild/classes" experimental/wifi-standalone/tests/device/StationSocketOwnerClient.java
+if ($LASTEXITCODE -ne 0) { throw 'Client javac failed' }
+& "$env:JAVAC_HOME/bin/jar" cf "$ownerBuild/client-classes.jar" -C "$ownerBuild/classes" .
+if ($LASTEXITCODE -ne 0) { throw 'Client jar failed' }
+& "$env:JAVA_HOME/bin/java" -cp "$env:ANDROID_PARTS/build-tools/d8.jar" com.android.tools.r8.D8 --release --min-api 28 --lib "$env:ANDROID_PARTS/platform/android.jar" --output "$ownerBuild/dex" "$ownerBuild/client-classes.jar"
+if ($LASTEXITCODE -ne 0) { throw 'Client D8 failed' }
+```
+
+Следующий ручной запуск предназначен для нашей подготовленной Станции:
+`ru.yandex.quasar.app` имеет UID **10005** и разрешает `run-as`.
+Это не переносимое значение UID для других устройств. Сначала проверить,
+что Wi-Fi и VPN уже выключены, затем явно выбрать ADB serial через
+`STATION_ADB_SERIAL`. Сервер пишет результат атомарно; каждый запуск требует
+новый nonce из 32 строчных hex-символов. Читать нужно сначала `listening`,
+а после клиента — свежий окончательный результат с тем же nonce.
+
+```powershell
+if (-not $env:STATION_ADB_SERIAL) { throw 'Select STATION_ADB_SERIAL first' }
+$ownerNonce = [guid]::NewGuid().ToString('N')
+$ownerRemote = "/data/local/tmp/station-owner-client-$ownerNonce.dex"
+adb -s "$env:STATION_ADB_SERIAL" push "$ownerBuild/dex/classes.dex" "$ownerRemote"
+if ($LASTEXITCODE -ne 0) { throw 'Client push failed' }
+adb -s "$env:STATION_ADB_SERIAL" shell am start -W -n local.station.wifi/.ControlActivity --es command socket_owner_probe --es nonce "$ownerNonce"
+$ownerReady = adb -s "$env:STATION_ADB_SERIAL" shell run-as local.station.wifi cat files/socket-owner-probe.json | ConvertFrom-Json
+if ($ownerReady.nonce -ne $ownerNonce -or $ownerReady.status -ne 'listening') { throw 'Fresh listener not ready; do not run client' }
+adb -s "$env:STATION_ADB_SERIAL" shell run-as ru.yandex.quasar.app /system/bin/toybox env "CLASSPATH=$ownerRemote" /system/bin/app_process /system/bin local.station.socketprobe.StationSocketOwnerClient 10005
+if ($LASTEXITCODE -ne 0) { throw 'Client failed' }
+$ownerFinalDeadline = [DateTime]::UtcNow.AddSeconds(1)
+do {
+    $ownerResult = adb -s "$env:STATION_ADB_SERIAL" shell run-as local.station.wifi cat files/socket-owner-probe.json | ConvertFrom-Json
+    if ($ownerResult.nonce -ne $ownerNonce) { throw 'Result nonce mismatch' }
+    if ($ownerResult.status -ne 'listening') { break }
+    Start-Sleep -Milliseconds 30
+} while ([DateTime]::UtcNow -lt $ownerFinalDeadline)
+if ($ownerResult.nonce -ne $ownerNonce -or $ownerResult.status -ne 'observed') { throw 'Fresh final result required' }
+$ownerResult
+adb -s "$env:STATION_ADB_SERIAL" shell rm -f "$ownerRemote"
+```
+
+При ошибке nonce или `listening` результат не засчитывать; повторять только
+новым запуском после завершения предыдущей пробы. APK сам ограничивает
+пробу 3,8 секунды. Успех требует `lookupComplete`, `clientTupleFound`,
+`clientUidMatchesExpected`, `serverTupleFound`, `serverUidMatchesOwn` и
+отсутствия неоднозначности обоих UID. 18 ноября actual APK UID 10040
+увидел Quasar UID 10005 и собственный принятый сокет. Проверенные SHA-256:
+исходник клиента `1d971c636bbe9a9f64213209c97d9e68f03b71fd08d1dd8ad19ee559f4419d05`,
+его DEX `78e7cbdfadb7295dec9c9e220e38cc003d86985b3d4f2acbb5a8797342073c71`,
+APK `eccb5f693c7b318382b17f572e879e370391cedfb90320267046d725c765550a`.
+Другой toolchain может дать иной DEX. Проверка доказывает чтение владельца
+установленного loopback TCP-соединения; определение UID на стадии SYN,
+безопасное разрешение TV-трафика и блокировку OTA она не доказывает.
+
 ## Проверка на устройстве
 
 18 ноября 2026 года после восстановления приложений выполнена отдельная

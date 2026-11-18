@@ -86,6 +86,10 @@ STUBS = {
         public boolean reconnect(){throw new AssertionError();}
     }''',
     'local/station/wifi/WifiRelayService.java': '''package local.station.wifi; public class WifiRelayService {}''',
+    'local/station/wifi/SocketOwnerProbe.java': '''package local.station.wifi; final class SocketOwnerProbe {
+        static int starts; static String nonce;
+        static void start(android.app.Activity activity,String value){starts++;nonce=value;activity.finish();}
+    }''',
 }
 
 HOST = '''package local.station.wifi;
@@ -139,6 +143,13 @@ public final class ControlActivityHostTest {
         ControlActivity ready=activity(root,"ready");ready.onCreate(null);
         check(ready.dialogStarts==0&&ready.finishes==1,"existing consent finishes without dialog");
         check("consent_ready".equals(status(ready)),"existing consent recorded");isolated(ready);
+        ControlActivity diagnostic=activity(root,"diagnostic");
+        diagnostic.intent=new Intent().putExtra("command","socket_owner_probe").putExtra("nonce","0123456789abcdef0123456789abcdef");
+        int prepareBefore=VpnService.preparations;diagnostic.onCreate(null);
+        check(SocketOwnerProbe.starts==1&&"0123456789abcdef0123456789abcdef".equals(SocketOwnerProbe.nonce),"diagnostic branch passes nonce exactly once");
+        check(VpnService.preparations==prepareBefore,"diagnostic does not prepare VPN");
+        check(!diagnostic.files.toPath().resolve("control-status.json").toFile().exists(),"diagnostic uses separate result file");
+        check(diagnostic.finishes==1,"diagnostic controls its own completion");isolated(diagnostic);
         System.out.println(assertions+" assertions passed; consent-only Activity lifecycle; no device/network");
     }
 }'''
