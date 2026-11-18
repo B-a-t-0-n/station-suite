@@ -176,6 +176,42 @@ public final class TvVoiceCommandHostTest {
             playback(text, null, 0);
     }
 
+    private static void contextualPlayback() {
+        String title = TvVoiceCommand.contextualTitle("Алиса, включи мне Время первых.");
+        require("Время первых".equals(title), "Время первых", "wrong bare film title");
+        assertCommand(TvVoiceCommand.contextualPlay(title, null), "Время первых",
+                TvVoiceCommand.Kind.PLAY, null, title, "video", 0);
+        assertCommand(TvVoiceCommand.contextualPlay(title, "film"), "current mode is film",
+                TvVoiceCommand.Kind.PLAY, null, title, "film", 0);
+        assertCommand(TvVoiceCommand.contextualPlay("Друзья", "series"), "current mode is series",
+                TvVoiceCommand.Kind.PLAY, null, "Друзья", "series", 0);
+        require("Катюша".equals(TvVoiceCommand.contextualTitle("включи Катюша")), "Катюша", "wrong bare song title");
+        require("Катюшу".equals(TvVoiceCommand.contextualTitle("Алиса, включи, пожалуйста, Катюшу")),
+                "Катюшу", "polite phrasing not stripped");
+        require("1917".equals(TvVoiceCommand.contextualTitle("запусти 1917")), "1917", "numeric title lost");
+        require("Брат 2".equals(TvVoiceCommand.contextualTitle("поставь мне «Брат 2», пожалуйста")),
+                "Брат 2", "quoted title not stripped");
+        require("В бой идут одни старики".equals(TvVoiceCommand.contextualTitle("включи В бой идут одни старики")),
+                "В бой идут одни старики", "ordinary preposition mistaken for a provider");
+        require("Что? Где? Когда?".equals(TvVoiceCommand.contextualTitle("включи «Что? Где? Когда?»")),
+                "Что? Где? Когда?", "punctuation inside quoted title treated as a command");
+        for (String text : new String[] {null, "", "включи", "включи мне", "включи мне пожалуйста",
+                "включи фильм Время первых", "включи сериал Друзья", "поставь вторую серию",
+                "включи песню Династия", "включи музыку", "включи альбом Кино", "включи радио",
+                "включи на Окко Время первых", "включи Время первых на Окко", "включи Кинопоиск",
+                "открой Окко", "включи Первый канал", "включи телеканал НТВ", "включи канал Север",
+                "включи Чебурашку", "включи Смешарики", "найди Время первых", "не включи Дюну",
+                "включи мне не Дюну", "включи Дюну?", "включи Дюну и поставь таймер",
+                "включи Дюну выключи звук", "включи поставь таймер", "включи звук", "поставь на паузу",
+                "включи свет в гостиной", "включи таймер на три минуты", "включи следующий трек",
+                "включи будильник", "включи телевизор", "включи приложение", "включи https://okko.tv",
+                "включи okko.tv", "включи Дюну\nсейчас", "включи ...", "продолжи фильм"}) {
+            require(TvVoiceCommand.contextualTitle(text) == null, text, "explicit or malformed request admits context");
+        }
+        require(TvVoiceCommand.contextualPlay("javascript:open", "film") == null,
+                "unsafe target", "ineligible title built a television request");
+    }
+
     public static void main(String[] args) {
         route("Алиса, включи мне фильм простаквашено.", TvVoiceCommand.Kind.PLAY,
                 null, "простаквашено", "film", 0);
@@ -258,6 +294,7 @@ public final class TvVoiceCommandHostTest {
         yearFollowUp();
         series();
         playback();
+        contextualPlayback();
         System.out.println(checked + " TV admission assertions passed; no network or app launches");
     }
 }

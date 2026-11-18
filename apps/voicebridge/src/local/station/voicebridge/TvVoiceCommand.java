@@ -41,6 +41,18 @@ final class TvVoiceCommand {
             + "поищи|открой|закрой|покажи|переключи|установи|прибавь|убавь)(?=$|[ ,:])");
     private static final Pattern NEGATIVE = words("^не(?: |$)");
     private static final Pattern MUSIC = words("^(?:песн[яюи]|трек|альбом|музык[ау]|клип|плейлист|радио)(?: |$)");
+    private static final Pattern CONTEXTUAL_PLAY = words("^(?:включи|поставь|запусти)"
+            + "(?: +мне)?(?:,? +пожалуйста,?)? +(.+)$");
+    private static final Pattern NON_TITLE = words("^(?:(?:теле ?канал|(?:тв|tv)[ -]?канал|канал|прямой эфир"
+            + "|сезон|серию|эпизод|фильм|кино|мультфильм|мультик|мультсериал|сериал|видео|ролик"
+            + "|таймер|будильник|громкость|настройки|приложение|режим|свет|лампу|лампочку"
+            + "|розетку|кондиционер|обогреватель|светильник|чайник|блютуз|bluetooth|wifi|wi fi|вай фай"
+            + "|интернет|vpn|впн|колонку|станцию|камеру|микрофон|запись|игру|питание"
+            + "|следующ(?:ий|ую|ее)|предыдущ(?:ий|ую|ее))(?=$|[ ,:])"
+            + "|звук$|(?:тв|телевизор|телек|экран|мне|пожалуйста)$"
+            + "|на паузу(?=$|[ ,:])|с начала(?=$|[ ,:]))");
+    private static final Pattern NOT_A_PLAY_REQUEST = words("(?:^|[ ,:])(?:не|нельзя|можно|можешь|"
+            + "включить|поставить|запустить|что|как|почему)(?=$|[ ,:])");
     private static final String YEAR_DIGITS = "(?:18|19|20)[0-9]{2}";
     private static final Pattern EXPLICIT_DIGIT_YEAR = words("^(.*?)[ ,]+(?:\\((" + YEAR_DIGITS + ")\\)"
             + "|(?:(?:в|от) +)?(" + YEAR_DIGITS + ")(?:-?(?:го|м))? +год(?:а|у)?)$");
@@ -288,6 +300,34 @@ final class TvVoiceCommand {
         boolean find = action.equals("найди") || action.equals("отыщи") || action.equals("поищи") || action.equals("ищи");
         boolean open = action.equals("открой") || action.equals("запусти") || action.equals("включи");
         return parseRequest(find ? Kind.FIND : Kind.PLAY, body, open);
+    }
+
+    /** A bare playback title can follow the currently active media mode. */
+    static String contextualTitle(String transcript) {
+        String text = normalizeUtterance(transcript);
+        if (text == null) return null;
+        text = WAKE.matcher(text.trim().replaceFirst("[.!]+$", "").trim()).replaceFirst("")
+                .replaceFirst("(?iu),? +пожалуйста$", "");
+        Matcher play = CONTEXTUAL_PLAY.matcher(text);
+        if (!play.matches()) return null;
+        String body = cleanTitle(play.group(1));
+        String unquoted = maskQuotes(body);
+        if (unquoted.indexOf('?') >= 0 || hasSeveralActions(maskQuotes(text))
+                || NOT_A_PLAY_REQUEST.matcher(unquoted).find() || QUESTION.matcher(unquoted).find()
+                || MUSIC.matcher(unquoted).find() || NON_TITLE.matcher(unquoted).find()
+                || playback(transcript) != null || TvChannelCommand.parse(transcript) != null || parse(transcript) != null)
+            return null;
+        String title = stripTitleQuotes(body);
+        if (title.isEmpty() || title.length() > MAX_TITLE_CHARS || !title.codePoints().anyMatch(Character::isLetterOrDigit))
+            return null;
+        return title;
+    }
+
+    static TvVoiceCommand contextualPlay(String title, String preferredType) {
+        if (title == null || title.isEmpty() || title.length() > MAX_TITLE_CHARS || !safeText(title)
+                || !title.codePoints().anyMatch(Character::isLetterOrDigit)) return null;
+        String mediaType = "film".equals(preferredType) || "series".equals(preferredType) ? preferredType : "video";
+        return new TvVoiceCommand(Kind.PLAY, null, title, mediaType, 0);
     }
 
     private static TvVoiceCommand parseRequest(Kind kind, String body, boolean open) {

@@ -85,9 +85,10 @@ public final class VoiceRuntimeService extends Service {
                     processOwner = null; processAsrOwner = null;
                 }
                 if (processOwner == null) {
+                    MediaVoiceContext media = new MediaVoiceContext(TvPlaybackAccessibilityService::foregroundMedia);
                     handler = new RuntimeVoiceHandler(this, () -> PrivateConfig.read(this, "config.json"),
                             () -> main.post(() -> { if (!destroyed) writeStatus(RuntimeSettings.enabled(this) && !stopping); }),
-                            new TvVoiceControl(this), VoiceHistory.get(this));
+                            new TvVoiceControl(this, media), VoiceHistory.get(this));
                     processOwner = handler;
                     try {
                         JSONObject config = PrivateConfig.read(this, "config.json");
@@ -97,7 +98,7 @@ public final class VoiceRuntimeService extends Service {
                                     () -> main.post(() -> { if (!destroyed) writeStatus(RuntimeSettings.enabled(this) && !stopping); }),
                                     config.optString("voice_local_asr_engine", "sherpa"), config.optInt("voice_local_asr_threads", 2),
                                     config.optBoolean("voice_local_endpoint_observation", false),
-                                    config.optBoolean("voice_local_server_endpoint", false));
+                                    config.optBoolean("voice_local_server_endpoint", false), media);
                             processAsrOwner = localAsr;
                         }
                     } catch (Exception ignored) { localAsrConfigFailed = localAsrRequested; }

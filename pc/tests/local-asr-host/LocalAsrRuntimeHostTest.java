@@ -247,6 +247,31 @@ public final class LocalAsrRuntimeHostTest {
         }
     }
 
+    private static void mediaContextChangesRoute() throws Exception {
+        java.util.concurrent.atomic.AtomicReference<MediaVoiceContext.Mode> screen =
+                new java.util.concurrent.atomic.AtomicReference<>(MediaVoiceContext.Mode.TV);
+        java.util.concurrent.atomic.AtomicLong now = new java.util.concurrent.atomic.AtomicLong(100);
+        MediaVoiceContext context = new MediaVoiceContext(screen::get, now::get);
+        check("video".equals(context.choose(false).videoType), "manual TV picks video search");
+        context.selected(MediaVoiceContext.Mode.FILM);
+        check("film".equals(context.choose(false).videoType), "new film selects film search during switching");
+        screen.set(MediaVoiceContext.Mode.VIDEO);
+        now.addAndGet(9000);
+        check("film".equals(context.preferredVideoType()), "a generic player keeps the selected film type");
+        context.selected(MediaVoiceContext.Mode.MUSIC);
+        check(context.choose(false) == MediaVoiceContext.Mode.MUSIC, "music wins during player startup");
+        now.addAndGet(9000);
+        check(context.choose(true) == MediaVoiceContext.Mode.MUSIC, "confirmed music beats the old screen");
+        screen.set(MediaVoiceContext.Mode.TV);
+        check(context.choose(false) == MediaVoiceContext.Mode.TV, "TV wins when music is no longer playing");
+        screen.set(MediaVoiceContext.Mode.NONE);
+        now.addAndGet(TimeUnit.MINUTES.toMillis(21));
+        check(context.choose(false) == MediaVoiceContext.Mode.NONE, "inactive remembered mode expires");
+        check(context.choose(true) == MediaVoiceContext.Mode.MUSIC, "manual music without prior command is detected");
+        screen.set(MediaVoiceContext.Mode.SERIES);
+        check("series".equals(context.preferredVideoType()), "visible series selects series search");
+    }
+
     private static void timerFinalizationAckAndOwnership()throws Exception {
         LocalSpeechRecognizer.finalText="Алиса поставь таймер на одну минуту";
         FakeAgent.reset(FakeAgent.Mode.TIMER_BLOCKED);
@@ -350,6 +375,7 @@ public final class LocalAsrRuntimeHostTest {
         passiveEndpointObservation();
         explicitServerEndpoint();
         musicFailureFeedback();
+        mediaContextChangesRoute();
         televisionChannelPrecedesMusicSearch();
         timerFinalizationAckAndOwnership();
         failedTimerCannotClaimSuccess();

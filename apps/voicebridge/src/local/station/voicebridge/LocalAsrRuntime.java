@@ -19,6 +19,7 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
     private final boolean observeEndpoint;
     private final boolean serverEndpoint;
     private final RuntimeVoiceHandler answers;
+    private final MediaVoiceContext media;
     private final LocalVoiceCommands.HomeAction home;
     private final Runnable changed;
     private final ArrayBlockingQueue<Turn> pending = new ArrayBlockingQueue<>(1);
@@ -86,6 +87,12 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
     }
     public LocalAsrRuntime(Context context, RuntimeVoiceHandler answers, Runnable changed, String engine,
                            int threads, boolean observeEndpoint, boolean serverEndpoint) {
+        this(context, answers, changed, engine, threads, observeEndpoint, serverEndpoint,
+                new MediaVoiceContext(() -> MediaVoiceContext.Mode.NONE));
+    }
+
+    LocalAsrRuntime(Context context, RuntimeVoiceHandler answers, Runnable changed, String engine,
+                    int threads, boolean observeEndpoint, boolean serverEndpoint, MediaVoiceContext media) {
         Context app = context.getApplicationContext() == null ? context : context.getApplicationContext();
         if (!("vosk".equals(engine) || "sherpa".equals(engine)) || !(threads == 1 || threads == 2 || threads == 4))
             throw new IllegalArgumentException("LOCAL_ASR_CONFIG");
@@ -94,7 +101,7 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
             throw new IllegalArgumentException("LOCAL_ASR_CONFIG");
         this.serverEndpoint = serverEndpoint;
         this.modelDirectory = new File(app.getFilesDir(), "sherpa".equals(engine) ? "local-sherpa-model" : "local-asr-model");
-        this.answers = answers; this.changed = changed;
+        this.answers = answers; this.changed = changed; this.media = media;
         home = () -> {
             Intent home = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -274,15 +281,42 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
                 return;
             }
             LocalVoiceCommands.Decision decision = LocalVoiceCommands.parseFinal(transcript);
+            LocalVoiceCommands.AgentExecutor commands = new LocalVoiceCommands.AgentExecutor(home,
+                    () -> closed.get() || turn.stale() || current.get() != turn);
+            String bareTitle = TvVoiceCommand.contextualTitle(transcript);
+            if (bareTitle != null && (decision.command == null
+                    || decision.command.action == LocalVoiceCommands.Action.PLAY_QUERY)) {
+                MediaVoiceContext.Mode mode = media.choose(commands.musicPlaying());
+                if (turn.stale() || current.get() != turn) return;
+                if (mode.videoType != null) {
+                    answers.transcriptReady(transcript, turn.metadata, turn.writer);
+                    transferred = true; completed++; lastCode = "";
+                    return;
+                }
+                if (mode == MediaVoiceContext.Mode.MUSIC)
+                    decision = LocalVoiceCommands.parseFinal("включи песню " + bareTitle);
+            }
             if (decision.handled()) {
                 if (turn.stale()) return;
                 lastLocalDecision = decision.kind.name();
                 long commandStarted = millis();
-                LocalVoiceCommands.Executor commands = new LocalVoiceCommands.AgentExecutor(home,
-                        () -> closed.get() || turn.stale() || current.get() != turn);
+                boolean musicRequest = decision.command != null && (decision.command.action == LocalVoiceCommands.Action.PLAY_QUERY
+                        || decision.command.action == LocalVoiceCommands.Action.RESUME);
+                boolean switchingFromVideo = musicRequest && media.choose(false).videoType != null;
                 LocalVoiceCommands.Result result = LocalVoiceCommands.execute(decision,
                         command -> turn.stale() || closed.get() ? LocalVoiceCommands.Result.unavailable(command) : commands.apply(command));
                 if (current.get() == turn) {
+                    if (result.accepted && !turn.stale()) {
+                        if (result.action == LocalVoiceCommands.Action.PLAY_QUERY
+                                || result.action == LocalVoiceCommands.Action.RESUME) {
+                            media.selected(MediaVoiceContext.Mode.MUSIC);
+                            if (switchingFromVideo && !turn.stale()) {
+                                try { home.goHome(); }
+                                catch (Exception unavailable) { /* The music request already reached the player. */ }
+                            }
+                        } else if (result.action == LocalVoiceCommands.Action.STOP || result.action == LocalVoiceCommands.Action.HOME)
+                            media.selected(MediaVoiceContext.Mode.NONE);
+                    }
                     lastLocalCommandMs = Math.max(0, millis() - commandStarted);
                     if (result.accepted) lastInputEndToLocalActionMs = Math.max(0, millis() - turn.endedAt);
                     lastLocalAction = result.action == null ? "" : result.action.name();

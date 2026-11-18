@@ -15,7 +15,8 @@ class TvPlaybackControlTests(unittest.TestCase):
         java = Path(os.environ["STATION_JAVA_HOME"]) / "bin/java.exe"
         javac = Path(os.environ.get("STATION_JAVAC_HOME", os.environ["STATION_JAVA_HOME"])) / "bin/javac.exe"
         sources = [src / f"{name}.java" for name in
-                   ("TvVoiceCommand", "TvPlaybackControl", "TvPlaybackAccessibilityService")]
+                   ("TvVoiceCommand", "TvChannelCommand", "TvPlaybackControl", "TvPlaybackAccessibilityService",
+                    "MediaVoiceContext")]
         sources.append(test_dir / "tv-playback-host/TvPlaybackHostTest.java")
         with tempfile.TemporaryDirectory(prefix="station-tv-playback-") as output:
             for command in (

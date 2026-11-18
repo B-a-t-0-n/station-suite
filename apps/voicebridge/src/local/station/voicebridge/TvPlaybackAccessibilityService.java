@@ -51,6 +51,40 @@ public final class TvPlaybackAccessibilityService extends AccessibilityService {
         super.onDestroy();
     }
 
+    static MediaVoiceContext.Mode foregroundMedia() {
+        TvPlaybackAccessibilityService service = connected();
+        if (service == null) return MediaVoiceContext.Mode.NONE;
+        AccessibilityNodeInfo root = service.getRootInActiveWindow();
+        MediaVoiceContext.Mode mode = mediaInWindow(root);
+        if (mode != MediaVoiceContext.Mode.NONE) return mode;
+        for (AccessibilityWindowInfo window : service.getWindows()) {
+            try {
+                if (mode == MediaVoiceContext.Mode.NONE && window.getType() == AccessibilityWindowInfo.TYPE_APPLICATION
+                        && (window.isActive() || window.isFocused()))
+                    mode = mediaInWindow(window.getRoot());
+            } finally { window.recycle(); }
+        }
+        return mode;
+    }
+
+    private static MediaVoiceContext.Mode mediaInWindow(AccessibilityNodeInfo root) {
+        if (root == null) return MediaVoiceContext.Mode.NONE;
+        try {
+            if (!sameText(OKKO, root.getPackageName())
+                    || present(root, "contentCardRootView", "ps_ads_exo_player_view", "ps_avod_ad_player_view"))
+                return MediaVoiceContext.Mode.NONE;
+            boolean legacyPlayer = present(root, PLAYER) && present(root, "playerView", "exo_content_frame");
+            boolean sdkPlayer = present(root, SDK_VIDEO) && present(root, PLAYER, SDK_CONTROLS, SDK_TIMELINE);
+            if (!legacyPlayer && !sdkPlayer) return MediaVoiceContext.Mode.NONE;
+            if (present(root, "ps_live_indicator", "ps_live_indicator_title", "ps_live_channel_list_button",
+                    "ps_go_to_live_button"))
+                return MediaVoiceContext.Mode.TV;
+            if (present(root, "playerEpisodesButtonBack", "playerEpisodesListRecycler", "playerSeasonEpisodesRecycler"))
+                return MediaVoiceContext.Mode.SERIES;
+            return MediaVoiceContext.Mode.VIDEO;
+        } finally { root.recycle(); }
+    }
+
     boolean hasVideo() {
         AccessibilityNodeInfo root = playerRoot();
         if (root == null) return false;

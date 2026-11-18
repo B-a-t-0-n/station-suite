@@ -275,7 +275,8 @@ final class LocalAsrRuntime {
     LocalAsrRuntime(Context context,RuntimeVoiceHandler handler,Runnable changed,String engine,int threads,boolean observe) {
         this(context,handler,changed);
     }
-    LocalAsrRuntime(Context context,RuntimeVoiceHandler handler,Runnable changed,String engine,int threads,boolean observe,boolean endpoint) {
+    LocalAsrRuntime(Context context,RuntimeVoiceHandler handler,Runnable changed,String engine,int threads,boolean observe,
+                    boolean endpoint,MediaVoiceContext media) {
         this(context,handler,changed);
     }
     void close() { closed=true; }
@@ -284,4 +285,7 @@ final class LocalAsrRuntime {
     boolean isReady() { return !closed; }
     JSONObject snapshot() { return new JSONObject(); }
 }
-final class TvVoiceControl { TvVoiceControl(Context context) {} }
+final class TvVoiceControl { TvVoiceControl(Context context, MediaVoiceContext media) {} }
+final class TvPlaybackAccessibilityService {
+    static MediaVoiceContext.Mode foregroundMedia() { return MediaVoiceContext.Mode.NONE; }
+}

@@ -37,12 +37,14 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
     private static final String LAST_OKKO_FILM = "last-okko-film.json";
     private final Context app;
     private final TvPlaybackControl playback;
+    private final MediaVoiceContext media;
     private final TvVoiceCommand.YearFollowUp yearFollowUp = new TvVoiceCommand.YearFollowUp();
     private SeriesContext recentSeries;
 
-    TvVoiceControl(Context context) {
+    TvVoiceControl(Context context, MediaVoiceContext media) {
         app = context.getApplicationContext();
         playback = new TvPlaybackControl(app);
+        this.media = media;
     }
 
     @Override public VoicePipeline.TvResult handle(String transcript, VoicePipeline.Chat chat, BooleanSupplier cancelled)
@@ -55,6 +57,13 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         long now = SystemClock.elapsedRealtime();
         if (recentSeries != null && now >= recentSeries.expiresAt) recentSeries = null;
         TvVoiceCommand command = yearFollowUp.resolve(transcript, now);
+        if (command == null) {
+            String title = TvVoiceCommand.contextualTitle(transcript);
+            if (title != null) {
+                command = TvVoiceCommand.contextualPlay(title, media.preferredVideoType());
+                if (command != null) yearFollowUp.clear();
+            }
+        }
         if (command == null) {
             if (recentSeries == null) return null;
             TvVoiceCommand.EpisodeChoice choice = TvVoiceCommand.episodeReply(transcript, now < recentSeries.replyUntil);
@@ -136,9 +145,11 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
                     boolean opened = command.kind == TvVoiceCommand.Kind.FIND && openHit(hit, hit.target, false, cancelled);
                     return askEpisode(recentSeries, command.season, 0, opened);
                 }
-                if (!episodeRequest && openHit(hit, hit.target, false, cancelled))
+                if (!episodeRequest && openHit(hit, hit.target, false, cancelled)) {
+                    if (command.kind == TvVoiceCommand.Kind.PLAY) selectVideo(MediaVoiceContext.Mode.SERIES, cancelled);
                     return result("Открыла «" + hit.displayTitle + "». Список серий можно выбрать на экране.",
                             "series_card_opened", true);
+                }
                 return result("Окко не показал список серий для «" + hit.displayTitle + "».",
                         "episodes_unavailable", false);
             }
@@ -155,8 +166,12 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
                 if (startsOkko) {
                     playback.rememberOkkoVideo(hit.displayTitle, null, hit.durationMs, previousPlayer);
                     rememberFilm(hit);
+                    selectVideo(MediaVoiceContext.Mode.FILM, cancelled);
                     return result("Включаю «" + hit.displayTitle + "» в Окко.", "playback_requested", true);
                 }
+                if (play) selectVideo("film".equals(hit.mediaType) ? MediaVoiceContext.Mode.FILM
+                        : "series".equals(hit.mediaType) ? MediaVoiceContext.Mode.SERIES : MediaVoiceContext.Mode.VIDEO,
+                        cancelled);
                 return result("Нашла «" + hit.displayTitle + "» в " + hit.provider.label + ". Открываю.", "title_opened", true);
             }
         }
@@ -203,7 +218,13 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
                 || !launch(view, cancelled))
             return result("Не удалось открыть телеканал в Окко.", "channel_launch_unavailable", false);
         playback.clearOkkoVideo();
+        selectVideo(MediaVoiceContext.Mode.TV, cancelled);
         return result("Включаю «" + channel.title + "» в Окко.", "channel_playback_requested", true);
+    }
+
+    private void selectVideo(MediaVoiceContext.Mode mode, BooleanSupplier cancelled) {
+        media.selected(mode);
+        new LocalVoiceCommands.AgentExecutor(null, cancelled).pauseActiveMusic();
     }
 
     private static OkkoEpisodeCatalog loadEpisodes(TvVideoSearch.Hit hit, BooleanSupplier cancelled) {
@@ -235,6 +256,7 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
             return result("Не получилось открыть серию в Окко.", "episode_launch_unavailable", false);
         playback.rememberOkkoVideo(series.hit.displayTitle, series.catalog.episodeTitle(season, episode),
                 series.catalog.durationMs(season, episode), previousPlayer);
+        selectVideo(MediaVoiceContext.Mode.SERIES, cancelled);
         series.season = season;
         series.waitingSeason = false;
         series.waitingEpisodeCheck = false;
@@ -371,6 +393,7 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
             return cancelled.getAsBoolean() ? result("Команда отменена.", "cancelled", false)
                     : result("Не удалось открыть последний фильм в Окко.", "resume_launch_unavailable", false);
         playback.rememberOkkoVideo(hit.displayTitle, null, hit.durationMs, null);
+        selectVideo(MediaVoiceContext.Mode.FILM, cancelled);
         return result("Открываю «" + hit.displayTitle + "» для продолжения в Окко.", "movie_resume_requested", true);
     }
 

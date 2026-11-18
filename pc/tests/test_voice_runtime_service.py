@@ -55,7 +55,7 @@ class VoiceRuntimeServiceTests(unittest.TestCase):
                 path.write_text(source, encoding='utf8'); sources.append(path)
             sources += [ROOT / 'src/local/station/voicebridge' / name for name in
                         ('VoiceRuntimeService.java', 'RuntimeSettings.java', 'RuntimeReceiver.java',
-                         'BootReceiver.java', 'VoiceCloudGate.java')]
+                         'BootReceiver.java', 'VoiceCloudGate.java', 'MediaVoiceContext.java')]
             sources.append(Path(__file__).resolve().parent / 'runtime-service-host/VoiceRuntimeServiceHostTest.java')
             classes = target / 'classes'; classes.mkdir()
             commands = [

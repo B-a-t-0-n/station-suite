@@ -17,7 +17,7 @@ ANDROID = SDK / 'platform/android.jar'
 BUILD = ROOT / 'build'
 PRIVATE = Path(os.environ['STATION_SIGNING_DIR'])
 OUT = ROOT / 'dist'
-VERSION, VERSION_CODE = '0.7.8', 22
+VERSION, VERSION_CODE = '0.7.9', 23
 commands = []
 
 

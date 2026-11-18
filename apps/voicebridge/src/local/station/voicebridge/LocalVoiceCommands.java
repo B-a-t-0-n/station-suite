@@ -144,6 +144,7 @@ public final class LocalVoiceCommands {
         }
         if (text.startsWith("включи ") || text.startsWith("поставь ")) {
             String query = text.substring(text.indexOf(' ') + 1);
+            if (query.startsWith("мне ")) query = query.substring(4);
             boolean explicit = false;
             for (String prefix : new String[]{"песню", "трек", "музыку"}) {
                 if (query.equals(prefix)) {
@@ -315,7 +316,7 @@ public final class LocalVoiceCommands {
         return new Result(true, accepted, code, action, volume);
     }
 
-    /** Fixed loopback Agent APIs. Its catalog and allowlisted MP3 URLs still require the PC music server. */
+    /** Fixed loopback Agent APIs for the native music player and local controls. */
     public static final class AgentExecutor implements Executor {
         private static final int MAX_RESPONSE = 8192, MAX_SEARCH_RESPONSE = 65536, TOTAL_TIMEOUT_MS = 15000;
         private static final ScheduledExecutorService DEADLINES = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -342,6 +343,28 @@ public final class LocalVoiceCommands {
             if (connections == null) throw new IllegalArgumentException("connections_required");
             if (cancelled == null) throw new IllegalArgumentException("cancellation_required");
             this.connections = connections; this.home = home; this.cancelled = cancelled;
+        }
+
+        boolean musicPlaying() {
+            return readMusicState(false);
+        }
+
+        void pauseActiveMusic() {
+            readMusicState(true);
+        }
+
+        private boolean readMusicState(boolean pause) {
+            if (!busy.compareAndSet(false, true)) return false;
+            try {
+                operationDeadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(pause ? 600 : 250);
+                JSONObject status = request("/api/status", false);
+                JSONObject music = status.optJSONObject("musicRuntime");
+                boolean playing = music != null && Boolean.TRUE.equals(music.opt("nativeConfirmed"))
+                        && "playing".equals(music.optString("state"));
+                if (playing && pause) request("/api/pause", true);
+                return playing;
+            } catch (LocalFailure unavailable) { return false; }
+            finally { busy.set(false); }
         }
         @Override public Result apply(Command command) {
             if (command == null) return result(false, "rejected", null, -1);
