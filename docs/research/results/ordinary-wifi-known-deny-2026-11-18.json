@@ -1,0 +1,173 @@
+{
+  "date": "2026-11-18",
+  "mode": "ordinary_wifi_known_yandex_ipv4_deny",
+  "androidApi": 28,
+  "deviceBuild": "20221212",
+  "externalVpnRequired": false,
+  "otaGuarantee": false,
+  "sourceScope": "one pinned Station IPv4 /32",
+  "knownIpv4DenyRuleCount": 14,
+  "denyProtocolScope": [
+    "tcp",
+    "udp"
+  ],
+  "denyPorts": "all",
+  "otherLanIpv6Changed": false,
+  "otherDeviceRulesChanged": false,
+  "dnsSnapshotSources": [
+    "PC resolver",
+    "home router resolver over pinned physical uplink"
+  ],
+  "routerExactReadbackAfterReboot": true,
+  "ordinaryBoundWifiHttps": {
+    "sourcePortVerified": true,
+    "bound": true,
+    "connected": true,
+    "localWifiMatch": true,
+    "httpStatus": 301,
+    "tlsVerified": true,
+    "certificateHostnameVerified": true,
+    "stage": "complete",
+    "error": "",
+    "elapsedMs": 210
+  },
+  "knownAddressNegativeControlsBeforeBoot": [
+    {
+      "bound": true,
+      "sourceVerified": true,
+      "connected": false,
+      "exceptionType": "ConnectException",
+      "elapsedMs": 4
+    },
+    {
+      "bound": true,
+      "sourceVerified": true,
+      "connected": false,
+      "exceptionType": "ConnectException",
+      "elapsedMs": 4
+    },
+    {
+      "bound": true,
+      "sourceVerified": true,
+      "connected": false,
+      "exceptionType": "ConnectException",
+      "elapsedMs": 5
+    }
+  ],
+  "sameAddressesPositiveFromOtherSource": [
+    {
+      "connected": true
+    },
+    {
+      "connected": true
+    },
+    {
+      "connected": true
+    }
+  ],
+  "knownAddressNegativeControlsAfterBoot": [
+    {
+      "bound": true,
+      "sourceVerified": true,
+      "connected": false,
+      "exceptionType": "ConnectException",
+      "elapsedMs": 6
+    },
+    {
+      "bound": true,
+      "sourceVerified": true,
+      "connected": false,
+      "exceptionType": "ConnectException",
+      "elapsedMs": 5
+    },
+    {
+      "bound": true,
+      "sourceVerified": true,
+      "connected": false,
+      "exceptionType": "ConnectException",
+      "elapsedMs": 5
+    }
+  ],
+  "knownNegativeControlAddressCount": 3,
+  "all14AddressesActivelyProbed": false,
+  "localQuasarUidProbe": {
+    "dnsPinned": true,
+    "http204": true,
+    "configHttp200": true,
+    "hasUpdateFalse": true
+  },
+  "directSyntheticPipeline": {
+    "operation": "pipeline_probe",
+    "ok": true,
+    "transport": "direct",
+    "elapsedMs": 3027,
+    "microphoneCaptured": false,
+    "audioPlayed": false,
+    "details": {
+      "ok": true,
+      "audioBytes": 17857,
+      "llmMs": 433,
+      "ttsMs": 1546,
+      "elapsedMs": 3002,
+      "localAsr": false,
+      "cloudAudioUploaded": true,
+      "fileDeleted": true,
+      "audioPlayed": false
+    }
+  },
+  "ordinaryAppDefaultNetworkProbe": {
+    "status": "success",
+    "uid": 10041,
+    "httpStatus": 200,
+    "responseBytes": 577,
+    "tlsDefaultCertificateValidation": true,
+    "tlsDefaultHostnameValidation": true,
+    "probePassed": true,
+    "networkBound": false,
+    "elapsedMs": 1194
+  },
+  "temporaryAppRemoved": true,
+  "ethernetCableDisconnectedByUser": true,
+  "pcEthernetDisconnectedObserved": true,
+  "pcBusinessTransportStopped": true,
+  "pcObservationAdbOnly": true,
+  "systemNtp": {
+    "server": "194.190.168.1",
+    "autoTime": true,
+    "freshSystemSuccessEventObserved": true,
+    "clockSkewSecondsAfterBoot": 0.17,
+    "manualTimeSet": false
+  },
+  "wifiOnlyReboot": {
+    "newBootObserved": true,
+    "bootCompleted": true,
+    "agentRunning": true,
+    "voiceRunning": true,
+    "vpnRunning": true,
+    "voiceHealthy": true,
+    "voiceListenerReady": true,
+    "localServicesHealthy": true,
+    "directWifiBound": true,
+    "vpnActive": true,
+    "vpnPermanent": true,
+    "freshVoicePidMatches": true,
+    "bootReceiverAction": "boot_completed",
+    "bootReceiverLocalRequested": true,
+    "bootReceiverVoiceRequested": true
+  },
+  "nativeVoiceConnectionsAfterBoot": 2,
+  "localAsrReadyAfterBoot": true,
+  "userConfirmedNewVoiceAndMusicAfterReboot": true,
+  "nativeMaindHashUnchanged": true,
+  "routerRebootTested": false,
+  "coldPowerCycleTested": false,
+  "webTvNavigationAutobootProven": false,
+  "phoneNavigationCodePath": "direct Bluetooth HID; independent of Station shell input helper",
+  "limitations": [
+    "Known IPv4 snapshots only; DNS rotation, unlisted/shared destinations and IPv6 can bypass these rules.",
+    "No complete list of OTA download destinations or prevention guarantee.",
+    "Phone HID may need reopening after a long Station reboot. Web navigation shell helper has no autonomous boot proof."
+  ],
+  "oneHidHostConnectionObservedAfterBoot": true,
+  "hidDeviceIdentityIndependentlyMatched": false
+}

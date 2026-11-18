@@ -1,0 +1,103 @@
+{
+  "format": 1,
+  "kind": "hostname_inventory_not_executable_router_policy",
+  "vendorBuild": "20221212",
+  "vendorConfig": {
+    "filename": "quasar-prod.cfg",
+    "sha256": "685c4b8cdfbef945ff90c4dff932dbbfd34cc4db2d5eee3fd21aefd5f2a2af5b"
+  },
+  "otaGuarantee": false,
+  "note": "Hostname roles only. DNS responses and Station identity belong to private configuration. This inventory is not exhaustive OTA coverage.",
+  "hosts": [
+    {
+      "hostname": "api.lbs.yandex.net",
+      "role": "native_geolocation",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "clck.yandex.net",
+      "role": "native_telemetry_shared",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "iot.quasar.yandex.ru",
+      "role": "native_iot",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "mobileproxy.passport.yandex.net",
+      "role": "native_auth_shared_auth",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "oauth.yandex.ru",
+      "role": "native_oauth_shared_auth",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "passport.yandex.ru",
+      "role": "native_auth_shared_auth",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "push.yandex.ru",
+      "role": "native_push",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "quasar.s3.yandex.net",
+      "role": "shared_s3_screensaver_assets",
+      "includeInMinimalDeny": false,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "quasar.yandex.net",
+      "role": "config_backend",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "quasar.yandex.ru",
+      "role": "config_backend_dev_monitor",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "scbh.yandex.net",
+      "role": "native_connectivity_http_time",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "startup.mobile.yandex.net",
+      "role": "native_telemetry",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "station-config.quasar.yandex.net",
+      "role": "suite_native_push_config_name",
+      "includeInMinimalDeny": true,
+      "origin": "suite_local_push"
+    },
+    {
+      "hostname": "uniproxy.alice.yandex.net",
+      "role": "native_voice",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    },
+    {
+      "hostname": "ws-api.music.yandex.net",
+      "role": "native_music",
+      "includeInMinimalDeny": true,
+      "origin": "vendor_config"
+    }
+  ]
+}
