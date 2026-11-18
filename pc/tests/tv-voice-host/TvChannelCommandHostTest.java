@@ -23,11 +23,19 @@ final class TvChannelCommandHostTest {
         plays("Покажи на Окко прямой эфир НТВ", "НТВ");
         plays("Включи телеканал Окко ТВ", "Okko TV");
         plays("Включи канал 5", "Пятый канал");
+        plays("Включи Домашний", "Домашний");
+        plays("Включи Ю", "Ю");
+        plays("Включи СТС", "СТС");
         plays("Включи телеканал Дом Кино", "дом кино");
         plays("Включи канал Дом Кино через Окко", "дом кино");
         plays("Включи телеканал «Сделано на Окко»", "сделано на окко");
         expects("Включи телеканал", TvChannelCommand.Kind.ASK_NAME, "");
         expects("Включи телеканал на Окко", TvChannelCommand.Kind.ASK_NAME, "");
+        expects("Включи телека", TvChannelCommand.Kind.ASK_NAME, "");
+        expects("Включи телекан на Окко", TvChannelCommand.Kind.ASK_NAME, "");
+        expects("Алиса, открой все телеканалы в Окко", TvChannelCommand.Kind.OPEN_LIST, "");
+        expects("открой все телеканалы вок", TvChannelCommand.Kind.OPEN_LIST, "");
+        expects("Покажи в Окко список телеканалов", TvChannelCommand.Kind.OPEN_LIST, "");
         expects("Включи телеканал НТВ на Рутубе", TvChannelCommand.Kind.UNSUPPORTED_SOURCE, "");
         expects("Включи на Wink телеканал Россия 1", TvChannelCommand.Kind.UNSUPPORTED_SOURCE, "");
         expects("Включи телеканал НТВ в приложении Вещатель", TvChannelCommand.Kind.UNSUPPORTED_SOURCE, "");
@@ -41,7 +49,10 @@ final class TvChannelCommandHostTest {
                 "можешь включить НТВ", "включи НТВ?", "какие телеканалы доступны?",
                 "не включай телеканал НТВ", "включи канал не НТВ", "включи телеканал НТВ, а не Матч ТВ",
                 "включи телеканал НТВ и включи музыку", "включи телеканал https://okko.tv/",
-                "включи телеканал нтв\nзапусти", "включи телеканал на Окко НТВ на Окко"
+                "включи телеканал нтв\nзапусти", "включи телеканал на Окко НТВ на Окко",
+                "включи Домашний режим", "включи песню Ю", "включи песню Домашний",
+                "поставь телеканал на пауз", "поставь телеканал на паузу", "поставь телеканал НТВ на паузу",
+                "поставь на Окко тв-канал на паузу"
         }) {
             check(TvChannelCommand.parse(phrase) == null, "overbroad match for " + phrase);
         }

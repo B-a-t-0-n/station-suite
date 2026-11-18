@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 
 /** Read-only, fixed local probes; responses expose only selected booleans and counters. */
 final class LocalDiagnostics {
-    static final String VERSION = "0.7.9";
+    static final String VERSION = "0.7.10";
     private LocalDiagnostics() { }
     static JSONObject snapshot(JSONObject own, JSONObject input) throws Exception {
         JSONObject agent = agent(own), services = new JSONObject().put("agent", true)

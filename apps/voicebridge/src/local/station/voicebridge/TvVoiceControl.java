@@ -50,7 +50,12 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
     @Override public VoicePipeline.TvResult handle(String transcript, VoicePipeline.Chat chat, BooleanSupplier cancelled)
             throws Exception {
         if (cancelled.getAsBoolean()) return null;
+        if (TvVoiceCommand.contextQuestion(transcript)) {
+            boolean musicPlaying = new LocalVoiceCommands.AgentExecutor(null, cancelled).musicPlaying();
+            return result(media.choose(musicPlaying).answer, "context_reported", false);
+        }
         TvVoiceCommand.Playback control = TvVoiceCommand.playback(transcript);
+        if (control == null) control = TvVoiceCommand.contextualPlayback(transcript);
         if (control != null) return controlPlayback(control, cancelled);
         TvChannelCommand channel = TvChannelCommand.parse(transcript);
         if (channel != null) return playChannel(channel, cancelled);
@@ -208,15 +213,20 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
             return result("Для прямого эфира могу открыть телеканал в Окко.", "channel_source_unsupported", false);
         if (command.kind == TvChannelCommand.Kind.ASK_NAME)
             return result("Назови телеканал. Например: «Включи Первый канал».", "channel_name_missing", false);
-        OkkoChannels.Channel channel = OkkoChannels.find(command.name);
-        if (channel == null)
-            return result("В моём списке Окко нет телеканала «" + command.name + "».",
-                    "channel_not_found", false);
-        Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse(channel.uri()))
+        boolean openList = command.kind == TvChannelCommand.Kind.OPEN_LIST;
+        OkkoChannels.Channel channel = openList ? null : OkkoChannels.find(command.name, cancelled);
+        if (cancelled.getAsBoolean()) return result("Команда отменена.", "cancelled", false);
+        Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse(channel == null ? "okko://tvchannels" : channel.uri()))
                 .setPackage(TvVoiceCommand.Provider.OKKO.packageName).addCategory(Intent.CATEGORY_BROWSABLE);
         if (app.getPackageManager().resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY) == null
                 || !launch(view, cancelled))
-            return result("Не удалось открыть телеканал в Окко.", "channel_launch_unavailable", false);
+            return result(channel == null ? "Не удалось открыть список телеканалов в Окко."
+                    : "Не удалось открыть телеканал в Окко.", "channel_launch_unavailable", false);
+        if (channel == null) {
+            String answer = openList ? "Открываю список телеканалов в Окко."
+                    : "Не удалось выбрать «" + command.name + "» по названию. Открываю список телеканалов в Окко.";
+            return result(answer, openList ? "channel_catalog_opened" : "channel_catalog_fallback", true);
+        }
         playback.clearOkkoVideo();
         selectVideo(MediaVoiceContext.Mode.TV, cancelled);
         return result("Включаю «" + channel.title + "» в Окко.", "channel_playback_requested", true);
@@ -353,13 +363,18 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
             case CANCELLED: return result("Команда отменена.", "cancelled", false);
             case NO_VIDEO:
                 if (request.resumeLastFilm) return resumeLastFilm(cancelled);
+                if (media.choose(false) == MediaVoiceContext.Mode.TV)
+                    return result("Окко не предоставил управление этим прямым эфиром.", "live_control_unavailable", false);
                 return result("Сначала запусти фильм или серию на телевизоре.", "video_not_active", false);
             case PERMISSION_REQUIRED:
                 return result("Включи управление видео Станции в специальных возможностях телевизора.",
                         "video_permission_required", false);
             case UNCONFIRMED:
                 return result("Не удалось подтвердить действие в Окко.", "video_control_unconfirmed", false);
-            default: return result("Не удалось выполнить эту команду в видеоплеере.", "video_control_unavailable", false);
+            default:
+                if (media.choose(false) == MediaVoiceContext.Mode.TV)
+                    return result("Окко не предоставил управление этим прямым эфиром.", "live_control_unavailable", false);
+                return result("Не удалось выполнить эту команду в видеоплеере.", "video_control_unavailable", false);
         }
     }
 

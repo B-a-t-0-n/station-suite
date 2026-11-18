@@ -345,13 +345,16 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
             case "episodes_not_found": case "season_not_found": case "MUSIC_NOT_FOUND": case "music_not_found":
             case "TIMER_NOT_RUNNING": case "timer_not_running": case "resume_history_missing":
                 return "no_match";
-            case "episode_count": case "episode_listed": case "apps_listed": return "answer";
+            case "episode_count": case "episode_listed": case "apps_listed": case "context_reported": return "answer";
             case "TIMER_CREATED": case "video_control_applied": return "action";
             case "playback_requested": case "episode_playback_requested": case "movie_resume_requested":
-            case "channel_playback_requested":
+            case "channel_playback_requested": case "channel_catalog_opened": case "music_playback_requested":
             case "provider_opened_no_match": case "provider_search_opened": case "title_opened":
             case "series_card_opened": case "app_opened": return "requested";
-            case "channel_launch_unavailable": return "error";
+            case "channel_launch_unavailable": case "live_control_unavailable": case "video_not_active":
+            case "video_control_unavailable": case "video_control_unconfirmed": case "video_permission_required":
+                return "error";
+            case "channel_catalog_fallback": return "no_match";
             default: return executed ? "action" : answered ? "answer" : "error";
         }
     }

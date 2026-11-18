@@ -274,7 +274,8 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
                 turn.writer.finishInput(turn.metadata, transcript);
                 if (closed.get() || turn.stale() || current.get() != turn) { cancelled++; return; }
             }
-            if (TvChannelCommand.parse(transcript) != null || TvVoiceCommand.parse(transcript) != null
+            if (TvVoiceCommand.contextQuestion(transcript)
+                    || TvChannelCommand.parse(transcript) != null || TvVoiceCommand.parse(transcript) != null
                     || TvVoiceCommand.playback(transcript) != null) {
                 answers.transcriptReady(transcript, turn.metadata, turn.writer);
                 transferred = true; completed++; lastCode = "";
@@ -283,6 +284,13 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
             LocalVoiceCommands.Decision decision = LocalVoiceCommands.parseFinal(transcript);
             LocalVoiceCommands.AgentExecutor commands = new LocalVoiceCommands.AgentExecutor(home,
                     () -> closed.get() || turn.stale() || current.get() != turn);
+            if (TvVoiceCommand.contextualPlayback(transcript) != null
+                    && media.choose(commands.musicPlaying()).videoType != null) {
+                if (turn.stale() || current.get() != turn) return;
+                answers.transcriptReady(transcript, turn.metadata, turn.writer);
+                transferred = true; completed++; lastCode = "";
+                return;
+            }
             String bareTitle = TvVoiceCommand.contextualTitle(transcript);
             if (bareTitle != null && (decision.command == null
                     || decision.command.action == LocalVoiceCommands.Action.PLAY_QUERY)) {
@@ -343,9 +351,16 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
                             ? VoicePipeline.LocalFeedback.MUSIC_NOT_FOUND : VoicePipeline.LocalFeedback.MUSIC_UNAVAILABLE;
                     answers.commandFailed(transcript, feedback, turn.metadata, turn.writer);
                     transferred = true;
+                } else if ("media_unavailable".equals(result.code)
+                        && !turn.stale() && !closed.get() && current.get() == turn) {
+                    answers.commandFeedback(transcript, VoicePipeline.LocalFeedback.PLAYBACK_INACTIVE,
+                            turn.metadata, turn.writer);
+                    transferred = true;
                 } else {
                     if (!turn.stale() && !closed.get() && current.get() == turn) {
-                        answers.recordLocal(transcript, result.code, result.accepted, Math.max(0, millis() - turn.endedAt));
+                        String historyCode = result.accepted && result.action == LocalVoiceCommands.Action.PLAY_QUERY
+                                ? "music_playback_requested" : result.code;
+                        answers.recordLocal(transcript, historyCode, result.accepted, Math.max(0, millis() - turn.endedAt));
                     }
                     quiet(turn.metadata, turn.writer, transcript);
                 }

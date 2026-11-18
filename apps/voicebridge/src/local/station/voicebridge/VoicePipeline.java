@@ -21,6 +21,7 @@ public final class VoicePipeline {
         MUSIC_UNAVAILABLE("Сейчас не получается включить музыку."),
         MUSIC_NOT_FOUND("Не удалось найти эту музыку."),
         COMMAND_UNAVAILABLE("Сейчас не получается выполнить эту команду."),
+        PLAYBACK_INACTIVE("Сейчас нет активного воспроизведения, которым я могу управлять."),
         TIMER_CREATED("Таймер установлен."),
         TIMER_UNAVAILABLE("Не удалось подтвердить установку таймера. Проверь раздел Часы в пульте."),
         TIMER_NOT_RUNNING("Активного таймера нет."),

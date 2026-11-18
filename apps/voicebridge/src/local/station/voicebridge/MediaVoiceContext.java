@@ -7,11 +7,17 @@ import java.util.function.Supplier;
 /** Combines successful voice selections with the players' current state. */
 final class MediaVoiceContext {
     enum Mode {
-        NONE(null), MUSIC(null), VIDEO("video"), FILM("film"), SERIES("series"), TV("video");
+        NONE(null, "Сейчас контекст просмотра или музыки не выбран. Назови песню, фильм, сериал или телеканал."),
+        MUSIC(null, "Сейчас контекст музыки. По названию буду искать песню."),
+        VIDEO("video", "Сейчас контекст видео. По названию буду искать фильм или сериал."),
+        FILM("film", "Сейчас контекст фильмов. По названию буду искать фильм."),
+        SERIES("series", "Сейчас контекст сериалов. По названию буду искать сериал."),
+        TV("video", "Сейчас контекст телеканалов. По названию буду искать фильм или сериал.");
 
         final String videoType;
+        final String answer;
 
-        Mode(String videoType) { this.videoType = videoType; }
+        Mode(String videoType, String answer) { this.videoType = videoType; this.answer = answer; }
     }
 
     private static final long SWITCH_GRACE_MS = TimeUnit.SECONDS.toMillis(8);

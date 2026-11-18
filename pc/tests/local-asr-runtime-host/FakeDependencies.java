@@ -55,7 +55,7 @@ final class RuntimeVoiceHandler {
     void commandFeedback(String ignored, VoicePipeline.LocalFeedback feedback, LegacyVoiceSession.Metadata metadata,
                        LoopbackVoiceServer.ReplyWriter writer) { throw new AssertionError("unexpected timer feedback"); }
 }
-final class VoicePipeline { enum LocalFeedback { MUSIC_NOT_FOUND, MUSIC_UNAVAILABLE, TIMER_CREATED, TIMER_UNAVAILABLE, TIMER_NOT_RUNNING, TIMER_AMBIGUOUS, TIMER_STOP_UNAVAILABLE } }
+final class VoicePipeline { enum LocalFeedback { MUSIC_NOT_FOUND, MUSIC_UNAVAILABLE, PLAYBACK_INACTIVE, TIMER_CREATED, TIMER_UNAVAILABLE, TIMER_NOT_RUNNING, TIMER_AMBIGUOUS, TIMER_STOP_UNAVAILABLE } }
 final class NativeOggInput { static final int MAX_BYTES = 512 * 1024; }
 final class StreamingOpusInput implements AutoCloseable {
     private int bytes;

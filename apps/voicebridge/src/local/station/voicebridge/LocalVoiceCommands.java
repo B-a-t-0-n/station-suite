@@ -118,13 +118,15 @@ public final class LocalVoiceCommands {
         else if (oneOf(text, "тише", "потише", "сделай тише", "убавь громкость", "уменьши громкость")) action = Action.VOLUME_DOWN;
         else if (oneOf(text, "выключи звук", "убери звук", "без звука")) action = Action.MUTE;
         else if (oneOf(text, "включи звук", "верни звук")) action = Action.UNMUTE;
-        else if (oneOf(text, "пауза", "поставь на паузу", "поставь музыку на паузу", "приостанови музыку")) action = Action.PAUSE;
+        else if (oneOf(text, "пауза", "поставь на паузу", "поставь на пауз", "поставь музыку на паузу",
+                "поставь музыку на пауз", "приостанови музыку")) action = Action.PAUSE;
         else if (oneOf(text, "продолжи", "продолжи музыку", "продолжи воспроизведение", "возобнови музыку", "возобнови воспроизведение")) action = Action.RESUME;
         else if ("стоп".equals(text)) action = Action.SMART_STOP;
         else if (oneOf(text, "останови таймер", "отмени таймер", "выключи таймер", "убери таймер")) action = Action.STOP_TIMER;
         else if (oneOf(text, "останови все таймеры", "отмени все таймеры", "выключи все таймеры")) action = Action.STOP_ALL_TIMERS;
         else if (oneOf(text, "останови музыку", "выключи музыку", "останови воспроизведение")) action = Action.STOP;
-        else if (oneOf(text, "домой", "на главный экран", "открой главный экран", "вернись на главный экран")) action = Action.HOME;
+        else if (oneOf(text, "домой", "на главный экран", "открой главный экран", "вернись на главный экран",
+                "открой главную", "открой главное", "открой главную страницу")) action = Action.HOME;
         else if (oneOf(text, "следующий трек", "следующая песня", "включи следующий трек", "поставь следующий трек",
                 "переключи трек", "переключи песню")) action = Action.NEXT;
         else if (oneOf(text, "предыдущий трек", "предыдущая песня", "включи предыдущий трек", "поставь предыдущий трек")) action = Action.PREVIOUS;

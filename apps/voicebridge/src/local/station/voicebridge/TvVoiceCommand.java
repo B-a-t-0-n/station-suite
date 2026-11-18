@@ -115,14 +115,15 @@ final class TvVoiceCommand {
     private static final Pattern PLAYBACK_NEGATION = words("(?:^| )не(?: |$)");
     private static final String VIDEO_TARGET = "(?:этот |текущий )?(?:фильм|сериал|мультсериал|мультфильм|"
             + "мультик|видео|ролик|кино|серию|эпизод)";
-    private static final Pattern VIDEO_PAUSE = words("^(?:(?:поставь|поставить) +" + VIDEO_TARGET + " +на паузу"
-            + "|(?:поставь|поставить) +на паузу +" + VIDEO_TARGET + "|приостанови +" + VIDEO_TARGET
+    private static final String PLAYBACK_TARGET = "(?:" + VIDEO_TARGET + "|(?:этот |текущий )?(?:телеканал|тв-канал|прямой эфир))";
+    private static final Pattern VIDEO_PAUSE = words("^(?:(?:поставь|поставить) +" + PLAYBACK_TARGET + " +на паузу?"
+            + "|(?:поставь|поставить) +на паузу? +" + PLAYBACK_TARGET + "|приостанови +" + PLAYBACK_TARGET
             + "|пауза (?:в фильме|в сериале|на видео))$");
     private static final String CONTINUE = "(?:продолжи(?:ть)?|продолжай|возобнови(?:ть)?)";
     private static final Pattern RESUME_LAST_FILM = words("^" + CONTINUE
             + " +(?:(?:смотреть|просмотр) +)?(?:(?:этот|текущий|последний) +)?(?:фильм|фильма|кино)$");
     private static final Pattern VIDEO_RESUME = words("^(?:" + CONTINUE + "|сними с паузы) +"
-            + "(?:(?:смотреть|просмотр) +)?(?:" + VIDEO_TARGET + "|фильма|сериала|видео)$");
+            + "(?:(?:смотреть|просмотр) +)?(?:" + PLAYBACK_TARGET + "|фильма|сериала|видео)$");
     private static final Pattern VIDEO_RESTART = words("^(?:(?:включи|поставь|запусти|воспроизведи|смотри) +"
             + VIDEO_TARGET + " +(?:сначала|с начала|с самого начала)|(?:включи|запусти|поставь) +"
             + "(?:сначала|с начала) +" + VIDEO_TARGET + "|(?:перезапусти|начни заново) +" + VIDEO_TARGET
@@ -180,7 +181,7 @@ final class TvVoiceCommand {
 
     enum Provider {
         OKKO("Окко", "tv.okko.androidtv", "ок ?ко|okko"),
-        VK("VK Видео", "com.vk.tv", "в[эк] ?ка ?видео|вк ?видео|в ?к ?видео|вконтакте|в контакте|vk ?video|vk|вк"),
+        VK("VK Видео", "com.vk.tv", "в[еэк] ?ка ?видео|вк ?видео|в ?к ?видео|вконтакте|в контакте|vk ?video|vk|вк"),
         RUTUBE("RUTUBE", "ru.rutube.app", "ру ?туб(?:е)?|rutube"),
         YOUTUBE("YouTube", "com.google.android.youtube.tv", "ю ?т[ую]б(?:е)?|ютюб(?:е)?|you ?tube"),
         LAMPA("Lampa", "top.rootu.lampa", "ламп[аеу]|lampa");
@@ -300,6 +301,20 @@ final class TvVoiceCommand {
         boolean find = action.equals("найди") || action.equals("отыщи") || action.equals("поищи") || action.equals("ищи");
         boolean open = action.equals("открой") || action.equals("запусти") || action.equals("включи");
         return parseRequest(find ? Kind.FIND : Kind.PLAY, body, open);
+    }
+
+    static boolean contextQuestion(String transcript) {
+        String text = commandText(transcript);
+        if (text == null) return false;
+        switch (text.replaceFirst("[?!.]+$", "").replaceFirst("^скажи, +", "скажи ").trim()) {
+            case "какой сейчас контекст": case "какой контекст сейчас": case "какой контекст":
+            case "в каком ты сейчас контексте": case "в каком контексте мы сейчас":
+            case "скажи какой сейчас контекст": case "скажи текущий контекст":
+            case "какой сейчас режим": case "в каком ты сейчас режиме":
+                return true;
+            default:
+                return false;
+        }
     }
 
     /** A bare playback title can follow the currently active media mode. */
@@ -456,6 +471,19 @@ final class TvVoiceCommand {
         if ("назад".equalsIgnoreCase(direction)) positionMs = -positionMs;
         boolean resume = !relative && (verb.equals("включи") || verb.equals("запусти") || verb.equals("продолжи"));
         return new Playback(relative ? PlaybackAction.SEEK_BY : PlaybackAction.SEEK_TO, positionMs, resume);
+    }
+
+    static Playback contextualPlayback(String transcript) {
+        String text = commandText(transcript);
+        if (text == null) return null;
+        switch (text) {
+            case "пауза": case "поставь на паузу": case "поставь на пауз":
+                return new Playback(PlaybackAction.PAUSE, 0);
+            case "продолжи": case "продолжи воспроизведение": case "возобнови воспроизведение":
+                return new Playback(PlaybackAction.RESUME, 0);
+            default:
+                return null;
+        }
     }
 
     private static long playbackTime(String text) {

@@ -15,15 +15,21 @@ final class TvChannelCommand {
     private static final Pattern OKKO_SOURCE = Pattern.compile("(?:^|[ ,:]+)(?:на|в|через) +"
             + "(?:(?:приложении|кинотеатре|сервисе|видео ?сервисе) +)?"
             + "(?:ок ?ко|око|okko)(?=$|[ ,:])");
+    private static final Pattern OPEN_CHANNELS = Pattern.compile(
+            "^(?:открой|покажи) +(?:(?:в|на) (?:ок ?ко|око|okko) +)?(?:раздел +)?"
+            + "(?:все +)?(?:теле ?каналы|(?:тв|tv)[ -]?каналы|список телеканалов)"
+            + "(?: +(?:(?:в|на) (?:ок ?ко|око|okko)|вок))?$");
     private static final Pattern CHANNEL_LABEL = Pattern.compile("^(?:(теле ?канал|(?:тв|tv)[ -]?канал|"
             + "прямой эфир(?: телеканала| канала)?|эфир телеканала)|канал)(?=$|[ ,:])[ ,:]*");
-    private static final Pattern NEEDS_QUALIFIER = Pattern.compile("первый|пятый|матч|пятница|домашний"
+    private static final Pattern CLIPPED_CHANNEL_LABEL = Pattern.compile("теле ?кан?");
+    private static final Pattern PLAYBACK_SUFFIX = Pattern.compile("(?:^| )на паузу?$");
+    private static final Pattern NEEDS_QUALIFIER = Pattern.compile("первый|пятый|матч|пятница"
             + "|культура|культуру|карусель|спас|звезда|звезду|мир|еда|еду|солнце");
     private static final Pattern NEGATIVE = Pattern.compile("^не(?: |$)");
     private static final int MAX_CHANNEL_NAME = 80;
     private static final Map<String, String> ALIASES = channelAliases();
 
-    enum Kind { PLAY, ASK_NAME, UNSUPPORTED_SOURCE }
+    enum Kind { PLAY, OPEN_LIST, ASK_NAME, UNSUPPORTED_SOURCE }
 
     final Kind kind;
     final String name;
@@ -38,6 +44,7 @@ final class TvChannelCommand {
         if (text == null) return null;
         String unquotedText = TvVoiceCommand.maskQuotes(text);
         if (unquotedText.indexOf('?') >= 0 || TvVoiceCommand.hasSeveralActions(unquotedText)) return null;
+        if (OPEN_CHANNELS.matcher(text).matches()) return new TvChannelCommand(Kind.OPEN_LIST, "");
         Matcher action = ACTION.matcher(text);
         if (!action.matches()) return null;
         String body = action.group(1);
@@ -53,6 +60,10 @@ final class TvChannelCommand {
         Matcher label = CHANNEL_LABEL.matcher(unquotedBody);
         boolean hasLabel = label.lookingAt();
         boolean television = hasLabel && label.group(1) != null;
+        String unquotedName = TvVoiceCommand.cleanTitle(hasLabel ? unquotedBody.substring(label.end()) : unquotedBody);
+        if (PLAYBACK_SUFFIX.matcher(unquotedName).find()) return null;
+        if (!hasLabel && CLIPPED_CHANNEL_LABEL.matcher(unquotedName).matches())
+            return new TvChannelCommand(Kind.ASK_NAME, "");
         String name = TvVoiceCommand.stripTitleQuotes(
                 TvVoiceCommand.cleanTitle(hasLabel ? body.substring(label.end()) : body));
         if (name.length() > MAX_CHANNEL_NAME || NEGATIVE.matcher(name).find()) return null;
@@ -107,6 +118,7 @@ final class TvChannelCommand {
         add(aliases, "БубOKKO", "БубОкко", "Буб Окко", "Бубоко", "Буба Окко");
         add(aliases, "ТНТ", "т э н т э", "тэ эн тэ", "т н т");
         add(aliases, "СТС", "эс тэ эс", "с т с");
+        add(aliases, "Ю");
         add(aliases, "Пятница!", "Пятница ТВ");
         add(aliases, "Домашний");
         add(aliases, "Муз-ТВ", "МузТВ", "Муз тэ вэ");

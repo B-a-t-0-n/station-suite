@@ -73,7 +73,8 @@ public final class LocalVoiceCommandsHostTest {
                 {"пауза", "поставь на паузу", "поставь музыку на паузу", "приостанови музыку"},
                 {"продолжи", "продолжи музыку", "продолжи воспроизведение", "возобнови музыку", "возобнови воспроизведение"},
                 {"останови музыку", "выключи музыку", "останови воспроизведение"},
-                {"домой", "на главный экран", "открой главный экран", "вернись на главный экран"}
+                {"домой", "на главный экран", "открой главный экран", "вернись на главный экран",
+                        "открой главную", "открой главное", "открой главную страницу"}
         };
         LocalVoiceCommands.Action[] actions = {LocalVoiceCommands.Action.VOLUME_UP, LocalVoiceCommands.Action.VOLUME_DOWN,
                 LocalVoiceCommands.Action.MUTE, LocalVoiceCommands.Action.UNMUTE, LocalVoiceCommands.Action.PAUSE,

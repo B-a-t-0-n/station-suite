@@ -409,7 +409,7 @@ final class RuntimeVoiceHandler {
         lastWriter=writer;lastFeedback=feedback;feedbacks.incrementAndGet();
     }
 }
-final class VoicePipeline {enum LocalFeedback { MUSIC_NOT_FOUND, MUSIC_UNAVAILABLE, TIMER_CREATED, TIMER_UNAVAILABLE, TIMER_NOT_RUNNING, TIMER_AMBIGUOUS, TIMER_STOP_UNAVAILABLE }}
+final class VoicePipeline {enum LocalFeedback { MUSIC_NOT_FOUND, MUSIC_UNAVAILABLE, PLAYBACK_INACTIVE, TIMER_CREATED, TIMER_UNAVAILABLE, TIMER_NOT_RUNNING, TIMER_AMBIGUOUS, TIMER_STOP_UNAVAILABLE }}
 final class LegacyVoiceSession {
     static final int SERVER_ENDPOINT_REASON=-3;
     static final class Metadata {final int audioBytes,endReason;final long captureMillis=1;

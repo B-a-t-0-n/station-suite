@@ -177,6 +177,19 @@ public final class TvVoiceCommandHostTest {
     }
 
     private static void contextualPlayback() {
+        for (String text : new String[] {"Алиса, какой сейчас контекст?", "В каком ты сейчас контексте",
+                "Алиса, скажи, какой сейчас контекст?"})
+            require(TvVoiceCommand.contextQuestion(text), text, "current context request missed");
+        for (String text : new String[] {"объясни контекст фильма", "включи фильм Контекст", "какая погода"})
+            require(!TvVoiceCommand.contextQuestion(text), text, "other query read as context status");
+        for (String text : new String[] {"поставь фильм на пауз", "поставь телеканал на пауз",
+                "поставь прямой эфир на паузу"})
+            require(TvVoiceCommand.playback(text) != null && TvVoiceCommand.playback(text).action
+                    == TvVoiceCommand.PlaybackAction.PAUSE, text, "clipped or explicit TV pause missed");
+        require(TvVoiceCommand.contextualPlayback("Алиса, поставь на пауз") != null,
+                "поставь на пауз", "clipped generic pause missed");
+        require(TvVoiceCommand.contextualPlayback("поставь музыку на паузу") == null,
+                "поставь музыку на паузу", "music pause routed to video");
         String title = TvVoiceCommand.contextualTitle("Алиса, включи мне Время первых.");
         require("Время первых".equals(title), "Время первых", "wrong bare film title");
         assertCommand(TvVoiceCommand.contextualPlay(title, null), "Время первых",

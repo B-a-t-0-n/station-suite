@@ -1,44 +1,72 @@
 package local.station.voicebridge;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
 
-/** Public channel IDs from the Okko TV guide. Launches through the installed Okko app. */
+/** The public guide's channel IDs; the installed Okko app handles access and playback. */
 final class OkkoChannels {
-    private static final Map<String, Channel> CHANNELS = new HashMap<>();
+    private static final Map<String, Channel> EXACT = new HashMap<>();
+    private static final Map<String, Channel> SPOKEN = new HashMap<>();
 
     static {
-        add("Первый канал", 31266743);
-        add("Россия 1", 31263664);
-        add("Матч ТВ", 194696717);
-        add("НТВ", 222903718);
-        add("Пятый канал", 31263662);
-        add("Россия Культура", 31263659);
-        add("Россия 24", 31263665);
-        add("Карусель", 413994390);
-        add("ОТР", 374422719);
-        add("ТВ Центр", 31263669);
-        add("РЕН ТВ", 31263663);
-        add("Спас", 31263666);
-        add("Okko TV", 631975545);
-        add("БубОкко", 644651263);
+        Set<String> ambiguous = new HashSet<>();
+        for (String[] entry : OkkoPublicChannelSnapshot.ENTRIES) {
+            Channel channel = new Channel(entry[0], entry[1]);
+            EXACT.put(exactKey(channel.title), channel);
+            addSpoken(channel.title, channel, ambiguous);
+            if (channel.title.indexOf('+') >= 0)
+                addSpoken(channel.title.replace("+", " плюс "), channel, ambiguous);
+        }
+        for (String key : ambiguous) SPOKEN.remove(key);
+
+        preferredLabel("Телеканал «Россия»", "Россия 1");
+        preferredLabel("Телекомпания НТВ", "НТВ");
+        preferredLabel("Телеканал «Россия-Культура»", "Россия Культура");
+        preferredLabel("Российский информационный канал «Россия-24»", "Россия 24");
+        preferredLabel("Детско-юношеский телеканал «Карусель»", "Карусель");
+        preferredLabel("Общественное телевидение России", "ОТР");
+        preferredLabel("ТВ Центр - Москва", "ТВ Центр");
+        preferredLabel("СПАС", "Спас");
+        preferredLabel("БубOKKO тв", "БубОкко");
     }
 
     private OkkoChannels() { }
 
     static Channel find(String title) {
-        return CHANNELS.get(TvChannelCommand.lookupKey(title));
+        if (title == null) return null;
+        Channel exact = EXACT.get(exactKey(title));
+        return exact != null ? exact : SPOKEN.get(TvChannelCommand.lookupKey(title));
     }
 
-    private static void add(String title, int id) {
-        CHANNELS.put(TvChannelCommand.lookupKey(title), new Channel(title, id));
+    static Channel find(String title, BooleanSupplier cancelled) {
+        return cancelled.getAsBoolean() ? null : find(title);
+    }
+
+    private static String exactKey(String value) {
+        return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static void addSpoken(String title, Channel channel, Set<String> ambiguous) {
+        String key = TvChannelCommand.lookupKey(title);
+        Channel old = SPOKEN.putIfAbsent(key, channel);
+        if (old != null && !old.id.equals(channel.id)) ambiguous.add(key);
+    }
+
+    private static void preferredLabel(String officialTitle, String spokenTitle) {
+        Channel channel = EXACT.get(exactKey(officialTitle));
+        if (channel != null)
+            SPOKEN.put(TvChannelCommand.lookupKey(spokenTitle), new Channel(spokenTitle, channel.id));
     }
 
     static final class Channel {
         final String title;
-        private final int id;
+        private final String id;
 
-        private Channel(String title, int id) {
+        private Channel(String title, String id) {
             this.title = title;
             this.id = id;
         }
