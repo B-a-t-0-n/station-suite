@@ -20,7 +20,7 @@ class RuntimeVoiceHandlerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='voice-runtime-handler-') as temporary:
             target = Path(temporary)
             sources = [ROOT / 'src/local/station/voicebridge' / name for name in
-                       ('RuntimeVoiceHandler.java', 'VoiceCloudGate.java', 'VoicePipeline.java',
+                       ('RuntimeVoiceHandler.java', 'VoiceHistory.java', 'VoiceCloudGate.java', 'VoicePipeline.java',
                         'CloudClient.java', 'SpeechifyClient.java', 'NativeOggInput.java',
                         'LegacyVoiceSession.java', 'LegacyVoiceReply.java', 'LoopbackVoiceServer.java')]
             test = Path(__file__).resolve().parent / 'runtime-host/RuntimeVoiceHandlerHostTest.java'

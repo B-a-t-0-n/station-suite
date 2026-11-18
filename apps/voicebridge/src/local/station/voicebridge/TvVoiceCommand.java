@@ -106,8 +106,11 @@ final class TvVoiceCommand {
     private static final Pattern VIDEO_PAUSE = words("^(?:(?:поставь|поставить) +" + VIDEO_TARGET + " +на паузу"
             + "|(?:поставь|поставить) +на паузу +" + VIDEO_TARGET + "|приостанови +" + VIDEO_TARGET
             + "|пауза (?:в фильме|в сериале|на видео))$");
-    private static final Pattern VIDEO_RESUME = words("^(?:продолжи|возобнови|сними с паузы) +"
-            + "(?:просмотр +)?(?:" + VIDEO_TARGET + "|фильма|сериала|видео)$");
+    private static final String CONTINUE = "(?:продолжи(?:ть)?|продолжай|возобнови(?:ть)?)";
+    private static final Pattern RESUME_LAST_FILM = words("^" + CONTINUE
+            + " +(?:(?:смотреть|просмотр) +)?(?:(?:этот|текущий|последний) +)?(?:фильм|фильма|кино)$");
+    private static final Pattern VIDEO_RESUME = words("^(?:" + CONTINUE + "|сними с паузы) +"
+            + "(?:(?:смотреть|просмотр) +)?(?:" + VIDEO_TARGET + "|фильма|сериала|видео)$");
     private static final Pattern VIDEO_RESTART = words("^(?:(?:включи|поставь|запусти|воспроизведи|смотри) +"
             + VIDEO_TARGET + " +(?:сначала|с начала|с самого начала)|(?:включи|запусти|поставь) +"
             + "(?:сначала|с начала) +" + VIDEO_TARGET + "|(?:перезапусти|начни заново) +" + VIDEO_TARGET
@@ -134,15 +137,21 @@ final class TvVoiceCommand {
         final PlaybackAction action;
         final long positionMs;
         final boolean resumeAfterSeek;
+        final boolean resumeLastFilm;
 
         private Playback(PlaybackAction action, long positionMs) {
             this(action, positionMs, false);
         }
 
         private Playback(PlaybackAction action, long positionMs, boolean resumeAfterSeek) {
+            this(action, positionMs, resumeAfterSeek, false);
+        }
+
+        private Playback(PlaybackAction action, long positionMs, boolean resumeAfterSeek, boolean resumeLastFilm) {
             this.action = action;
             this.positionMs = positionMs;
             this.resumeAfterSeek = resumeAfterSeek;
+            this.resumeLastFilm = resumeLastFilm;
         }
     }
 
@@ -389,6 +398,7 @@ final class TvVoiceCommand {
         String text = commandText(transcript);
         if (text == null || text.indexOf('?') >= 0 || PLAYBACK_NEGATION.matcher(text).find()) return null;
         if (VIDEO_PAUSE.matcher(text).matches()) return new Playback(PlaybackAction.PAUSE, 0);
+        if (RESUME_LAST_FILM.matcher(text).matches()) return new Playback(PlaybackAction.RESUME, 0, false, true);
         if (VIDEO_RESUME.matcher(text).matches()) return new Playback(PlaybackAction.RESUME, 0);
         if (VIDEO_RESTART.matcher(text).matches()) return new Playback(PlaybackAction.RESTART, 0);
         Matcher seek = SEEK.matcher(text);

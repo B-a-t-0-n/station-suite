@@ -2,15 +2,20 @@ package local.station.agent;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
-/** Test the real HTTP route; no bound socket, native command, sound, or timer runtime. */
+/** Test the real HTTP route with a fake browser and bounded loopback upstream. */
 public final class AgentScheduleHttpHostTest {
     private static int assertions;
     private static final class Peer extends Socket {
@@ -32,11 +37,86 @@ public final class AgentScheduleHttpHostTest {
         if (!condition) throw new AssertionError(reason);
     }
     private static String dispatch(AgentHttpServer server, String method, String target, boolean local) throws Exception {
-        Peer peer = new Peer(method + " " + target + " HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n", local);
+        return dispatch(server, method, target, local, "Content-Length: 0\r\n");
+    }
+    private static String dispatch(AgentHttpServer server, String method, String target, boolean local,
+                                   String headers) throws Exception {
+        Peer peer = new Peer(method + " " + target + " HTTP/1.1\r\nHost: localhost\r\n" + headers + "\r\n", local);
         Method handle = AgentHttpServer.class.getDeclaredMethod("handle", Socket.class);
         handle.setAccessible(true);
         handle.invoke(server, peer);
         return new String(peer.output.toByteArray(), StandardCharsets.UTF_8);
+    }
+    private static void history(AgentService service) throws Exception {
+        String path = "/api/voice/history", clear = path + "/clear";
+        String token = "0123456789abcdef0123456789abcdef";
+        String auth = "Authorization: Bearer " + token + "\r\n";
+        try (ServerSocket upstream = new ServerSocket(0, 2, InetAddress.getByName("127.0.0.1"))) {
+            upstream.setSoTimeout(2000);
+            AgentHttpServer server = new AgentHttpServer(new android.content.Context(), service,
+                    new VoiceHistoryGateway(upstream.getLocalPort()));
+            String response = dispatch(server, "GET", path, false);
+            check(response.startsWith("HTTP/1.1 401 ") && !response.contains("Access-Control-Allow-Origin")
+                    && response.contains("no-store"), "private route is locked and has no CORS");
+            check(dispatch(server, "OPTIONS", path, false).startsWith("HTTP/1.1 405 "), "no CORS preflight");
+            check(dispatch(server, "GET", path + "?key=" + token, false, auth).startsWith("HTTP/1.1 400 "),
+                    "token is never taken from query");
+            check(dispatch(server, "POST", path, false, auth).startsWith("HTTP/1.1 405 "), "read is GET only");
+            check(dispatch(server, "GET", clear, false, auth).startsWith("HTTP/1.1 405 "), "clear is POST only");
+            check(dispatch(server, "POST", clear, false, auth + "Content-Length: 7\r\n").startsWith("HTTP/1.1 400 "),
+                    "no request body");
+            check(dispatch(server, "POST", clear, false, auth + "Transfer-Encoding: chunked\r\n").startsWith("HTTP/1.1 400 "),
+                    "no chunked body");
+            check(dispatch(server, "GET", path, false, auth + auth).startsWith("HTTP/1.1 400 "), "no duplicate auth");
+            check(dispatch(server, "GET", path, false, auth + "Sec-Fetch-Site: cross-site\r\n")
+                    .startsWith("HTTP/1.1 400 "), "cross-origin fetch header rejected");
+            String history = "{\"ok\":true,\"enabled\":true,\"entries\":[{\"answer\":\"Проверка\"}]}";
+            response = exchange(server, upstream, "GET", path, "/history",
+                    auth + "Cookie: never-forward\r\nSec-Fetch-Site: same-origin\r\n", token,
+                    "200 OK", "application/json; charset=utf-8", history, history.getBytes(StandardCharsets.UTF_8).length);
+            check(response.startsWith("HTTP/1.1 200 ") && response.endsWith(history)
+                    && response.contains("Cross-Origin-Resource-Policy: same-origin"), "authorized dashboard receives UTF-8");
+            response = exchange(server, upstream, "POST", clear, "/history/clear", auth, token,
+                    "200 OK", "application/json", "{\"ok\":true}", 11);
+            check(response.startsWith("HTTP/1.1 200 ") && response.endsWith("{\"ok\":true}"), "authorized clear succeeds");
+            response = exchange(server, upstream, "GET", path, "/history", auth, token,
+                    "503 Service Unavailable", "application/json", "{\"ok\":false,\"code\":\"disabled\"}", 30);
+            check(response.startsWith("HTTP/1.1 503 ") && response.contains("\"disabled\""), "disabled is distinguished");
+            response = exchange(server, upstream, "GET", path, "/history", auth, token,
+                    "200 OK", "application/json", "", 262145);
+            check(response.startsWith("HTTP/1.1 503 "), "oversized upstream payload rejected");
+        }
+    }
+
+    private static String exchange(AgentHttpServer server, ServerSocket upstream, String method, String path,
+                                   String localPath, String headers, String token,
+                                   String upstreamStatus, String type, String body, int length) throws Exception {
+        FutureTask<Void> serve = new FutureTask<>(() -> {
+            try (Socket socket = upstream.accept()) {
+                socket.setSoTimeout(1500);
+                BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
+                if (!(method + " " + localPath + " HTTP/1.1").equals(input.readLine()))
+                    throw new AssertionError("wrong upstream operation");
+                boolean validated = false;
+                String line;
+                while ((line = input.readLine()) != null && !line.isEmpty()) {
+                    if (line.equals("Authorization: Bearer " + token.toUpperCase(java.util.Locale.ROOT))) validated = true;
+                    if (line.startsWith("Cookie:") || line.startsWith("Sec-Fetch-"))
+                        throw new AssertionError("browser headers were forwarded");
+                }
+                if (!validated) throw new AssertionError("upstream did not receive the expected authorization");
+                String wire = "HTTP/1.1 " + upstreamStatus + "\r\nContent-Type: " + type + "\r\nContent-Length: "
+                        + length + "\r\nConnection: close\r\n\r\n" + body;
+                socket.getOutputStream().write(wire.getBytes(StandardCharsets.UTF_8));
+            }
+            return null;
+        });
+        Thread reply = new Thread(serve, "history-test-upstream");
+        reply.setDaemon(true);
+        reply.start();
+        String response = dispatch(server, method, path, false, headers);
+        serve.get(2500, TimeUnit.MILLISECONDS);
+        return response;
     }
     private static String query(String payload) throws Exception {
         return "/api/schedules?request=" + URLEncoder.encode(payload, "UTF-8");
@@ -97,6 +177,7 @@ public final class AgentScheduleHttpHostTest {
         response = dispatch(server, "POST", "/api/hardware", false);
         check(response.startsWith("HTTP/1.1 405 ") && service.hardwareCalls == 1,
                 "hardware endpoint is read-only");
-        System.out.println(assertions + " assertions passed; fake peers only");
+        history(service);
+        System.out.println(assertions + " assertions passed; fake peers and loopback only");
     }
 }

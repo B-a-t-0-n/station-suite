@@ -34,6 +34,7 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
     private static final Pattern NUMBERS = Pattern.compile("\\p{N}+");
     private static final long SERIES_CONTEXT_MS = TimeUnit.MINUTES.toMillis(15);
     private static final long SERIES_REPLY_MS = TimeUnit.MINUTES.toMillis(3);
+    private static final String LAST_OKKO_FILM = "last-okko-film.json";
     private final Context app;
     private final TvPlaybackControl playback;
     private final TvVoiceCommand.YearFollowUp yearFollowUp = new TvVoiceCommand.YearFollowUp();
@@ -151,6 +152,7 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
             if (openHit(hit, target, play, cancelled)) {
                 if (startsOkko) {
                     playback.rememberOkkoVideo(hit.displayTitle, null, hit.durationMs, previousPlayer);
+                    rememberFilm(hit);
                     return result("Включаю «" + hit.displayTitle + "» в Окко.", "playback_requested", true);
                 }
                 return result("Нашла «" + hit.displayTitle + "» в " + hit.provider.label + ". Открываю.", "title_opened", true);
@@ -307,7 +309,9 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         switch (playback.execute(request, cancelled)) {
             case APPLIED: return result(answer, "video_control_applied", true);
             case CANCELLED: return result("Команда отменена.", "cancelled", false);
-            case NO_VIDEO: return result("Сначала запусти фильм или серию на телевизоре.", "video_not_active", false);
+            case NO_VIDEO:
+                if (request.resumeLastFilm) return resumeLastFilm(cancelled);
+                return result("Сначала запусти фильм или серию на телевизоре.", "video_not_active", false);
             case PERMISSION_REQUIRED:
                 return result("Включи управление видео Станции в специальных возможностях телевизора.",
                         "video_permission_required", false);
@@ -315,6 +319,39 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
                 return result("Не удалось подтвердить действие в Окко.", "video_control_unconfirmed", false);
             default: return result("Не удалось выполнить эту команду в видеоплеере.", "video_control_unavailable", false);
         }
+    }
+
+    private void rememberFilm(TvVideoSearch.Hit hit) {
+        String id = TvVideoSearch.okkoMovieId(hit.target);
+        if (id == null || !TITLE.matcher(hit.displayTitle).matches()) return;
+        try {
+            PrivateConfig.write(app, LAST_OKKO_FILM, new JSONObject().put("id", id)
+                    .put("title", hit.displayTitle).put("durationMs", hit.durationMs));
+        } catch (Exception unavailable) {
+            // Failure to keep history does not affect the launch already dispatched.
+        }
+    }
+
+    private VoicePipeline.TvResult resumeLastFilm(BooleanSupplier cancelled) {
+        TvVideoSearch.Hit hit;
+        try {
+            JSONObject saved = PrivateConfig.read(app, LAST_OKKO_FILM);
+            String title = saved.optString("title");
+            String target = "okko://movie?uid=" + saved.optString("id") + "&type=movie";
+            if (!TITLE.matcher(title).matches() || TvVideoSearch.okkoMovieId(target) == null)
+                return result("Сначала включи фильм в Окко голосом.", "resume_history_missing", false);
+            long duration = saved.optLong("durationMs", -1);
+            hit = new TvVideoSearch.Hit(TvVoiceCommand.Provider.OKKO, "", target, title, 0, 0,
+                    "film", duration > 0 && duration <= TimeUnit.HOURS.toMillis(24) ? duration : -1);
+        } catch (Exception unavailable) {
+            return result("Сначала включи фильм в Окко голосом.", "resume_history_missing", false);
+        }
+        if (cancelled.getAsBoolean()) return result("Команда отменена.", "cancelled", false);
+        if (!openHit(hit, hit.launchTarget(true), true, cancelled))
+            return cancelled.getAsBoolean() ? result("Команда отменена.", "cancelled", false)
+                    : result("Не удалось открыть последний фильм в Окко.", "resume_launch_unavailable", false);
+        playback.rememberOkkoVideo(hit.displayTitle, null, hit.durationMs, null);
+        return result("Открываю «" + hit.displayTitle + "» для продолжения в Окко.", "movie_resume_requested", true);
     }
 
     private boolean openHit(TvVideoSearch.Hit hit, String target, boolean play, BooleanSupplier cancelled) {

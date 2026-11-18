@@ -17,6 +17,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
     private final Validator validator;
     private final Clock clock;
     private final Runnable observer;
+    private final VoiceHistory history;
     private boolean closed, credentialsReady, lastFileDeleted;
     private int workers, failures, status, retryAfter = -1;
     private long generation, backoffUntil, accepted, rejected, completed, discarded, failed, transactions;
@@ -40,16 +41,26 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
     }
 
     RuntimeVoiceHandler(Context context, ConfigSource source, Runnable observer, VoicePipeline.TvHandler tv) {
+        this(context, source, observer, tv, null);
+    }
+
+    RuntimeVoiceHandler(Context context, ConfigSource source, Runnable observer, VoicePipeline.TvHandler tv,
+                        VoiceHistory history) {
         this(new VoicePipeline(application(context), tv), source, realValidator(application(context)),
-                () -> System.nanoTime() / 1000000L, observer);
+                () -> System.nanoTime() / 1000000L, observer, history);
         startWarmup();
     }
 
     RuntimeVoiceHandler(VoicePipeline pipeline, ConfigSource source, Validator validator, Clock clock, Runnable observer) {
+        this(pipeline, source, validator, clock, observer, null);
+    }
+
+    RuntimeVoiceHandler(VoicePipeline pipeline, ConfigSource source, Validator validator, Clock clock, Runnable observer,
+                        VoiceHistory history) {
         if (pipeline == null || source == null || validator == null || clock == null)
             throw new IllegalArgumentException("runtime_dependencies_required");
         this.pipeline = pipeline; this.source = source; this.validator = validator;
-        this.clock = clock; this.observer = observer;
+        this.clock = clock; this.observer = observer; this.history = history;
         refreshConfiguration();
     }
 
@@ -170,9 +181,11 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
         final long turn;
         LoopbackVoiceServer.ReplyWriter cancel = null;
         boolean admit = false;
+        boolean duplicate;
         String command = metadata.reference + '\u0000' + metadata.requestId + '\u0000' + metadata.sequenceNumber;
         synchronized (this) {
-            if (recentCommands.contains(command)) {
+            duplicate = recentCommands.contains(command);
+            if (duplicate) {
                 turn = 0; rejected++;
             } else if (!closed && workers == 0 && VoiceCloudGate.tryAcquire(ticket)) {
                 recentCommands.add(command);
@@ -185,7 +198,11 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
             }
         }
         if (cancel != null) cancel.cancelReply();
-        if (!admit) { completeWithoutSpeech(metadata, writer); writer.close(); changed(); return; }
+        if (!admit) {
+            completeWithoutSpeech(metadata, writer); writer.close(); changed();
+            if (!duplicate) recordLocal(transcript, "BUSY", false, -1);
+            return;
+        }
         final byte[] selected = audio == null ? null : audio.clone();
         changed();
         try {
@@ -197,6 +214,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
                 VoiceCloudGate.release(ticket);
             }
             completeWithoutSpeech(metadata, writer); writer.close(); changed();
+            recordLocal(transcript, "WORKER_START_FAILED", false, -1);
         }
     }
 
@@ -205,12 +223,17 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
                      Object ticket, long turn) {
         String identity = null;
         boolean replySent = false;
+        long started = clock.millis();
+        String[] resolvedText = {localText};
+        String historyCode = "CANCELLED", historyOutcome = "cancelled", historyAnswer = "";
         try {
             NativeOggInput.Result input = localText == null ? NativeOggInput.normalize(audio) : null;
             Settings settings = settings(); identity = settings.identity;
             synchronized (this) {
                 if (closed || generation != turn || !writer.isOpen()) { discarded++; return; }
-                if (backoffUntil > clock.millis()) { rejected++; return; }
+                if (backoffUntil > clock.millis()) {
+                    rejected++; historyCode = "API_BACKOFF"; historyOutcome = "error"; return;
+                }
                 state = "pipeline"; transactions++;
             }
             changed();
@@ -223,6 +246,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
                 }
                 @Override public void begin(String transcript, String answer) throws IOException {
                     if (isCancelled()) throw new IOException("cancelled");
+                    resolvedText[0] = transcript;
                     writer.beginStreaming(metadata, transcript, answer);
                     synchronized (RuntimeVoiceHandler.this) { state = "reply"; }
                 }
@@ -242,6 +266,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
                         }
                     })
                     : streaming ? pipeline.runStreaming(settings.config, input.audio, output) : pipeline.run(settings.config, input.audio);
+            resolvedText[0] = result.transcript;
             synchronized (this) {
                 timings(result.summary);
                 lastFileDeleted = result.summary.optBoolean("fileDeleted");
@@ -250,14 +275,22 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
             }
             if (!streaming) writer.reply(metadata, result.transcript, result.answer, result.audio);
             replySent = true;
+            historyAnswer = result.answer;
+            String television = result.summary.optString("tvCode");
+            historyCode = !television.isEmpty() ? television : feedback == null ? "answered" : feedback.name();
+            historyOutcome = outcome(historyCode, result.summary.optBoolean("controlActionsExecuted"),
+                    feedback == null && television.isEmpty());
             synchronized (this) {
                 if (!closed && generation == turn && settings.identity.equals(configIdentity))
                     pipeline.rememberCompletedConversation(result);
                 completed++; failures = 0; backoffUntil = 0; code = ""; stage = ""; provider = ""; status = 0; retryAfter = -1;
             }
         } catch (NativeOggInput.InputException invalid) {
+            historyCode = "INVALID_AUDIO"; historyOutcome = "error";
             synchronized (this) { rejected++; code = "INVALID_AUDIO"; stage = "input"; }
         } catch (VoicePipeline.PipelineException failure) {
+            historyCode = failure.code;
+            historyOutcome = "CANCELLED".equals(historyCode) ? "cancelled" : "error";
             synchronized (this) {
                 timings(failure.summary);
                 lastFileDeleted = failure.summary.optBoolean("fileDeleted");
@@ -269,6 +302,8 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
                 }
             }
         } catch (Exception ignored) {
+            historyCode = identity == null ? "INVALID_CONFIG" : "LOCAL_FAILURE";
+            historyOutcome = "error";
             synchronized (this) {
                 failed++;
                 if (identity == null) { credentialsReady = false; code = "INVALID_CONFIG"; stage = "config"; }
@@ -281,7 +316,39 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
                 workers = 0; currentWriter = null; state = closed ? "closed" : "idle";
                 VoiceCloudGate.release(ticket);
             }
+            recordHistory(resolvedText[0], historyAnswer, historyCode, historyOutcome,
+                    Math.max(0, clock.millis() - started));
             changed();
+        }
+    }
+
+    /** Local commands that complete without a synthesized response. */
+    void recordLocal(String transcript, String code, boolean executed, long elapsedMs) {
+        recordHistory(transcript, "", code, outcome(code, executed, false), elapsedMs);
+    }
+
+    private void recordHistory(String transcript, String answer, String code, String outcome, long elapsedMs) {
+        if (history != null) history.record(transcript, answer, code, outcome, elapsedMs);
+    }
+
+    private static String outcome(String code, boolean executed, boolean answered) {
+        if (code == null) return "unknown";
+        switch (code) {
+            case "cancelled": case "CANCELLED": return "cancelled";
+            case "season_requested": case "episode_requested": case "year_ambiguous":
+            case "episode_count_season_needed": case "series_context_missing":
+            case "unsupported_or_ambiguous": case "TIMER_AMBIGUOUS": case "timer_ambiguous":
+                return "clarification";
+            case "no_match": case "year_no_match": case "episode_not_found": case "episode_not_listed":
+            case "episodes_not_found": case "season_not_found": case "MUSIC_NOT_FOUND": case "music_not_found":
+            case "TIMER_NOT_RUNNING": case "timer_not_running": case "resume_history_missing":
+                return "no_match";
+            case "episode_count": case "episode_listed": case "apps_listed": return "answer";
+            case "TIMER_CREATED": case "video_control_applied": return "action";
+            case "playback_requested": case "episode_playback_requested": case "movie_resume_requested":
+            case "provider_opened_no_match": case "provider_search_opened": case "title_opened":
+            case "series_card_opened": case "app_opened": return "requested";
+            default: return executed ? "action" : answered ? "answer" : "error";
         }
     }
 

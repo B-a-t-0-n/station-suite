@@ -150,6 +150,16 @@ public final class TvVoiceCommandHostTest {
         playback("перемотай фильм на 23 минуту 10 секунду", TvVoiceCommand.PlaybackAction.SEEK_TO, 1_390_000);
         playback("поставь фильм на двадцать третьей минуте и десятой секунде", TvVoiceCommand.PlaybackAction.SEEK_TO, 1_390_000);
         playback("включи фильм с 23:10", TvVoiceCommand.PlaybackAction.SEEK_TO, 1_390_000);
+        for (String text : new String[]{"Алиса, продолжи фильм", "Продолжи смотреть фильм",
+                "Продолжить фильм", "Продолжи просмотр фильма", "Продолжи последний фильм"}) {
+            TvVoiceCommand.Playback continuation = TvVoiceCommand.playback(text);
+            require(continuation != null && continuation.action == TvVoiceCommand.PlaybackAction.RESUME
+                    && continuation.resumeLastFilm, text, "movie resume keeps the last-film fallback");
+        }
+        require(!TvVoiceCommand.playback("сними с паузы фильм").resumeLastFilm,
+                "сними с паузы фильм", "pause toggle never opens history");
+        require(!TvVoiceCommand.playback("продолжи сериал").resumeLastFilm,
+                "продолжи сериал", "series resume never opens the last movie");
         require(TvVoiceCommand.playback("включи фильм с 23:10").resumeAfterSeek,
                 "включи фильм с 23:10", "play from a timestamp resumes playback");
         require(!TvVoiceCommand.playback("перейди на 23:10").resumeAfterSeek,

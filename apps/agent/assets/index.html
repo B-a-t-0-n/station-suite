@@ -48,6 +48,42 @@ input,select{min-width:0;border:1px solid var(--line);background:#faf9fd;color:v
   .hardware-metric { padding: 16px 13px; }
 }
 
+.tabs { max-width: 840px; }
+.voice-panel-nav { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 15px; }
+.voice-panel-nav[hidden] { display: none; }
+.voice-panel-nav a { display: inline-flex; align-items: center; min-height: 34px; padding: 5px 12px; border-radius: 11px; color: var(--muted); font-size: 13px; }
+.voice-panel-nav a[aria-current="page"] { color: var(--accent); background: var(--soft); font-weight: 650; }
+.voice-commands-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 17px; }
+.voice-commands-head h2 { margin: 0; color: var(--ink); font-size: clamp(21px, 4vw, 28px); letter-spacing: -.6px; text-transform: none; }
+.voice-commands-head .small { margin: 4px 0 0; }
+.voice-commands-search { width: min(100%, 270px); }
+.voice-commands-search span { display: block; margin: 0 0 4px; }
+.voice-commands-search input { width: 100%; }
+.voice-commands-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.voice-command-group h3 { margin: 0 0 9px; font-size: 16px; font-weight: 650; }
+.voice-command-list { margin: 0; padding: 0; list-style: none; }
+.voice-command-list li { padding: 7px 0; border-bottom: 1px solid #f1eff5; }
+.voice-command-list li:last-child { border: 0; }
+.voice-command-note { margin: 11px 0 0; }
+.voice-history-auth { max-width: 520px; }
+.voice-history-auth p { margin: 0 0 13px; }
+.voice-history-auth label { display: block; margin-bottom: 6px; }
+.voice-history-auth input { flex: 1; min-width: 150px; }
+.voice-history-entries { display: grid; gap: 12px; margin: 14px 0 0; padding: 0; list-style: none; }
+.voice-history-entry { padding: 17px 19px; }
+.voice-history-entry p { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.voice-history-entry strong { margin-right: 4px; }
+.voice-history-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.voice-history-status { margin: 10px 0; }
+.voice-history-status:empty { display: none; }
+@media(max-width: 680px) {
+  .agent .tabs button { min-width: 0; padding-inline: 1px; font-size: clamp(9px, 2.7vw, 11px); }
+  .agent .tabs button:nth-last-child(-n+2) { flex-grow: 1.2; }
+  .agent header .mini b { max-width: 100%; }
+  .voice-commands-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .voice-commands-search { width: 100%; }
+}
+
 </style>
 </head>
 <body class="agent">
@@ -62,9 +98,14 @@ input,select{min-width:0;border:1px solid var(--line);background:#faf9fd;color:v
   <button class="tab" data-tab="player" onclick="showTab('player')"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17V5l11-2v12"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="17" cy="16" rx="3" ry="3"/></svg><span>Плеер</span></button>
   <button class="tab" data-tab="search" onclick="showTab('search')"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Поиск</span></button>
   <button class="tab" data-tab="tv" onclick="showTab('tv')"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><span>ТВ</span></button>
+  <button class="tab" data-tab="commands" onclick="showTab('commands')"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1m-7 8v2m-3 0h6"/></svg><span>Команды</span></button>
   <button class="tab" data-tab="lab" onclick="showTab('lab')"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8m-6 0v6L4 19a1.4 1.4 0 0 0 1.2 2h13.6a1.4 1.4 0 0 0 1.2-2L14 9V3M8 14h8"/></svg><span>Состояние</span></button>
 </div>
 <div id="message"></div>
+<nav id="voicePanelNav" class="voice-panel-nav" aria-label="Голосовой режим" hidden>
+  <a id="voiceCommandLink" href="#commands">Список команд</a>
+  <a id="voiceHistoryLink" href="#voice-history">История запросов</a>
+</nav>
 
 <section id="tab-player" class="panel">
   <div class="grid">
@@ -173,6 +214,118 @@ input,select{min-width:0;border:1px solid var(--line);background:#faf9fd;color:v
   </div>
 </section>
 
+<section id="tab-commands" class="panel" aria-labelledby="voiceCommandsTitle">
+  <div class="voice-commands-head">
+    <div>
+      <h2 id="voiceCommandsTitle">Голосовые команды</h2>
+      <p class="small muted">Скажите нужную фразу вслух рядом со Станцией.</p>
+    </div>
+    <label class="voice-commands-search">
+      <span class="small muted">Фильтр команд</span>
+      <input id="voiceCommandFilter" type="search" placeholder="Например, перемотай" autocomplete="off">
+    </label>
+  </div>
+  <p id="voiceCommandEmpty" class="card muted" role="status" hidden>Команд по этому запросу не найдено.</p>
+  <div class="voice-commands-grid">
+    <section class="card voice-command-group">
+      <h3>Фильмы и ТВ</h3>
+      <ul class="voice-command-list">
+        <li>Алиса, включи фильм Простоквашино</li>
+        <li>Алиса, найди на Окко Простоквашино</li>
+        <li>Алиса, найди фильм Простоквашино 2026 года</li>
+        <li>Алиса, 2026 <span class="small muted">· когда Алиса уточнила год</span></li>
+        <li>Алиса, открой Окко</li>
+        <li>Алиса, какие приложения установлены на телевизоре?</li>
+        <li>Алиса, домой</li>
+      </ul>
+      <p class="small muted voice-command-note">Поиск учитывает установленные приложения. Воспроизведение зависит от доступа в видеосервисе.</p>
+    </section>
+    <section class="card voice-command-group">
+      <h3>Плеер Окко</h3>
+      <ul class="voice-command-list">
+        <li>Алиса, продолжи фильм</li>
+        <li>Алиса, поставь фильм на паузу</li>
+        <li>Алиса, перемотай на тридцать секунд назад</li>
+        <li>Алиса, перемотай на минуту вперёд</li>
+        <li>Алиса, перейди на 12:34</li>
+        <li>Алиса, включи фильм с начала</li>
+      </ul>
+      <p class="small muted voice-command-note">Для управления открытым плеером включите «Управление видео Станции» в специальных возможностях Android TV.</p>
+      <p class="small muted voice-command-note">После выхода из Окко «Продолжи фильм» снова откроет последний фильм, запущенный голосом. Позицию хранит Окко.</p>
+    </section>
+    <section class="card voice-command-group">
+      <h3>Сериалы в Окко</h3>
+      <ul class="voice-command-list">
+        <li>Алиса, найди на Окко мультик Смешарики</li>
+        <li>Алиса, сколько серий доступно?</li>
+        <li>Алиса, сколько серий в пятом сезоне?</li>
+        <li>Алиса, доступна ли первая серия?</li>
+        <li>Алиса, включи первую серию пятого сезона Смешариков на Окко</li>
+        <li>Алиса, пятый сезон <span class="small muted">· после уточнения сезона</span></li>
+        <li>Алиса, первую <span class="small muted">· после уточнения серии</span></li>
+      </ul>
+      <p class="small muted voice-command-note">Короткие ответы работают после вопроса Алисы. Количество серий берётся из каталога Окко.</p>
+    </section>
+    <section class="card voice-command-group">
+      <h3>Музыка</h3>
+      <ul class="voice-command-list">
+        <li>Алиса, включи музыку</li>
+        <li>Алиса, включи песню Кино Группа крови</li>
+        <li>Алиса, поставь музыку на паузу</li>
+        <li>Алиса, продолжи музыку</li>
+        <li>Алиса, следующий трек</li>
+        <li>Алиса, предыдущий трек</li>
+        <li>Алиса, останови музыку</li>
+      </ul>
+    </section>
+    <section class="card voice-command-group">
+      <h3>Громкость</h3>
+      <ul class="voice-command-list">
+        <li>Алиса, сделай громче</li>
+        <li>Алиса, сделай тише</li>
+        <li>Алиса, громкость на тридцать процентов</li>
+        <li>Алиса, выключи звук</li>
+        <li>Алиса, верни звук</li>
+      </ul>
+    </section>
+    <section class="card voice-command-group">
+      <h3>Таймеры</h3>
+      <ul class="voice-command-list">
+        <li>Алиса, поставь таймер на пять минут</li>
+        <li>Алиса, останови таймер</li>
+        <li>Алиса, останови все таймеры</li>
+        <li>Алиса, стоп <span class="small muted">· остановить сигнал таймера</span></li>
+      </ul>
+    </section>
+  </div>
+</section>
+
+<section id="tab-voice-history" class="panel" aria-labelledby="voiceHistoryTitle">
+  <div class="voice-commands-head">
+    <div>
+      <h2 id="voiceHistoryTitle">История запросов</h2>
+      <p class="small muted" id="voiceHistoryRetention"></p>
+    </div>
+  </div>
+  <form id="voiceHistoryUnlock" class="card voice-history-auth">
+    <p class="small muted">На телевизоре откройте Station Voice Lab → «История запросов» → «Показать код».</p>
+    <label for="voiceHistoryCode">Код доступа</label>
+    <div class="row">
+      <input id="voiceHistoryCode" type="password" maxlength="64" autocapitalize="characters" autocomplete="off" spellcheck="false" required>
+      <button class="primary" id="voiceHistoryOpen" type="submit">Открыть</button>
+    </div>
+  </form>
+  <div id="voiceHistoryControls" hidden>
+    <div class="row">
+      <button id="voiceHistoryReload">Обновить</button>
+      <button id="voiceHistoryClear" class="danger" disabled>Очистить историю</button>
+      <button id="voiceHistoryLock" class="ghost">Закрыть доступ</button>
+    </div>
+  </div>
+  <p id="voiceHistoryStatus" class="small muted voice-history-status" role="status"></p>
+  <ol id="voiceHistoryEntries" class="voice-history-entries"></ol>
+</section>
+
 <section id="tab-lab" class="panel">
   <section class="hardware" aria-labelledby="hardwareTitle">
     <div class="hardware-head">
@@ -256,7 +409,7 @@ async function api(path) {
   }
 }
 function esc(value) { return String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function escJs(value) { return String(value ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/[\r\n]+/g,' '); }
+function escJs(value) { return esc(String(value ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/[\r\n\u2028\u2029]+/g,' ')); }
 const TV_APP_LABELS = {
   'ru.yandex.quasar.app':'Яндекс Станция',
   'com.google.android.youtube':'YouTube',
@@ -283,16 +436,58 @@ function fmtMs(ms) { const n=Math.max(0,Number(ms||0)); return Math.floor(n/6000
 function msg(text, bad=false) { $('message').textContent=text||''; $('message').style.color=bad?'var(--bad)':'var(--muted)'; }
 function dot(ok, label) { return '<span class="dot ' + (ok?'ok':'bad') + '"></span>' + label; }
 
-function showTab(name) {
+const TAB_HASH = {remote:'', player:'#player', search:'#search', tv:'#tv', commands:'#commands',
+  'voice-history':'#voice-history', lab:'#status'};
+
+function tabFromHash() {
+  return Object.keys(TAB_HASH).find(name => TAB_HASH[name] === location.hash) || 'remote';
+}
+
+function showTab(name, updateUrl = true) {
   activeTab = name;
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab').forEach(b => {
+    const selected = b.dataset.tab === (name === 'voice-history' ? 'commands' : name);
+    b.classList.toggle('active', selected);
+    b.setAttribute('aria-pressed', String(selected));
+  });
   const panel = $('tab-' + name); if (panel) panel.classList.add('active');
+  $('voicePanelNav').hidden = name !== 'commands' && name !== 'voice-history';
+  for (const [id, selected] of [['voiceCommandLink', name === 'commands'], ['voiceHistoryLink', name === 'voice-history']]) {
+    if (selected) $(id).setAttribute('aria-current', 'page');
+    else $(id).removeAttribute('aria-current');
+  }
+  if (updateUrl && TAB_HASH[name] !== undefined && location.hash !== TAB_HASH[name]) {
+    history.pushState(null, '', location.pathname + location.search + TAB_HASH[name]);
+  }
   if (name === 'tv') loadApps();
   if (name === 'remote') { loadRemoteApps(); refreshRemote(); }
   if (name === 'lab') refreshLab();
   syncHardwarePolling();
+  syncVoiceHistory();
 }
+
+function normalizeCommandFilter(text) {
+  return text.toLocaleLowerCase('ru').replaceAll('ё', 'е').trim();
+}
+
+$('voiceCommandFilter').addEventListener('input', event => {
+  const terms = normalizeCommandFilter(event.target.value).split(/\s+/).filter(Boolean);
+  let any = false;
+  for (const card of document.querySelectorAll('.voice-command-group')) {
+    const category = normalizeCommandFilter(card.querySelector('h3').textContent);
+    let matched = false;
+    for (const line of card.querySelectorAll('li')) {
+      const haystack = category + ' ' + normalizeCommandFilter(line.textContent);
+      const visible = terms.every(term => haystack.includes(term));
+      line.hidden = !visible;
+      matched ||= visible;
+    }
+    card.hidden = !matched;
+    any ||= matched;
+  }
+  $('voiceCommandEmpty').hidden = any;
+});
 
 async function refreshStatus() {
   const s = await api('/api/status');
@@ -634,10 +829,181 @@ async function refreshHardware() {
   }
 }
 
-document.addEventListener('visibilitychange', syncHardwarePolling);
+const VOICE_HISTORY_OUTCOMES = {
+  answer:'Ответ', action:'Выполнено', requested:'Команда передана', clarification:'Уточнение',
+  no_match:'Результат не найден', error:'Ошибка', cancelled:'Отменено', unknown:'Без отметки'
+};
+let voiceHistoryToken = '';
+let voiceHistoryUnlocked = false;
+let voiceHistoryEntryCount = 0;
+let voiceHistoryTimer;
+let voiceHistoryRequest;
+
+function watchingVoiceHistory() { return activeTab === 'voice-history' && !document.hidden; }
+
+function setVoiceHistoryStatus(text, warning = false) {
+  const status = $('voiceHistoryStatus');
+  if (status.textContent !== text) status.textContent = text;
+  status.classList.toggle('warn', warning);
+}
+
+function syncVoiceHistory() {
+  clearTimeout(voiceHistoryTimer);
+  if (watchingVoiceHistory()) refreshVoiceHistory();
+  else if (voiceHistoryRequest) {
+    voiceHistoryRequest.abort();
+    voiceHistoryRequest = null;
+    updateVoiceHistoryControls();
+  }
+}
+
+function updateVoiceHistoryControls() {
+  const busy = Boolean(voiceHistoryRequest);
+  $('voiceHistoryUnlock').hidden = voiceHistoryUnlocked;
+  $('voiceHistoryControls').hidden = !voiceHistoryUnlocked;
+  $('voiceHistoryOpen').disabled = busy;
+  $('voiceHistoryReload').disabled = busy;
+  $('voiceHistoryClear').disabled = busy || voiceHistoryEntryCount === 0;
+}
+
+function lockVoiceHistory(message = '') {
+  clearTimeout(voiceHistoryTimer);
+  if (voiceHistoryRequest) voiceHistoryRequest.abort();
+  voiceHistoryRequest = null;
+  voiceHistoryToken = '';
+  voiceHistoryUnlocked = false;
+  voiceHistoryEntryCount = 0;
+  $('voiceHistoryCode').value = '';
+  $('voiceHistoryEntries').replaceChildren();
+  $('voiceHistoryRetention').textContent = '';
+  setVoiceHistoryStatus(message, Boolean(message));
+  updateVoiceHistoryControls();
+}
+
+function appendVoiceHistoryLine(parent, label, value) {
+  const line = document.createElement('p');
+  const title = document.createElement('strong');
+  title.textContent = label;
+  line.append(title, document.createTextNode(' ' + value));
+  parent.append(line);
+}
+
+function renderVoiceHistory(data) {
+  const entries = Array.isArray(data.entries) ? data.entries : [];
+  const list = document.createDocumentFragment();
+  for (const entry of entries) {
+    const item = document.createElement('li');
+    item.className = 'card voice-history-entry';
+    const meta = document.createElement('div');
+    meta.className = 'small muted voice-history-meta';
+    const date = new Date(entry.timeMs);
+    if (Number.isFinite(entry.timeMs) && Number.isFinite(date.getTime())) {
+      const time = document.createElement('time');
+      time.dateTime = date.toISOString();
+      time.textContent = date.toLocaleString('ru-RU', {dateStyle:'short', timeStyle:'short'});
+      meta.append(time);
+    }
+    const result = document.createElement('span');
+    result.textContent = Object.hasOwn(VOICE_HISTORY_OUTCOMES, entry.outcome)
+      ? VOICE_HISTORY_OUTCOMES[entry.outcome] : VOICE_HISTORY_OUTCOMES.unknown;
+    if (typeof entry.code === 'string' && entry.code) result.title = entry.code;
+    meta.append(result);
+    if (Number.isFinite(entry.elapsedMs) && entry.elapsedMs >= 0) {
+      const elapsed = document.createElement('span');
+      elapsed.textContent = entry.elapsedMs < 1000 ? entry.elapsedMs + ' мс'
+        : (entry.elapsedMs / 1000).toLocaleString('ru-RU', {maximumFractionDigits:1}) + ' с';
+      meta.append(elapsed);
+    }
+    item.append(meta);
+    if (typeof entry.transcript === 'string' && entry.transcript) appendVoiceHistoryLine(item, 'Распознано', entry.transcript);
+    if (typeof entry.answer === 'string' && entry.answer) appendVoiceHistoryLine(item, 'Ответ', entry.answer);
+    list.append(item);
+  }
+  $('voiceHistoryEntries').replaceChildren(list);
+  voiceHistoryEntryCount = entries.length;
+  const limit = Number.isSafeInteger(data.limit) && data.limit > 0 ? data.limit : null;
+  const days = Number.isSafeInteger(data.retentionDays) && data.retentionDays > 0 ? data.retentionDays : null;
+  $('voiceHistoryRetention').textContent = limit && days ? 'До ' + limit + ' записей за последние ' + days + ' дн.' : '';
+}
+
+async function refreshVoiceHistory(clear = false) {
+  if (!watchingVoiceHistory() || !voiceHistoryToken || voiceHistoryRequest) return;
+  clearTimeout(voiceHistoryTimer);
+  const controller = new AbortController();
+  voiceHistoryRequest = controller;
+  updateVoiceHistoryControls();
+  if (!voiceHistoryUnlocked) setVoiceHistoryStatus('Проверяю код…');
+  const timeout = setTimeout(() => controller.abort(), 4500);
+  try {
+    const response = await fetch(clear ? '/api/voice/history/clear' : '/api/voice/history', {
+      method:clear ? 'POST' : 'GET',
+      headers:{Authorization:'Bearer ' + voiceHistoryToken},
+      cache:'no-store', redirect:'error', signal:controller.signal
+    });
+    if (voiceHistoryRequest !== controller) return;
+    if (response.status === 401) {
+      lockVoiceHistory('Код не подошёл. Проверьте код в Station Voice Lab.');
+      return;
+    }
+    const data = await response.json();
+    if (voiceHistoryRequest !== controller) return;
+    if (data.code === 'disabled' || data.enabled === false) {
+      lockVoiceHistory('История выключена. Включите её в Station Voice Lab на телевизоре.');
+      return;
+    }
+    if (!response.ok || data.ok !== true) throw new Error('voice_history_unavailable');
+    voiceHistoryUnlocked = true;
+    renderVoiceHistory(data);
+    setVoiceHistoryStatus(clear ? 'История очищена.' : voiceHistoryEntryCount === 0 ? 'В истории пока нет запросов.' : '');
+  } catch {
+    if (voiceHistoryRequest !== controller) return;
+    if (!voiceHistoryUnlocked) {
+      lockVoiceHistory('История недоступна. Проверьте, что она включена на телевизоре, и повторите.');
+    } else {
+      setVoiceHistoryStatus(clear ? 'Не удалось очистить историю.' : 'Не удалось обновить историю.', true);
+    }
+  } finally {
+    clearTimeout(timeout);
+    if (voiceHistoryRequest === controller) {
+      voiceHistoryRequest = null;
+      updateVoiceHistoryControls();
+      if (watchingVoiceHistory() && voiceHistoryToken) voiceHistoryTimer = setTimeout(refreshVoiceHistory, 10000);
+    }
+  }
+}
+
+$('voiceHistoryUnlock').addEventListener('submit', event => {
+  event.preventDefault();
+  const input = $('voiceHistoryCode');
+  const code = input.value.replace(/[\s-]+/g, '').toUpperCase();
+  if (!/^[0-9A-F]{32}$/.test(code)) {
+    setVoiceHistoryStatus('Введите полный код из 32 символов.', true);
+    return;
+  }
+  voiceHistoryToken = code;
+  input.value = '';
+  refreshVoiceHistory();
+});
+$('voiceHistoryReload').addEventListener('click', () => refreshVoiceHistory());
+$('voiceHistoryClear').addEventListener('click', () => {
+  if (window.confirm('Удалить всю историю запросов со Станции?')) refreshVoiceHistory(true);
+});
+$('voiceHistoryLock').addEventListener('click', () => {
+  lockVoiceHistory();
+  $('voiceHistoryCode').focus();
+});
+document.addEventListener('visibilitychange', () => {
+  syncHardwarePolling();
+  syncVoiceHistory();
+});
+window.addEventListener('pagehide', () => lockVoiceHistory());
 window.addEventListener('resize', () => { if (watchingHardware()) drawHardwareChart(); });
 refreshStatus();
-showTab(location.hash === '#status' ? 'lab' : 'remote');
+showTab(tabFromHash(), false);
+window.addEventListener('hashchange', () => {
+  const name = tabFromHash();
+  if (name !== activeTab) showTab(name, false);
+});
 setInterval(refreshStatus, 1000);
 setInterval(() => { if (activeTab === 'remote') refreshRemote(); }, 5000);
 setInterval(() => { if (activeTab === 'lab') refreshLab(); }, 5000);

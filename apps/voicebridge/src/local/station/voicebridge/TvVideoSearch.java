@@ -104,11 +104,16 @@ final class TvVideoSearch {
         String launchTarget(boolean play) {
             if (!play || provider != TvVoiceCommand.Provider.OKKO || !"film".equals(mediaType) || target == null)
                 return target;
-            Matcher verifiedLink = OKKO_LINK.matcher(target);
-            if (!verifiedLink.matches() || !"movie".equals(verifiedLink.group(1))
-                    || !"movie".equals(verifiedLink.group(3))) return target;
-            return target + "&extraElementToPlay=" + verifiedLink.group(2) + "&extraPlayVideo=true";
+            String id = okkoMovieId(target);
+            return id == null ? target : target + "&extraElementToPlay=" + id + "&extraPlayVideo=true";
         }
+    }
+
+    static String okkoMovieId(String target) {
+        if (target == null) return null;
+        Matcher link = OKKO_LINK.matcher(target);
+        return link.matches() && "movie".equals(link.group(1)) && "movie".equals(link.group(3))
+                && target.equals("okko://movie?uid=" + link.group(2) + "&type=movie") ? link.group(2) : null;
     }
 
     static String domain(TvVoiceCommand.Provider provider) {

@@ -1,4 +1,4 @@
-"""Exercise the production HTTP dispatcher with fake peers and no device/network."""
+"""Exercise the production HTTP dispatcher with fake peers and a local upstream."""
 from pathlib import Path
 import os
 import hashlib
@@ -55,6 +55,7 @@ class ScheduleHttpTests(unittest.TestCase):
                 [JAVA / 'javac.exe', '-encoding', 'UTF-8', '--release', '8', '-Xlint:all', '-cp', JSON,
                  '-d', classes, *sorted(temporary.rglob('*.java')),
                  ROOT / 'src/local/station/agent/AgentHttpServer.java',
+                 ROOT / 'src/local/station/agent/VoiceHistoryGateway.java',
                  ROOT / 'src/local/station/agent/AgentMediaQueue.java',
                  ROOT / 'src/local/station/agent/StationDisplaySettings.java',
                  ROOT / 'src/local/station/agent/NativeDisplaySettings.java',
@@ -67,7 +68,7 @@ class ScheduleHttpTests(unittest.TestCase):
                 result = subprocess.run([str(part) for part in command], capture_output=True,
                                         text=True, encoding='utf8', errors='replace', timeout=30)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn('assertions passed; fake peers only', result.stdout)
+            self.assertIn('assertions passed; fake peers and loopback only', result.stdout)
             print(result.stdout.strip())
 
 

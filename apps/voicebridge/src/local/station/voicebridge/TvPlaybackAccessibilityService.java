@@ -75,7 +75,10 @@ public final class TvPlaybackAccessibilityService extends AccessibilityService {
     Outcome execute(TvVoiceCommand.Playback command, TvPlaybackControl.Video video, BooleanSupplier cancelled) {
         if (cancelled.getAsBoolean()) return Outcome.CANCELLED;
         AccessibilityNodeInfo root = playerRoot();
-        if (root == null) return Outcome.NO_VIDEO;
+        if (root == null) {
+            if (command.resumeLastFilm && !canReopenOkko()) return Outcome.UNSUPPORTED;
+            return Outcome.NO_VIDEO;
+        }
         int window = root.getWindowId();
         if (!present(root, SDK_TIMELINE, OLD_TIMELINE)) {
             try {
@@ -98,6 +101,16 @@ public final class TvPlaybackAccessibilityService extends AccessibilityService {
                 default:
                     return Outcome.UNSUPPORTED;
             }
+        } finally { root.recycle(); }
+    }
+
+    private boolean canReopenOkko() {
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root == null) return false;
+        try {
+            if (!sameText(OKKO, root.getPackageName())) return root.getPackageName() != null;
+            return !present(root, SDK_CONTROLS, SDK_TIMELINE, OLD_TIMELINE, "ps_ads_exo_player_view",
+                    "ps_avod_ad_player_view", "ps_live_indicator_title");
         } finally { root.recycle(); }
     }
 

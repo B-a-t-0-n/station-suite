@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import org.json.JSONObject;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** Persistent local voice listener. Native Quasar owns the microphones and wake word. */
@@ -21,9 +22,11 @@ public final class VoiceRuntimeService extends Service {
     private RuntimeVoiceHandler handler;
     private LocalAsrRuntime localAsr;
     private LoopbackVoiceServer listener;
+    private VoiceHistoryServer historyServer;
     private boolean destroyed, stopping;
     private boolean localAsrRequested, localAsrConfigFailed;
     private long nextListenAttempt, lastConfigRefresh;
+    private long nextHistoryAttempt;
     private int listenFailures;
     private final Runnable heartbeat = new Runnable() {
         @Override public void run() {
@@ -84,7 +87,7 @@ public final class VoiceRuntimeService extends Service {
                 if (processOwner == null) {
                     handler = new RuntimeVoiceHandler(this, () -> PrivateConfig.read(this, "config.json"),
                             () -> main.post(() -> { if (!destroyed) writeStatus(RuntimeSettings.enabled(this) && !stopping); }),
-                            new TvVoiceControl(this));
+                            new TvVoiceControl(this), VoiceHistory.get(this));
                     processOwner = handler;
                     try {
                         JSONObject config = PrivateConfig.read(this, "config.json");
@@ -105,6 +108,14 @@ public final class VoiceRuntimeService extends Service {
             handler.refreshConfiguration();
             lastConfigRefresh = now;
         }
+        if (handler != null && historyServer == null && now >= nextHistoryAttempt) {
+            nextHistoryAttempt = now + 10_000;
+            VoiceHistoryServer candidate = new VoiceHistoryServer(VoiceHistory.get(this));
+            try {
+                candidate.start();
+                historyServer = candidate;
+            } catch (IOException unavailable) { candidate.close(); }
+        }
         if (handler != null && !localAsrConfigFailed
                 && (listener == null || !listener.status().optBoolean("active")) && now >= nextListenAttempt) {
             if (listener != null) listener.stop();
@@ -118,6 +129,10 @@ public final class VoiceRuntimeService extends Service {
     }
 
     private void closeAdmission() {
+        if (historyServer != null) {
+            historyServer.close();
+            historyServer = null;
+        }
         if (handler != null) handler.close();
         if (localAsr != null) localAsr.close();
         if (listener != null) listener.stop();

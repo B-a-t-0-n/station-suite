@@ -308,7 +308,12 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
                             ? VoicePipeline.LocalFeedback.MUSIC_NOT_FOUND : VoicePipeline.LocalFeedback.MUSIC_UNAVAILABLE;
                     answers.commandFailed(transcript, feedback, turn.metadata, turn.writer);
                     transferred = true;
-                } else quiet(turn.metadata, turn.writer, transcript);
+                } else {
+                    if (!turn.stale() && !closed.get() && current.get() == turn) {
+                        answers.recordLocal(transcript, result.code, result.accepted, Math.max(0, millis() - turn.endedAt));
+                    }
+                    quiet(turn.metadata, turn.writer, transcript);
+                }
             } else {
                 answers.transcriptReady(transcript, turn.metadata, turn.writer); transferred = true; lastCode = "";
             }

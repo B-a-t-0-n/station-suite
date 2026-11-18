@@ -228,11 +228,21 @@ final class PrivateConfig {
     static JSONObject lastBoot(Context context) { return boots.get(context); }
 }
 final class ProbeService { static boolean busy; static boolean isBusy() { return busy; } }
+final class VoiceHistory {
+    static VoiceHistory get(Context context) { return new VoiceHistory(); }
+}
+final class VoiceHistoryServer {
+    VoiceHistoryServer(VoiceHistory history) { }
+    void start() throws java.io.IOException { }
+    void close() { }
+}
 final class RuntimeVoiceHandler {
     interface ConfigSource { JSONObject snapshot() throws Exception; }
     static int instances; static RuntimeVoiceHandler latest;
     final Runnable changed; boolean closed; int workers;
-    RuntimeVoiceHandler(Context context, ConfigSource config, Runnable changed, TvVoiceControl tv) { this.changed = changed; latest = this; instances++; changed.run(); }
+    RuntimeVoiceHandler(Context context, ConfigSource config, Runnable changed, TvVoiceControl tv, VoiceHistory history) {
+        this.changed = changed; latest = this; instances++; changed.run();
+    }
     void begin() { if (!VoiceCloudGate.tryAcquire(this)) throw new AssertionError("gate busy"); workers = 1; }
     void finish() { workers = 0; VoiceCloudGate.release(this); changed.run(); }
     void close() { closed = true; }

@@ -1,6 +1,7 @@
 package local.station.voicebridge;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
@@ -19,6 +20,8 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import org.json.JSONObject;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class MainActivity extends Activity {
     private static final int PURPLE = Color.rgb(112, 75, 196);
@@ -26,6 +29,14 @@ public final class MainActivity extends Activity {
     private TextView status, runtimeStatus;
     private EditText giga, model, speechify, voice;
     private Spinner voiceGain;
+    private TextView historyStatus, historyCode;
+    private Button historyToggle;
+    private boolean historyVisible;
+    private final ExecutorService historyWorker = Executors.newSingleThreadExecutor(task -> {
+        Thread worker = new Thread(task, "StationHistorySettings");
+        worker.setDaemon(true);
+        return worker;
+    });
     private final Handler main = new Handler();
     private final Runnable refresh = new Runnable() {
         @Override public void run() { showResult(); main.postDelayed(this, 1500); }
@@ -65,6 +76,22 @@ public final class MainActivity extends Activity {
         voiceGain.setSelection(SpeechifyClient.DEFAULT_VOICE_GAIN_DB - SpeechifyClient.MIN_VOICE_GAIN_DB);
         TextView volumeStatus = label("", 14, Color.DKGRAY);
         button("Сохранить громкость ответов").setOnClickListener(view -> saveVoiceGain(volumeStatus));
+        label("История запросов", 22, PURPLE);
+        historyStatus = label("", 14, Color.DKGRAY);
+        historyCode = label("", 17, PURPLE);
+        historyCode.setTypeface(Typeface.MONOSPACE);
+        historyCode.setVisibility(View.GONE);
+        button("Показать код").setOnClickListener(view -> updateHistory(HistoryChange.SHOW_CODE));
+        historyToggle = button("Запись истории");
+        historyToggle.setOnClickListener(view -> updateHistory(HistoryChange.TOGGLE));
+        button("Сменить код").setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setMessage("Старый код перестанет работать в веб-панели.")
+                .setNegativeButton("Отмена", null)
+                .setPositiveButton("Сменить код", (dialog, which) -> updateHistory(HistoryChange.ROTATE)).show());
+        button("Очистить историю запросов").setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setMessage("Удалить сохранённые запросы и ответы?")
+                .setNegativeButton("Отмена", null)
+                .setPositiveButton("Удалить", (dialog, which) -> updateHistory(HistoryChange.CLEAR)).show());
         label("Проверки API", 22, PURPLE);
         status = label("Ожидает проверки", 17, PURPLE);
         Button probe = button("Проверить доступ к GigaChat");
@@ -110,6 +137,40 @@ public final class MainActivity extends Activity {
         } catch (Exception unavailable) {
             feedback.setText("Не удалось сохранить громкость ответов");
         }
+    }
+
+    private enum HistoryChange { REFRESH, SHOW_CODE, TOGGLE, ROTATE, CLEAR }
+
+    private void updateHistory(HistoryChange change) {
+        historyWorker.execute(() -> {
+            try {
+                VoiceHistory history = VoiceHistory.get(getApplicationContext());
+                String code = null;
+                switch (change) {
+                    case SHOW_CODE: code = history.accessCode(); break;
+                    case ROTATE: code = history.rotateAccessCode(); break;
+                    case TOGGLE: history.setEnabled(!history.isEnabled()); break;
+                    case CLEAR: history.clear(); break;
+                    default: break;
+                }
+                boolean enabled = history.isEnabled();
+                String revealed = code;
+                main.post(() -> {
+                    if (!historyVisible || isDestroyed()) return;
+                    historyToggle.setText(enabled ? "Остановить запись" : "Возобновить запись");
+                    historyStatus.setText(change == HistoryChange.CLEAR ? "История очищена"
+                            : enabled ? "Запись включена" : "Запись выключена");
+                    if (revealed != null) {
+                        historyCode.setText(revealed.replaceAll("(.{4})(?=.)", "$1 "));
+                        historyCode.setVisibility(View.VISIBLE);
+                    }
+                });
+            } catch (Exception unavailable) {
+                main.post(() -> {
+                    if (historyVisible && !isDestroyed()) historyStatus.setText("История недоступна");
+                });
+            }
+        });
     }
     private void test(String operation) {
         if (RuntimeSettings.enabled(this)) {
@@ -200,6 +261,21 @@ public final class MainActivity extends Activity {
         drawable.setCornerRadius(dp(12)); return drawable;
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
-    @Override protected void onResume() { super.onResume(); main.post(refresh); }
-    @Override protected void onPause() { main.removeCallbacks(refresh); super.onPause(); }
+    @Override protected void onResume() {
+        super.onResume();
+        historyVisible = true;
+        updateHistory(HistoryChange.REFRESH);
+        main.post(refresh);
+    }
+    @Override protected void onPause() {
+        historyVisible = false;
+        historyCode.setText("");
+        historyCode.setVisibility(View.GONE);
+        main.removeCallbacks(refresh);
+        super.onPause();
+    }
+    @Override protected void onDestroy() {
+        historyWorker.shutdown();
+        super.onDestroy();
+    }
 }

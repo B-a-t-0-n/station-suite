@@ -22,7 +22,8 @@ class DisplaySettingsTests(unittest.TestCase):
             classes = temporary / 'classes'
             classes.mkdir()
             actual = [ROOT / ('src/local/station/agent/' + name + '.java') for name in (
-                'AgentHttpServer', 'AgentMediaQueue', 'StationDisplaySettings', 'NativeDisplaySettings', 'PcDisplaySettingsBridge')]
+                'AgentHttpServer', 'VoiceHistoryGateway', 'AgentMediaQueue', 'StationDisplaySettings',
+                'NativeDisplaySettings', 'PcDisplaySettingsBridge')]
             source = ROOT / 'tests/display-settings-host/StationDisplaySettingsHostTest.java'
             result = subprocess.run([str(JAVA / 'javac.exe'), '-encoding', 'UTF-8', '--release', '8',
                                      '-Xlint:all', '-cp', str(JSON), '-d', str(classes),

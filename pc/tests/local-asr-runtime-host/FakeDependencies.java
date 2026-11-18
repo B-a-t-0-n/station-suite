@@ -46,6 +46,7 @@ final class LegacyVoiceSession {
 }
 final class RuntimeVoiceHandler {
     final AtomicInteger transfers = new AtomicInteger();
+    void recordLocal(String text, String code, boolean executed, long elapsedMs) { }
     void transcriptReady(String ignored, LegacyVoiceSession.Metadata metadata, LoopbackVoiceServer.ReplyWriter writer) {
         transfers.incrementAndGet();
     }

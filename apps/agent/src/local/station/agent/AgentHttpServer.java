@@ -24,6 +24,7 @@ final class AgentHttpServer implements Runnable {
     private static final int PORT = 18080;
     private static final int MAX_REQUEST_LINE = 32768, MAX_SCHEDULE_REQUEST = 4096;
     private final AgentService service;
+    private final VoiceHistoryGateway voiceHistory;
     private final byte[] html;
     private final byte[] scheduleGif;
     private final byte[] scheduleClearGif;
@@ -31,7 +32,12 @@ final class AgentHttpServer implements Runnable {
     private ServerSocket listener;
 
     AgentHttpServer(Context context, AgentService service) {
+        this(context, service, new VoiceHistoryGateway());
+    }
+
+    AgentHttpServer(Context context, AgentService service, VoiceHistoryGateway voiceHistory) {
         this.service = service;
+        this.voiceHistory = voiceHistory;
         byte[] page = new byte[0];
         try (InputStream input = context.getAssets().open("index.html")) {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -96,6 +102,16 @@ final class AgentHttpServer implements Runnable {
             if (request.length() > MAX_REQUEST_LINE) {
                 respondJson(client, 413, "{\"ok\":false,\"code\":\"request_too_large\"}"); return;
             }
+            String[] parts = request.split(" ");
+            if (parts.length < 2) { respond(client, 400, "text/plain", "bad request"); return; }
+            if (VoiceHistoryGateway.matches(parts[1])) {
+                VoiceHistoryGateway.Response response = parts.length == 3 && parts[2].matches("HTTP/1\\.[01]")
+                        ? voiceHistory.handle(parts[0], parts[1], client, reader)
+                        : new VoiceHistoryGateway.Response(400, "{\"ok\":false,\"code\":\"invalid_request\"}");
+                respondBytes(client, response.status, "application/json; charset=utf-8",
+                        response.json.getBytes(StandardCharsets.UTF_8), false);
+                return;
+            }
             String displayLength = null;
             boolean displayBadHeaders = false;
             while (true) {
@@ -111,8 +127,6 @@ final class AgentHttpServer implements Runnable {
                     if ("Transfer-Encoding".equalsIgnoreCase(name)) displayBadHeaders = true;
                 }
             }
-            String[] parts = request.split(" ");
-            if (parts.length < 2) { respond(client, 400, "text/plain", "bad request"); return; }
             URI uri = URI.create(parts[1]);
             String path = uri.getPath();
             Map<String, String> query = parseQuery(uri.getRawQuery());
@@ -345,12 +359,18 @@ final class AgentHttpServer implements Runnable {
     }
 
     private static void respondBytes(Socket socket, int status, String type, byte[] bytes) throws Exception {
+        respondBytes(socket, status, type, bytes, true);
+    }
+
+    private static void respondBytes(Socket socket, int status, String type, byte[] bytes,
+                                     boolean allowCrossOrigin) throws Exception {
         OutputStream output = socket.getOutputStream();
         String header = "HTTP/1.1 " + status + " " + reason(status) + "\r\n"
                 + "Content-Type: " + type + "\r\n"
                 + "Content-Length: " + bytes.length + "\r\n"
                 + "Cache-Control: no-store\r\n"
-                + "Access-Control-Allow-Origin: *\r\n"
+                + (allowCrossOrigin ? "Access-Control-Allow-Origin: *\r\n"
+                    : "Cross-Origin-Resource-Policy: same-origin\r\nX-Content-Type-Options: nosniff\r\n")
                 + "Connection: close\r\n\r\n";
         output.write(header.getBytes(StandardCharsets.US_ASCII));
         output.write(bytes);
@@ -360,10 +380,13 @@ final class AgentHttpServer implements Runnable {
     private static String reason(int status) {
         if (status == 200) return "OK";
         if (status == 400) return "Bad Request";
+        if (status == 401) return "Unauthorized";
         if (status == 403) return "Forbidden";
         if (status == 404) return "Not Found";
         if (status == 405) return "Method Not Allowed";
         if (status == 413) return "Payload Too Large";
+        if (status == 429) return "Too Many Requests";
+        if (status == 503) return "Service Unavailable";
         return "Error";
     }
 }

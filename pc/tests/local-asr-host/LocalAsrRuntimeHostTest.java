@@ -339,6 +339,7 @@ final class RuntimeVoiceHandler {
     final AtomicInteger transcripts=new AtomicInteger(),audio=new AtomicInteger(),feedbacks=new AtomicInteger();
     volatile LoopbackVoiceServer.ReplyWriter lastWriter;
     volatile VoicePipeline.LocalFeedback lastFeedback;
+    void recordLocal(String text, String code, boolean executed, long elapsedMs) { }
     void transcriptReady(String text,LegacyVoiceSession.Metadata metadata,LoopbackVoiceServer.ReplyWriter writer){
         if(!"PRIVATE_TRANSCRIPT".equals(text))throw new AssertionError("wrong final text");
         lastWriter=writer;transcripts.incrementAndGet();

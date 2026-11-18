@@ -37,6 +37,10 @@ public final class TvVideoSearchHostTest {
         check(validated.launchTarget(true).equals(validated.target + "&extraElementToPlay=" + UID + "&extraPlayVideo=true"),
                 "autoplay asks for the exact verified movie");
         check(validated.launchTarget(false).equals(validated.target), "find opens a movie's card");
+        check(UID.equals(TvVideoSearch.okkoMovieId(validated.target))
+                && TvVideoSearch.okkoMovieId(validated.target + "&play=true") == null
+                && TvVideoSearch.okkoMovieId(validated.target.replace("type=movie", "type=episode")) == null,
+                "history accepts only a canonical movie identity");
         String video = "<script type=\"application/ld+json\">{\"@type\":\"VideoObject\",\"name\":\"" + TITLE
                 + "\",\"duration\":\"PT1H46M\"}</script>";
         check(TvVideoSearch.verifyOkko(bytes(card.replace("</head>", video + "</head>")), film.get(0), TITLE, 2026)
