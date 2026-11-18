@@ -10,7 +10,7 @@ class TvVoiceCommandTests(unittest.TestCase):
     def test_production_parser(self):
         repo = Path(__file__).resolve().parents[2]
         src = repo / 'apps/voicebridge/src/local/station/voicebridge'
-        sources = [src / 'TvVoiceCommand.java', src / 'TvVideoSearch.java']
+        sources = [src / 'TvVoiceCommand.java', src / 'TvVideoSearch.java', src / 'OkkoPublicIndex.java']
         harnesses = sorted(Path(__file__).with_name('tv-voice-host').glob('*.java'))
         json_jar = Path(__file__).with_name('speechify-host') / 'deps/json-20240303.jar'
         java = Path(os.environ['STATION_JAVA_HOME']) / 'bin/java.exe'

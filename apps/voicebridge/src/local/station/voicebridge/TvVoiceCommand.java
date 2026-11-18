@@ -1,6 +1,8 @@
 package local.station.voicebridge;
 
 import java.text.Normalizer;
+import java.time.Year;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,8 +41,32 @@ final class TvVoiceCommand {
             + "поищи|открой|закрой|покажи|переключи|установи|прибавь|убавь)(?=$|[ ,:])");
     private static final Pattern NEGATIVE = words("^не(?: |$)");
     private static final Pattern MUSIC = words("^(?:песн[яюи]|трек|альбом|музык[ау]|клип|плейлист|радио)(?: |$)");
-    private static final Pattern YEAR = Pattern.compile("^(.*?)[ ,]+(?:\\((18[0-9]{2}|19[0-9]{2}|20[0-9]{2})\\)"
-            + "|(18[0-9]{2}|19[0-9]{2}|20[0-9]{2})(?: +год(?:а|у)?)?)$");
+    private static final String YEAR_DIGITS = "(?:18|19|20)[0-9]{2}";
+    private static final Pattern EXPLICIT_DIGIT_YEAR = words("^(.*?)[ ,]+(?:\\((" + YEAR_DIGITS + ")\\)"
+            + "|(?:(?:в|от) +)?(" + YEAR_DIGITS + ")(?:-?(?:го|м))? +год(?:а|у)?)$");
+    private static final Pattern BARE_DIGIT_YEAR = Pattern.compile("^(.*?)[ ,]+(" + YEAR_DIGITS + ")$");
+    private static final Pattern SPOKEN_YEAR = words("^(.*?)[ ,]+(?:(?:в|от) +)?("
+            + "тысяча (?:восемьсот|девятьсот)(?: [а-яё]+){0,2}"
+            + "|тысяча (?:восьмисот|девятисот|восемьсот|девятьсот)(?:ый|ого|ом)"
+            + "|две тысячи(?: [а-яё]+){0,2}|двухтысячн(?:ый|ого|ом)) +год(?:а|у)$");
+    private static final String[] YEAR_SMALL = {
+            "", "один|перв(?:ый|ого|ом)", "два|втор(?:ой|ого|ом)", "три|трет(?:ий|ьего|ьем)",
+            "четыре|четверт(?:ый|ого|ом)", "пять|пят(?:ый|ого|ом)", "шесть|шест(?:ой|ого|ом)",
+            "семь|седьм(?:ой|ого|ом)", "восемь|восьм(?:ой|ого|ом)", "девять|девят(?:ый|ого|ом)",
+            "десять|десят(?:ый|ого|ом)", "одиннадцать|одиннадцат(?:ый|ого|ом)",
+            "двенадцать|двенадцат(?:ый|ого|ом)", "тринадцать|тринадцат(?:ый|ого|ом)",
+            "четырнадцать|четырнадцат(?:ый|ого|ом)", "пятнадцать|пятнадцат(?:ый|ого|ом)",
+            "шестнадцать|шестнадцат(?:ый|ого|ом)", "семнадцать|семнадцат(?:ый|ого|ом)",
+            "восемнадцать|восемнадцат(?:ый|ого|ом)", "девятнадцать|девятнадцат(?:ый|ого|ом)"
+    };
+    private static final String[] YEAR_CARDINAL_TENS = {
+            "", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят",
+            "семьдесят", "восемьдесят", "девяносто"
+    };
+    private static final String[] YEAR_ORDINAL_TENS = {
+            "", "", "двадцат", "тридцат", "сороков", "пятидесят", "шестидесят",
+            "семидесят", "восьмидесят", "девяност"
+    };
     private static final Pattern DOMAIN = words("[\\p{L}0-9-]+\\.(?:ru|com|net|org|рф|io|dev|tv|me|biz|online)(?![\\p{L}0-9])");
     private static final Pattern URI_SCHEME = words("(?:^|[ ,])(?:https?|ftp|file|intent|javascript|data|content|"
             + "okko|vkvideo|rutube|youtube|lampa):");
@@ -94,7 +120,7 @@ final class TvVoiceCommand {
             return null;
         Matcher verb = VERB.matcher(text);
         if (!verb.matches()) return null;
-        String action = verb.group(1).toLowerCase(java.util.Locale.ROOT);
+        String action = verb.group(1).toLowerCase(Locale.ROOT);
         String body = verb.group(2).trim();
         if (MUSIC.matcher(body).find() || NEGATIVE.matcher(body).find()) return null;
         boolean find = action.equals("найди") || action.equals("отыщи") || action.equals("поищи") || action.equals("ищи");
@@ -145,15 +171,65 @@ final class TvVoiceCommand {
         if (EXTRA_ACTION.matcher(maskQuotes(body)).find()) return null;
         if (body.isEmpty() || body.matches("(?iu)" + VIDEO_TYPES)) return command(Kind.AMBIGUOUS, source);
         int year = 0;
-        Matcher yearSuffix = YEAR.matcher(body);
-        if (yearSuffix.matches() && !yearSuffix.group(1).trim().isEmpty()) {
-            year = Integer.parseInt(yearSuffix.group(2) == null ? yearSuffix.group(3) : yearSuffix.group(2));
-            body = yearSuffix.group(1).trim();
+        String unquotedTitle = maskQuotes(body);
+        Matcher explicitYear = EXPLICIT_DIGIT_YEAR.matcher(unquotedTitle);
+        Matcher spokenYear = SPOKEN_YEAR.matcher(unquotedTitle);
+        Matcher bareYear = BARE_DIGIT_YEAR.matcher(unquotedTitle);
+        int titleEnd = body.length();
+        if (explicitYear.matches()) {
+            year = Integer.parseInt(explicitYear.group(2) == null ? explicitYear.group(3) : explicitYear.group(2));
+            titleEnd = explicitYear.end(1);
+        } else if (spokenYear.matches()) {
+            year = spokenReleaseYear(spokenYear.group(2));
+            if (year != 0) titleEnd = spokenYear.end(1);
+        } else if (bareYear.matches()) {
+            int guessed = Integer.parseInt(bareYear.group(2));
+            // An unqualified far-future number is likely part of a title such as Blade Runner 2049.
+            if (guessed <= Year.now().getValue() + 2) {
+                year = guessed;
+                titleEnd = bareYear.end(1);
+            }
         }
-        String title = stripTitleQuotes(body);
+        String title = stripTitleQuotes(body.substring(0, titleEnd).trim());
         if (title.isEmpty() || title.length() > MAX_TITLE_CHARS || !title.codePoints().anyMatch(Character::isLetterOrDigit))
             return command(Kind.AMBIGUOUS, source);
         return new TvVoiceCommand(find ? Kind.FIND : Kind.PLAY, source, title, mediaType, year);
+    }
+
+    private static int spokenReleaseYear(String phrase) {
+        String normalized = phrase.toLowerCase(Locale.ROOT).replace('ё', 'е');
+        if (normalized.startsWith("двухтысячн")) return 2000;
+        if (normalized.matches("тысяча (?:восьмисот|восемьсот)(?:ый|ого|ом)")) return 1800;
+        if (normalized.matches("тысяча (?:девятисот|девятьсот)(?:ый|ого|ом)")) return 1900;
+        String[] centuries = {"тысяча восемьсот", "тысяча девятьсот", "две тысячи"};
+        for (int i = 0; i < centuries.length; i++) {
+            String prefix = centuries[i];
+            if (normalized.equals(prefix)) return 1800 + i * 100;
+            if (!normalized.startsWith(prefix + " ")) continue;
+            int number = yearBelowHundred(normalized.substring(prefix.length() + 1));
+            if (number > 0) return 1800 + i * 100 + number;
+        }
+        return 0;
+    }
+
+    private static int yearBelowHundred(String phrase) {
+        int small = yearSmall(phrase);
+        if (small > 0) return small;
+        for (int i = 2; i < YEAR_CARDINAL_TENS.length; i++) {
+            String tens = YEAR_CARDINAL_TENS[i];
+            if (phrase.equals(tens) || phrase.matches(YEAR_ORDINAL_TENS[i] + "(?:ый|ой|ого|ом)")) return i * 10;
+            if (phrase.startsWith(tens + " ")) {
+                int unit = yearSmall(phrase.substring(tens.length() + 1));
+                if (unit > 0 && unit < 10) return i * 10 + unit;
+            }
+        }
+        return 0;
+    }
+
+    private static int yearSmall(String phrase) {
+        for (int i = 1; i < YEAR_SMALL.length; i++)
+            if (phrase.matches(YEAR_SMALL[i])) return i;
+        return 0;
     }
 
     private static TvVoiceCommand command(Kind kind, Provider provider) {

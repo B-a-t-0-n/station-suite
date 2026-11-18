@@ -14,6 +14,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -21,11 +22,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Connects finalized TV requests, live package inventory, GigaChat, and scoped Internet search. */
 final class TvVoiceControl implements VoicePipeline.TvHandler {
-    private static final Pattern TITLE = Pattern.compile("[\\p{L}\\p{M}\\p{N} ,.:'’!?–—-]{1,100}");
+    private static final Pattern TITLE = Pattern.compile("[\\p{L}\\p{M}\\p{N} ,.:'’!?–—-]{1,"
+            + TvVoiceCommand.MAX_TITLE_CHARS + "}");
+    private static final Pattern NUMBERS = Pattern.compile("\\p{N}+");
     private final Context app;
 
     TvVoiceControl(Context context) { this.app = context.getApplicationContext(); }
@@ -63,14 +67,15 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         EnumSet<TvVoiceCommand.Provider> scope = requested == null
                 ? EnumSet.copyOf(installed.keySet()) : EnumSet.of(requested);
         String title = correctedTitle(command.title, chat, cancelled);
-        List<TvVideoSearch.Hit> hits = search(scope, title, command.mediaType, command.year, cancelled);
+        List<TvVideoSearch.Hit> hits = search(scope, title, command.title, command.mediaType, command.year, cancelled);
         if (cancelled.getAsBoolean()) return result("Поиск отменён.", "cancelled", false);
         hits.sort(Comparator.comparingInt((TvVideoSearch.Hit hit) -> hit.score).reversed()
                 .thenComparingInt(hit -> hit.provider.ordinal()).thenComparing(hit -> hit.page));
         for (TvVideoSearch.Hit hit : hits) {
-            if (command.year == 0 && hit.year != 0 && conflictingYear(hits, hit))
-                return result("Нашла несколько вариантов. Повтори название и добавь год.", "year_ambiguous", false);
             if (hit.target == null) continue;
+            String years = command.year == 0 ? conflictingYears(hits, hit) : "";
+            if (!years.isEmpty())
+                return result("Нашла версии " + years + " годов. Повтори название и добавь год.", "year_ambiguous", false);
             boolean play = command.kind == TvVoiceCommand.Kind.PLAY;
             String target = play && hit.provider == TvVoiceCommand.Provider.OKKO ? hit.target + "&play=true" : hit.target;
             Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse(target))
@@ -100,11 +105,19 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         return result("Не нашла «" + title + "» среди подключённых видеосервисов.", "no_match", false);
     }
 
-    private static boolean conflictingYear(List<TvVideoSearch.Hit> hits, TvVideoSearch.Hit selected) {
-        for (TvVideoSearch.Hit hit : hits)
-            if (hit.score == selected.score && hit.year != 0
-                    && hit.year != selected.year && !hit.page.equals(selected.page)) return true;
-        return false;
+    private static String conflictingYears(List<TvVideoSearch.Hit> hits, TvVideoSearch.Hit selected) {
+        if (selected.year == 0 || selected.mediaType == null) return "";
+        TreeSet<Integer> years = new TreeSet<>();
+        for (TvVideoSearch.Hit hit : hits) {
+            if (hit.target != null && hit.year != 0 && selected.mediaType.equals(hit.mediaType)
+                    && (hit.score == selected.score || hit.provider == TvVoiceCommand.Provider.OKKO
+                        && hit.provider == selected.provider))
+                years.add(hit.year);
+        }
+        if (years.size() < 2) return "";
+        List<String> labels = new ArrayList<>();
+        for (int year : years) labels.add(Integer.toString(year));
+        return String.join(", ", labels);
     }
 
     private static String correctedTitle(String original, VoicePipeline.Chat chat, BooleanSupplier cancelled) {
@@ -137,7 +150,7 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         String before = TvVideoSearch.normalize(previous);
         String after = TvVideoSearch.normalize(candidate);
         if (before.equals(after)) return true;
-        if (before.isEmpty() || after.isEmpty()) return false;
+        if (before.isEmpty() || after.isEmpty() || !sameNumbers(before, after)) return false;
         if (Math.abs(before.length() - after.length()) > Math.max(2, before.length() / 4)) return false;
         int[] row = new int[after.length() + 1];
         for (int j = 0; j < row.length; j++) row[j] = j;
@@ -153,7 +166,15 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         return row[after.length()] <= Math.max(2, before.length() / 4);
     }
 
-    private static List<TvVideoSearch.Hit> search(EnumSet<TvVoiceCommand.Provider> scope, String title,
+    private static boolean sameNumbers(String before, String after) {
+        Matcher original = NUMBERS.matcher(before);
+        Matcher corrected = NUMBERS.matcher(after);
+        while (original.find())
+            if (!corrected.find() || !original.group().equals(corrected.group())) return false;
+        return !corrected.find();
+    }
+
+    private static List<TvVideoSearch.Hit> search(EnumSet<TvVoiceCommand.Provider> scope, String title, String original,
                                                  String mediaType, int year, BooleanSupplier cancelled)
             throws InterruptedException {
         List<TvVideoSearch.Hit> hits = new ArrayList<>();
@@ -164,11 +185,19 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         });
         CompletionService<List<TvVideoSearch.Hit>> waiting = new ExecutorCompletionService<>(workers);
         int submitted = 0;
-        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(6500);
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(8000);
+        long providerDeadline = deadline - TimeUnit.MILLISECONDS.toNanos(900);
+        BooleanSupplier stopSearching = () -> cancelled.getAsBoolean() || System.nanoTime() >= providerDeadline;
+        boolean correctionChanged = !TvVideoSearch.normalize(title).equals(TvVideoSearch.normalize(original));
         try {
             for (TvVoiceCommand.Provider provider : scope) {
                 if (TvVideoSearch.domain(provider) == null) continue;
-                waiting.submit(() -> TvVideoSearch.search(provider, title, mediaType, year, cancelled));
+                waiting.submit(() -> {
+                    List<TvVideoSearch.Hit> candidate = TvVideoSearch.search(provider, title, mediaType, year, stopSearching);
+                    if (candidate.isEmpty() && correctionChanged && !stopSearching.getAsBoolean())
+                        return TvVideoSearch.search(provider, original, mediaType, year, stopSearching);
+                    return candidate;
+                });
                 submitted++;
             }
             while (submitted > 0 && !cancelled.getAsBoolean() && System.nanoTime() < deadline) {

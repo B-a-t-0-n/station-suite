@@ -26,6 +26,29 @@ public final class TvVoiceCommandHostTest {
                 TvVoiceCommand.Provider.OKKO, "простаквашено", null, 0);
         route("найди в ок ко фильм Простоквашино 2026 года!", TvVoiceCommand.Kind.FIND,
                 TvVoiceCommand.Provider.OKKO, "Простоквашино", "film", 2026);
+        route("найди на Окко фильм Простоквашино две тысячи двадцать шестого года", TvVoiceCommand.Kind.FIND,
+                TvVoiceCommand.Provider.OKKO, "Простоквашино", "film", 2026);
+        route("найди фильм Простоквашино 2026", TvVoiceCommand.Kind.FIND,
+                null, "Простоквашино", "film", 2026);
+        route("включи фильм «Интерстеллар» 2014-го года на Окко", TvVoiceCommand.Kind.PLAY,
+                TvVoiceCommand.Provider.OKKO, "Интерстеллар", "film", 2014);
+        route("найди фильм Дюна тысяча девятьсот восемьдесят четвёртого года", TvVoiceCommand.Kind.FIND,
+                null, "Дюна", "film", 1984);
+        route("найди фильм Дюна в тысяча девятьсот восемьдесят четвёртом году", TvVoiceCommand.Kind.FIND,
+                null, "Дюна", "film", 1984);
+        route("найди фильм Гладиатор двухтысячного года", TvVoiceCommand.Kind.FIND,
+                null, "Гладиатор", "film", 2000);
+        route("найди фильм Ирония судьбы тысяча девятьсот семьдесят пять года", TvVoiceCommand.Kind.FIND,
+                null, "Ирония судьбы", "film", 1975);
+        route("найди фильм «Простоквашино две тысячи двадцать шестого года»", TvVoiceCommand.Kind.FIND,
+                null, "Простоквашино две тысячи двадцать шестого года", "film", 0);
+        route("найди фильм «Дюна 1984»", TvVoiceCommand.Kind.FIND, null, "Дюна 1984", "film", 0);
+        route("найди фильм Бегущий по лезвию 2049", TvVoiceCommand.Kind.FIND,
+                null, "Бегущий по лезвию 2049", "film", 0);
+        route("найди фильм Космическая одиссея две тысячи один", TvVoiceCommand.Kind.FIND,
+                null, "Космическая одиссея две тысячи один", "film", 0);
+        route("найди фильм Пример две тысячи кошачьего года", TvVoiceCommand.Kind.FIND,
+                null, "Пример две тысячи кошачьего года", "film", 0);
         route("Алиса, найди, пожалуйста, мультфильм «Трое в Простоквашино» на Окко", TvVoiceCommand.Kind.FIND,
                 TvVoiceCommand.Provider.OKKO, "Трое в Простоквашино", "film", 0);
         route("покажи фильм Кошмар на улице Вязов (1984)", TvVoiceCommand.Kind.PLAY,
@@ -40,6 +63,8 @@ public final class TvVoiceCommandHostTest {
                 TvVoiceCommand.Provider.YOUTUBE, "", null, 0);
         route("какие у меня приложения есть?", TvVoiceCommand.Kind.LIST, null, "", null, 0);
         route("найди фильм 1917", TvVoiceCommand.Kind.FIND, null, "1917", "film", 0);
+        route("найди фильм «1917» две тысячи девятнадцатого года",
+                TvVoiceCommand.Kind.FIND, null, "1917", "film", 2019);
         route("покажи фильм «Едем на Окко?»", TvVoiceCommand.Kind.PLAY, null, "Едем на Окко?", "film", 0);
         route("найди фильм Простоквашино на Кинопоиске", TvVoiceCommand.Kind.UNSUPPORTED_SOURCE, null, "", null, 0);
         route("найди мне в кинотеатре Новое Кино фильм Простоквашино", TvVoiceCommand.Kind.UNSUPPORTED_SOURCE,
