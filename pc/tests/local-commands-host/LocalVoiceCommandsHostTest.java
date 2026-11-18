@@ -227,7 +227,7 @@ public final class LocalVoiceCommandsHostTest {
         String url = "http://127.0.0.1:17686/audio/track-0123456789abcdef0123456789abcdef.mp3";
         String title = "Track &url=http://evil.invalid/#?", artist = "PRIVATE Artist";
         String play = "/api/play?url=" + encoded(url) + "&title=" + encoded(title) + "&artist=" + encoded(artist);
-        for (String query : new String[]{"", "кино", "queen 2020"}) {
+        for (String query : new String[]{"", "track", "private artist"}) {
             FakeFactory factory = new FakeFactory();
             String search = query.isEmpty() ? "/api/library" : "/api/search?q=" + encoded(query);
             JSONObject resultBody = new JSONObject(track(url, title, artist)).put("unused", repeat("a", 9000));
@@ -240,6 +240,27 @@ public final class LocalVoiceCommandsHostTest {
                     "one bounded catalog request followed by one playback admission");
             check(mutation.getURL().getQuery().split("&").length == 3, "metadata cannot add query arguments");
             requestChecks(lookup, false); requestChecks(mutation, true);
+        }
+        for (String[] example : new String[][] {
+                {"катюшина", "Катюша", "Оригинал", "no_match"},
+                {"катюшу", "Катюша", "Варвара", "match"},
+                {"кино группа крови", "Группа крови", "Кино, В. Цой", "match"},
+                {"последний богатырь колобок", "Последний богатырь", "КИБЕРБАБКИ", "no_match"}
+        }) {
+            String query = example[0], expectedTitle = example[1], expectedArtist = example[2];
+            FakeFactory factory = new FakeFactory();
+            JSONObject results = new JSONObject(track(url, "Несвязанный трек", "Исполнитель"));
+            results.getJSONArray("tracks").put(new JSONObject(track(url, expectedTitle, expectedArtist))
+                    .getJSONArray("tracks").getJSONObject(0));
+            factory.add("/api/search?q=" + encoded(query), results.toString());
+            boolean match = "match".equals(example[3]);
+            if (match) factory.add("/api/play?url=" + encoded(url) + "&title=" + encoded(expectedTitle)
+                    + "&artist=" + encoded(expectedArtist), "{\"ok\":true}");
+            LocalVoiceCommands.Result result = LocalVoiceCommands.execute(parse("включи песню " + query),
+                    new LocalVoiceCommands.AgentExecutor(null, factory));
+            check(match ? result.accepted && factory.opened == 2
+                    : !result.accepted && "music_not_found".equals(result.code) && factory.opened == 1,
+                    "metadata must match requested song or performer: " + query);
         }
         for (String invalid : new String[]{"https://192.168.77.1:8899/audio/a.mp3", "http://evil.invalid/audio/a.mp3",
                 "http://192.168.77.1:8899@evil.invalid/audio/a.mp3", "http://192.168.77.1:88990/audio/a.mp3",

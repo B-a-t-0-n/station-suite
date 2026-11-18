@@ -58,4 +58,8 @@ final class MediaVoiceContext {
         return mode.videoType == null ? Mode.VIDEO.videoType : mode.videoType;
     }
 
+    boolean hasForegroundVideo() {
+        return foreground.get().videoType != null;
+    }
+
 }

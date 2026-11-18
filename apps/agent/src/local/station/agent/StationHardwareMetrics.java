@@ -2,12 +2,14 @@ package local.station.agent;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.hardware.display.DisplayManager;
 import android.os.CpuUsageInfo;
 import android.os.Environment;
 import android.os.HardwarePropertiesManager;
 import android.os.Process;
 import android.os.StatFs;
 import android.os.SystemClock;
+import android.view.Display;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.BufferedReader;
@@ -27,6 +29,7 @@ final class StationHardwareMetrics {
     private static final String CPU_SYSFS = "/sys/devices/system/cpu";
     private static final Pattern IDLE_STATE = Pattern.compile("state[0-9]{1,2}");
     private final ActivityManager activity;
+    private final DisplayManager displays;
     private HardwarePropertiesManager hardware;
     private boolean procStatReadable = true;
     private long previousAtMs = -1;
@@ -37,6 +40,7 @@ final class StationHardwareMetrics {
 
     StationHardwareMetrics(Context context) {
         activity = context.getSystemService(ActivityManager.class);
+        displays = context.getSystemService(DisplayManager.class);
         hardware = context.getSystemService(HardwarePropertiesManager.class);
     }
 
@@ -61,7 +65,8 @@ final class StationHardwareMetrics {
                 .put("source", value(sample == null ? null : sample.source));
         cached = new JSONObject().put("ok", true).put("sampledAtMs", System.currentTimeMillis())
                 .put("uptimeMs", uptimeMs).put("cpu", cpu).put("memory", readMemory())
-                .put("storage", readStorage()).put("temperatureC", value(readTemperature())).toString();
+                .put("storage", readStorage()).put("temperatureC", value(readTemperature()))
+                .put("display", value(readDisplay())).toString();
         previousAtMs = uptimeMs;
         previousCores = cores;
         previousAgentCpuMs = agentCpuMs;
@@ -87,6 +92,24 @@ final class StationHardwareMetrics {
         } catch (RuntimeException unavailable) {
             return capacity(-1, -1);
         }
+    }
+
+    private JSONObject readDisplay() throws JSONException {
+        if (displays == null) return null;
+        try {
+            Display display = displays.getDisplay(Display.DEFAULT_DISPLAY);
+            if (display == null || !display.isValid()) return null;
+            Display.Mode mode = display.getMode();
+            return displayMode(mode.getPhysicalWidth(), mode.getPhysicalHeight(), mode.getRefreshRate(),
+                    (display.getFlags() & Display.FLAG_SECURE) != 0);
+        } catch (RuntimeException unavailable) { return null; }
+    }
+
+    static JSONObject displayMode(int width, int height, float refreshHz, boolean secureCapable) throws JSONException {
+        if (width <= 0 || width > 16384 || height <= 0 || height > 16384
+                || !Float.isFinite(refreshHz) || refreshHz < 1 || refreshHz > 500) return null;
+        return new JSONObject().put("width", width).put("height", height)
+                .put("refreshHz", Math.round(refreshHz * 100.0) / 100.0).put("secureCapable", secureCapable);
     }
 
     private static JSONObject capacity(long total, long available) throws JSONException {

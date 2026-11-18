@@ -339,11 +339,12 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
             case "episode_count_season_needed": case "series_context_missing":
             case "unsupported_or_ambiguous": case "TIMER_AMBIGUOUS": case "timer_ambiguous":
             case "channel_name_missing": case "channel_source_unsupported":
+            case "media_title_missing": case "media_type_missing":
                 return "clarification";
             case "no_match": case "year_no_match": case "episode_not_found": case "episode_not_listed":
             case "channel_not_found":
             case "episodes_not_found": case "season_not_found": case "MUSIC_NOT_FOUND": case "music_not_found":
-            case "TIMER_NOT_RUNNING": case "timer_not_running": case "resume_history_missing":
+            case "TIMER_NOT_RUNNING": case "timer_not_running": case "resume_history_missing": case "PLAYBACK_INACTIVE":
                 return "no_match";
             case "episode_count": case "episode_listed": case "apps_listed": case "context_reported": return "answer";
             case "TIMER_CREATED": case "video_control_applied": return "action";
@@ -352,6 +353,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
             case "provider_opened_no_match": case "provider_search_opened": case "title_opened":
             case "series_card_opened": case "app_opened": return "requested";
             case "channel_launch_unavailable": case "live_control_unavailable": case "video_not_active":
+            case "radio_unavailable":
             case "video_control_unavailable": case "video_control_unconfirmed": case "video_permission_required":
                 return "error";
             case "channel_catalog_fallback": return "no_match";

@@ -33,8 +33,12 @@ public final class LocalAsrRuntimeHostTest {
     private static LegacyVoiceSession.Metadata metadata(int bytes) {return new LegacyVoiceSession.Metadata(bytes);}
     private static final class Fixture {
         final RuntimeVoiceHandler answers=new RuntimeVoiceHandler();
-        final LocalAsrRuntime runtime=new LocalAsrRuntime(new Context(),answers,()->{});
-        Fixture()throws Exception {await(()->runtime.isReady(),"model ready");}
+        final LocalAsrRuntime runtime;
+        Fixture() throws Exception { this(new MediaVoiceContext(() -> MediaVoiceContext.Mode.NONE)); }
+        Fixture(MediaVoiceContext media) throws Exception {
+            runtime = new LocalAsrRuntime(new Context(), answers, () -> {}, "vosk", 1, false, false, media);
+            await(() -> runtime.isReady(), "model ready");
+        }
         void close()throws Exception {runtime.close();await(()->runtime.canRelease(),"model released");}
     }
     private static void finalizedAndEarlyPrimaryRace()throws Exception {
@@ -272,6 +276,55 @@ public final class LocalAsrRuntimeHostTest {
         check("series".equals(context.preferredVideoType()), "visible series selects series search");
     }
 
+    private static void stopWhileWatchingVideo() throws Exception {
+        for (FakeAgent.Mode mode : new FakeAgent.Mode[]{FakeAgent.Mode.STOP_WITHOUT_TIMER, FakeAgent.Mode.STOP_RINGING_TIMER}) {
+            LocalSpeechRecognizer.finalText = "Алиса, стоп";
+            FakeAgent.reset(mode);
+            Fixture fixture = new Fixture(new MediaVoiceContext(() -> MediaVoiceContext.Mode.SERIES));
+            try {
+                LoopbackVoiceServer.ReplyWriter writer = new LoopbackVoiceServer.ReplyWriter();
+                check(fixture.runtime.offerStart(metadata(0), writer), "stop enters ASR");
+                check(fixture.runtime.offerChunk(writer, new byte[8]), "audio reaches ASR");
+                check(fixture.runtime.offerEnd(metadata(8), writer), "stop utterance finalized");
+                await(() -> fixture.runtime.snapshot().optLong("completed") == 1, "stop resolved");
+                fixture.runtime.commandReady(new byte[8], metadata(8), writer);
+                boolean deferred = mode == FakeAgent.Mode.STOP_WITHOUT_TIMER;
+                check(FakeAgent.opens.get() == 1 && FakeAgent.acks.get() == 1,
+                        "exactly one timer call and no music action");
+                check(fixture.answers.transcripts.get() == (deferred ? 1 : 0)
+                        && fixture.answers.feedbacks.get() == 0
+                        && (deferred ? fixture.answers.lastWriter == writer && writer.open : writer.quiet.get() == 1),
+                        "only a valid zero-ring result transfers the original stop to the video handler");
+                writer.close();
+            } finally {
+                fixture.close();
+                LocalSpeechRecognizer.finalText = "PRIVATE_TRANSCRIPT";
+                FakeAgent.reset(FakeAgent.Mode.NONE);
+            }
+        }
+    }
+
+    private static void neutralShortTitleDoesNotStartMusic() throws Exception {
+        LocalSpeechRecognizer.finalText = "включи незнакомое название";
+        FakeAgent.reset(FakeAgent.Mode.MEDIA_IDLE);
+        Fixture fixture = new Fixture();
+        try {
+            LoopbackVoiceServer.ReplyWriter writer = new LoopbackVoiceServer.ReplyWriter();
+            check(fixture.runtime.offerStart(metadata(0), writer), "neutral title enters ASR");
+            check(fixture.runtime.offerChunk(writer, new byte[8]), "neutral title audio admitted");
+            check(fixture.runtime.offerEnd(metadata(8), writer), "neutral title finalized");
+            await(() -> fixture.runtime.snapshot().optLong("completed") == 1, "neutral title routed");
+            check(FakeAgent.opens.get() == 1 && fixture.answers.transcripts.get() == 1
+                    && fixture.answers.lastWriter == writer && writer.open,
+                    "idle player state hands neutral title to TV routing without a music side effect");
+            writer.close();
+        } finally {
+            fixture.close();
+            LocalSpeechRecognizer.finalText = "PRIVATE_TRANSCRIPT";
+            FakeAgent.reset(FakeAgent.Mode.NONE);
+        }
+    }
+
     private static void timerFinalizationAckAndOwnership()throws Exception {
         LocalSpeechRecognizer.finalText="Алиса поставь таймер на одну минуту";
         FakeAgent.reset(FakeAgent.Mode.TIMER_BLOCKED);
@@ -376,6 +429,8 @@ public final class LocalAsrRuntimeHostTest {
         explicitServerEndpoint();
         musicFailureFeedback();
         mediaContextChangesRoute();
+        stopWhileWatchingVideo();
+        neutralShortTitleDoesNotStartMusic();
         televisionChannelPrecedesMusicSearch();
         timerFinalizationAckAndOwnership();
         failedTimerCannotClaimSuccess();
@@ -509,7 +564,8 @@ final class StreamingOpusInput implements AutoCloseable {
 }
 /** Process-local URL handler: all actuator HTTP is memory only, and unexpected paths fail. */
 final class FakeAgent {
-    enum Mode { NONE, MUSIC_MISSING, TIMER_OK, TIMER_BLOCKED, TIMER_INVALID, TIMER_LOST_ACK }
+    enum Mode { NONE, MUSIC_MISSING, TIMER_OK, TIMER_BLOCKED, TIMER_INVALID, TIMER_LOST_ACK,
+        STOP_WITHOUT_TIMER, STOP_RINGING_TIMER, MEDIA_IDLE }
     static volatile Mode mode=Mode.NONE;
     static final AtomicInteger opens=new AtomicInteger(),acks=new AtomicInteger();
     static volatile CountDownLatch entered=new CountDownLatch(0),release=new CountDownLatch(0);
@@ -525,21 +581,31 @@ final class FakeAgent {
         Mode selected=mode;
         String response;
         if(selected==Mode.MUSIC_MISSING&&url.getPath().equals("/api/search"))response="{\"tracks\":[]}";
+        else if(selected==Mode.MEDIA_IDLE&&url.getPath().equals("/api/status"))
+            response="{\"musicRuntime\":{\"nativeConfirmed\":true,\"state\":\"stopped\"}}";
         else if(selected!=Mode.NONE&&selected!=Mode.MUSIC_MISSING&&url.getPath().equals("/api/schedules")){
             try {
                 String query=url.getQuery();
                 if(query==null||!query.startsWith("request="))throw new AssertionError("missing schedule request");
                 JSONObject payload=new JSONObject(URLDecoder.decode(query.substring(8),"UTF-8"));
-                if(!"create_timer".equals(payload.getString("op"))||payload.length()!=3
-                        ||!payload.getString("requestId").matches("[0-9a-f-]{36}"))
-                    throw new AssertionError("unexpected schedule operation");
-                lastDuration=payload.getLong("durationMs");
-                if(lastDuration<5000||lastDuration>86400000)throw new AssertionError("unsafe duration");
-                String id="12345678-1234-1234-1234-123456789abc";
-                response=selected==Mode.TIMER_INVALID?"{\"ok\":true}":new JSONObject().put("ok",true)
-                        .put("id",id).put("entries",new org.json.JSONArray().put(new JSONObject().put("id",id)
-                        .put("type","timer").put("enabled",true).put("outcome","scheduled")
-                        .put("remainingMs",lastDuration))).toString();
+                if (selected == Mode.STOP_WITHOUT_TIMER || selected == Mode.STOP_RINGING_TIMER) {
+                    if (!"stop_timer".equals(payload.getString("op")) || !payload.getBoolean("ringingOnly")
+                            || payload.length() != 3) throw new AssertionError("unexpected smart-stop operation");
+                    response = new JSONObject().put("ok", true).put("id", payload.getString("requestId"))
+                            .put("stoppedTimers", selected == Mode.STOP_RINGING_TIMER ? 1 : 0)
+                            .put("entries", new org.json.JSONArray()).toString();
+                } else {
+                    if(!"create_timer".equals(payload.getString("op"))||payload.length()!=3
+                            ||!payload.getString("requestId").matches("[0-9a-f-]{36}"))
+                        throw new AssertionError("unexpected schedule operation");
+                    lastDuration=payload.getLong("durationMs");
+                    if(lastDuration<5000||lastDuration>86400000)throw new AssertionError("unsafe duration");
+                    String id="12345678-1234-1234-1234-123456789abc";
+                    response=selected==Mode.TIMER_INVALID?"{\"ok\":true}":new JSONObject().put("ok",true)
+                            .put("id",id).put("entries",new org.json.JSONArray().put(new JSONObject().put("id",id)
+                            .put("type","timer").put("enabled",true).put("outcome","scheduled")
+                            .put("remainingMs",lastDuration))).toString();
+                }
             }catch(org.json.JSONException error){throw new AssertionError(error);}
         }else throw new AssertionError("unexpected actuator URL: "+url.getPath());
         opens.incrementAndGet();
@@ -550,7 +616,9 @@ final class FakeAgent {
             public void disconnect(){disconnected=true;}
             public OutputStream getOutputStream(){return new ByteArrayOutputStream(){public void close(){outputClosed=true;}};}
             public int getResponseCode()throws IOException {
-                if(selected==Mode.MUSIC_MISSING){if(!"GET".equals(getRequestMethod()))throw new AssertionError("music lookup mutation");}
+                if(selected==Mode.MUSIC_MISSING || selected==Mode.MEDIA_IDLE){
+                    if(!"GET".equals(getRequestMethod()))throw new AssertionError("media lookup mutation");
+                }
                 else if(!"POST".equals(getRequestMethod())||!outputClosed)throw new AssertionError("timer POST before body closure");
                 if(selected==Mode.TIMER_BLOCKED){
                     entered.countDown();

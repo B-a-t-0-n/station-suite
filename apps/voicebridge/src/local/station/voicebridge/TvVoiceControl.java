@@ -54,18 +54,32 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
             boolean musicPlaying = new LocalVoiceCommands.AgentExecutor(null, cancelled).musicPlaying();
             return result(media.choose(musicPlaying).answer, "context_reported", false);
         }
+        TvVoiceCommand.MediaPrompt prompt = TvVoiceCommand.mediaPrompt(transcript);
+        if (prompt == TvVoiceCommand.MediaPrompt.RADIO)
+            return result("Радио пока не подключено. Могу включить песню или телеканал.", "radio_unavailable", false);
+        if (prompt == TvVoiceCommand.MediaPrompt.TITLE)
+            return result("Скажи, что включить. Назови песню, фильм, сериал или телеканал.", "media_title_missing", false);
         TvVoiceCommand.Playback control = TvVoiceCommand.playback(transcript);
         if (control == null) control = TvVoiceCommand.contextualPlayback(transcript);
+        // Only the ASR worker can forward «стоп», after the timer endpoint has returned zero ringing signals.
+        if (control == null && LocalVoiceCommands.isSmartStop(transcript))
+            control = TvVoiceCommand.playback("поставь видео на паузу");
         if (control != null) return controlPlayback(control, cancelled);
         TvChannelCommand channel = TvChannelCommand.parse(transcript);
         if (channel != null) return playChannel(channel, cancelled);
         long now = SystemClock.elapsedRealtime();
         if (recentSeries != null && now >= recentSeries.expiresAt) recentSeries = null;
         TvVoiceCommand command = yearFollowUp.resolve(transcript, now);
+        boolean contextual = false;
         if (command == null) {
             String title = TvVoiceCommand.contextualTitle(transcript);
             if (title != null) {
-                command = TvVoiceCommand.contextualPlay(title, media.preferredVideoType());
+                MediaVoiceContext.Mode mode = media.choose(false);
+                if (mode.videoType == null)
+                    return result("Уточни, что включить: песню, фильм, сериал или телеканал. Повтори команду с видом и названием.",
+                            "media_type_missing", false);
+                command = TvVoiceCommand.contextualPlay(title, mode.videoType);
+                contextual = command != null;
                 if (command != null) yearFollowUp.clear();
             }
         }
@@ -123,11 +137,11 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         // Explicit source and media type come from the utterance, never from generated text.
         EnumSet<TvVoiceCommand.Provider> scope = requested == null
                 ? EnumSet.copyOf(installed.keySet()) : EnumSet.of(requested);
-        String title = correctedTitle(command.title, chat, cancelled);
+        String title = TvVoiceCommand.hasKnownTitle(command.title) ? command.title : correctedTitle(command.title, chat, cancelled);
         boolean episodeRequest = command.kind == TvVoiceCommand.Kind.EPISODES
                 || command.kind == TvVoiceCommand.Kind.EPISODE || command.season != 0 || command.episode != 0;
         String mediaType = episodeRequest && !"animation".equals(command.mediaType) ? "series" : command.mediaType;
-        List<TvVideoSearch.Hit> hits = search(scope, title, command.title, mediaType, command.year, cancelled);
+        List<TvVideoSearch.Hit> hits = search(scope, title, command.title, mediaType, command.year, contextual, cancelled);
         if (cancelled.getAsBoolean()) return result("Поиск отменён.", "cancelled", false);
         hits.sort(Comparator.comparingInt((TvVideoSearch.Hit hit) -> hit.score).reversed()
                 .thenComparingInt(hit -> hit.provider.ordinal()).thenComparing(hit -> hit.page));
@@ -180,10 +194,10 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
                 return result("Нашла «" + hit.displayTitle + "» в " + hit.provider.label + ". Открываю.", "title_opened", true);
             }
         }
-        if (yearReply) {
+        if (yearReply || command.year > 0) {
             if (cancelled.getAsBoolean()) return result("Поиск отменён.", "cancelled", false);
             yearFollowUp.remember(command.withYear(0), SystemClock.elapsedRealtime());
-            return result("Не нашла «" + title + "» за " + command.year + " год. Можешь назвать другой год.",
+            return result("Не нашла «" + command.title + "» за " + command.year + " год. Можешь назвать другой год.",
                     "year_no_match", false);
         }
         if (episodeRequest)
@@ -205,7 +219,8 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
                 return result("В интернете не нашла подходящую карточку. Открываю " + requested.label + ".",
                         "provider_opened_no_match", true);
         }
-        return result("Не нашла «" + title + "» среди подключённых видеосервисов.", "no_match", false);
+        return result("Не нашла «" + command.title + "» среди подключённых видеосервисов."
+                + (contextual ? " Если нужна песня, скажи «включи песню» и название." : ""), "no_match", false);
     }
 
     private VoicePipeline.TvResult playChannel(TvChannelCommand command, BooleanSupplier cancelled) {
@@ -481,6 +496,7 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         String after = TvVideoSearch.normalize(candidate);
         if (before.equals(after)) return true;
         if (before.isEmpty() || after.isEmpty() || !sameNumbers(before, after)) return false;
+        if (before.length() <= 7 && before.indexOf(' ') < 0 && after.length() != before.length()) return false;
         if (Math.abs(before.length() - after.length()) > Math.max(2, before.length() / 4)) return false;
         int[] row = new int[after.length() + 1];
         for (int j = 0; j < row.length; j++) row[j] = j;
@@ -505,7 +521,7 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
     }
 
     private static List<TvVideoSearch.Hit> search(EnumSet<TvVoiceCommand.Provider> scope, String title, String original,
-                                                 String mediaType, int year, BooleanSupplier cancelled)
+                                                 String mediaType, int year, boolean contextual, BooleanSupplier cancelled)
             throws InterruptedException {
         List<TvVideoSearch.Hit> hits = new ArrayList<>();
         if (cancelled.getAsBoolean()) return hits;
@@ -519,13 +535,18 @@ final class TvVoiceControl implements VoicePipeline.TvHandler {
         long providerDeadline = deadline - TimeUnit.MILLISECONDS.toNanos(900);
         BooleanSupplier stopSearching = () -> cancelled.getAsBoolean() || System.nanoTime() >= providerDeadline;
         boolean correctionChanged = !TvVideoSearch.normalize(title).equals(TvVideoSearch.normalize(original));
+        String alternate = !contextual ? null : "film".equals(mediaType) ? "series"
+                : "series".equals(mediaType) ? "film" : null;
         try {
             for (TvVoiceCommand.Provider provider : scope) {
                 if (TvVideoSearch.domain(provider) == null) continue;
                 waiting.submit(() -> {
                     List<TvVideoSearch.Hit> candidate = TvVideoSearch.search(provider, title, mediaType, year, stopSearching);
                     if (candidate.isEmpty() && correctionChanged && !stopSearching.getAsBoolean())
-                        return TvVideoSearch.search(provider, original, mediaType, year, stopSearching);
+                        candidate = TvVideoSearch.search(provider, original, mediaType, year, stopSearching);
+                    if (alternate != null && candidate.stream().noneMatch(hit -> hit.target != null)
+                            && !stopSearching.getAsBoolean())
+                        candidate = TvVideoSearch.search(provider, title, alternate, year, stopSearching);
                     return candidate;
                 });
                 submitted++;

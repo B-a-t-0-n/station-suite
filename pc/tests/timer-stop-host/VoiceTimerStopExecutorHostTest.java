@@ -14,6 +14,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 /** In-memory peer drives exact production AgentExecutor, never a socket. */
 public final class VoiceTimerStopExecutorHostTest {
@@ -25,6 +26,11 @@ public final class VoiceTimerStopExecutorHostTest {
     private static LocalVoiceCommands.Result execute(String phrase, Factory peer) {
         return LocalVoiceCommands.execute(LocalVoiceCommands.parseFinal(phrase),
                 new LocalVoiceCommands.AgentExecutor(null, peer));
+    }
+    private static LocalVoiceCommands.Result execute(String phrase, Factory peer, BooleanSupplier foregroundVideo) {
+        LocalVoiceCommands.AgentExecutor executor = new LocalVoiceCommands.AgentExecutor(null, peer);
+        return LocalVoiceCommands.execute(LocalVoiceCommands.parseFinal(phrase),
+                command -> executor.apply(command, foregroundVideo));
     }
     private static void requests(Factory peer, int count) {
         check(peer.requests.size() == count, "expected HTTP count without retry");
@@ -69,6 +75,27 @@ public final class VoiceTimerStopExecutorHostTest {
                 && "GET".equals(idle.requests.get(1).getRequestMethod())
                 && "/api/stop".equals(idle.requests.get(2).getURL().getPath())
                 && "POST".equals(idle.requests.get(2).getRequestMethod()), "schedule-first exact fallback order");
+        Factory video = new Factory(); video.stopped = 0;
+        LocalVoiceCommands.Result deferred = execute("Алиса, стоп", video, () -> {
+            check(video.requests.size() == 1 && video.requests.get(0).inputClosed,
+                    "visible video checked only after zero ringing timers were confirmed");
+            return true;
+        });
+        check(!deferred.accepted && LocalVoiceCommands.VIDEO_STOP_DEFERRED.equals(deferred.code),
+                "visible video defers to the real Okko controller rather than claiming a stop");
+        payload(video, "ringingOnly"); requests(video, 1);
+        Factory ringing = new Factory();
+        check(execute("стоп", ringing, () -> {
+            throw new AssertionError("timer must take priority over visible video");
+        }).accepted, "confirmed ringing timer stops without examining video");
+        requests(ringing, 1);
+        Factory uncertain = new Factory(); uncertain.mode = "bad_id"; uncertain.stopped = 0;
+        check("agent_bad_response".equals(execute("стоп", uncertain, () -> {
+            throw new AssertionError("an invalid ACK cannot route to a player");
+        }).code), "uncertain timer state leaves both players untouched");
+        requests(uncertain, 1);
+        check(LocalVoiceCommands.isSmartStop("Алиса, пожалуйста стоп!") && !LocalVoiceCommands.isSmartStop("стоп?")
+                && !LocalVoiceCommands.isSmartStop("останови таймер"), "TV dispatch recognizes only the same exact smart-stop grammar");
         for (String phrase : new String[]{"отмени таймер", "отмени все таймеры"}) {
             Factory peer = new Factory(); peer.stopped = 0;
             LocalVoiceCommands.Result result = execute(phrase, peer);

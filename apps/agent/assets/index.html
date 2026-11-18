@@ -40,6 +40,11 @@ input,select{min-width:0;border:1px solid var(--line);background:#faf9fd;color:v
 .hardware-cpu { --series-color: #7560ea; }
 .hardware-ram { --series-color: #24836c; }
 #hardwareChart { display: block; width: 100%; height: clamp(150px, 25vw, 210px); }
+.video-diagnostics { margin-bottom: 20px; }
+.video-diagnostics h2 { margin-bottom: 6px; color: var(--ink); font-size: 16px; letter-spacing: 0; text-transform: none; }
+.video-diagnostics .row { margin-top: 12px; }
+.video-diagnostics p { margin: 9px 0 0; }
+.video-diagnostics .row button:disabled { cursor: default; }
 @media(max-width: 850px) {
   .hardware-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -388,6 +393,17 @@ input,select{min-width:0;border:1px solid var(--line);background:#faf9fd;color:v
       <canvas id="hardwareChart" role="img" aria-label="Динамика загрузки процессора и памяти">Динамика загрузки процессора и памяти</canvas>
     </section>
   </section>
+  <section class="card video-diagnostics" aria-labelledby="videoDiagnosticsTitle">
+    <h2 id="videoDiagnosticsTitle">Диагностика видео</h2>
+    <div class="kv"><span class="k">Режим вывода</span><span class="v" id="videoOutputMode">Нет данных</span></div>
+    <p class="small muted">Отметь момент появления полос. Панель сохранит замеры за 30 секунд до отметки и до 90 секунд после неё, пока вкладка браузера видна.</p>
+    <div class="row">
+      <button type="button" class="primary" id="markVideoStripes">Отметить полосы</button>
+      <button type="button" id="exportVideoDiagnostics" disabled>Скачать JSON</button>
+    </div>
+    <p class="small muted" role="status" id="videoDiagnosticsStatus"></p>
+    <p class="small muted">Последние 8 отметок сохраняются в этом браузере. В файл попадут только технические данные.</p>
+  </section>
   <div class="grid">
     <section class="card span-6">
       <h2>Моя Станция</h2>
@@ -675,13 +691,26 @@ async function refreshLab() {
 
 const HARDWARE_INTERVAL_MS = 3000;
 const HARDWARE_WINDOW_MS = 120000;
+const VIDEO_CAPTURE_MS = 90000;
+const VIDEO_LOOKBACK_MS = 30000;
+const VIDEO_LOOKBACK_LIMIT = 11;
+const VIDEO_MARK_LIMIT = 8;
+const VIDEO_SAMPLE_LIMIT = 44;
+const VIDEO_STORAGE_KEY = 'station-video-diagnostics-v1';
 const hardwareSamples = [];
+const videoLookback = [];
+const videoCaptures = new Map();
+const videoMarks = readVideoMarks();
 let hardwareTimer;
 let hardwareRequest;
 let lastHardwareUpdate;
 let chartCpuName = 'Процессор';
+let videoCaptureTimer;
+let videoStorageAvailable = true;
 
-function watchingHardware() { return activeTab === 'lab' && !document.hidden; }
+function watchingHardware() {
+  return !document.hidden && (activeTab === 'lab' || collectingVideoSamples());
+}
 function syncHardwarePolling() {
   clearTimeout(hardwareTimer);
   if (watchingHardware()) refreshHardware();
@@ -696,6 +725,121 @@ function hardwareUsage(capacity) {
   const available = hardwareNumber(capacity?.availableBytes);
   return total > 0 && available !== null && available >= 0 && available <= total
     ? (1 - available / total) * 100 : null;
+}
+function videoNumber(value, min, max) {
+  return Number.isFinite(value) && value >= min && value <= max ? value : null;
+}
+function videoDisplay(value) {
+  const width = videoNumber(value?.width, 1, 32768);
+  const height = videoNumber(value?.height, 1, 32768);
+  const refreshHz = videoNumber(value?.refreshHz, 1, 1000);
+  if (!Number.isInteger(width) || !Number.isInteger(height) || refreshHz === null) return null;
+  return {width, height, refreshHz,
+    secureCapable: typeof value.secureCapable === 'boolean' ? value.secureCapable : null};
+}
+function videoTime(value) {
+  return Number.isSafeInteger(value) && value >= 0 && value <= 8640000000000000 ? value : null;
+}
+function videoSample(value) {
+  if (!value || videoTime(value.receivedAtMs) === null) return null;
+  return {
+    receivedAtMs: value.receivedAtMs,
+    sampledAtMs: videoTime(value.sampledAtMs),
+    display: videoDisplay(value.display),
+    cpuPercent: videoNumber(value.cpuPercent, 0, 100),
+    ramPercent: videoNumber(value.ramPercent, 0, 100),
+    storagePercent: videoNumber(value.storagePercent, 0, 100),
+    temperatureC: videoNumber(value.temperatureC, -40, 200),
+    uptimeMs: videoTime(value.uptimeMs)
+  };
+}
+function readVideoMarks() {
+  try {
+    const stored = localStorage.getItem(VIDEO_STORAGE_KEY);
+    if (!stored || stored.length > 160000) return [];
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.slice(0, VIDEO_MARK_LIMIT).filter(marker => videoTime(marker?.markedAtMs) !== null)
+      .map(marker => ({
+        markedAtMs: marker.markedAtMs,
+        samples: Array.isArray(marker.samples)
+          ? marker.samples.slice(0, VIDEO_SAMPLE_LIMIT).map(videoSample).filter(Boolean) : []
+      }));
+  } catch {
+    return [];
+  }
+}
+function saveVideoMarks() {
+  try {
+    localStorage.setItem(VIDEO_STORAGE_KEY, JSON.stringify(videoMarks));
+    videoStorageAvailable = true;
+  } catch {
+    videoStorageAvailable = false;
+  }
+}
+function collectingVideoSamples() {
+  const now = performance.now();
+  for (const [marker, endsAt] of videoCaptures) {
+    if (now >= endsAt || marker.samples.length >= VIDEO_SAMPLE_LIMIT) videoCaptures.delete(marker);
+  }
+  return videoCaptures.size > 0;
+}
+function pruneVideoLookback(now) {
+  while (videoLookback.length && (now - videoLookback[0].time > VIDEO_LOOKBACK_MS
+      || videoLookback.length > VIDEO_LOOKBACK_LIMIT)) videoLookback.shift();
+}
+function showVideoMarks() {
+  $('exportVideoDiagnostics').disabled = videoMarks.length === 0;
+  const latest = videoMarks[0];
+  if (!latest) return;
+  let message = 'Отметка в ' + hardwareClock(latest.markedAtMs);
+  if (collectingVideoSamples() && videoCaptures.has(latest)) {
+    message += latest.samples.length ? ' · идёт сбор замеров' : ' · ожидаю свежий замер';
+  }
+  message += ' · замеров ' + latest.samples.length;
+  if (!videoStorageAvailable) message += ' · доступно до закрытия страницы';
+  const status = $('videoDiagnosticsStatus');
+  if (status.textContent !== message) status.textContent = message;
+}
+function markVideoStripes() {
+  const now = performance.now();
+  pruneVideoLookback(now);
+  const marker = {markedAtMs:Date.now(), samples:videoLookback.map(entry => entry.sample)};
+  videoMarks.unshift(marker);
+  if (videoMarks.length > VIDEO_MARK_LIMIT) videoCaptures.delete(videoMarks.pop());
+  videoCaptures.set(marker, now + VIDEO_CAPTURE_MS);
+  saveVideoMarks();
+  showVideoMarks();
+  if (!marker.samples.length) syncHardwarePolling();
+  clearTimeout(videoCaptureTimer);
+  videoCaptureTimer = setTimeout(showVideoMarks, VIDEO_CAPTURE_MS);
+}
+function updateVideoSample(value) {
+  const sample = videoSample(value);
+  if (sample && activeTab === 'lab') {
+    const now = performance.now();
+    videoLookback.push({time:now, sample});
+    pruneVideoLookback(now);
+  }
+  if (sample && collectingVideoSamples()) {
+    for (const marker of videoCaptures.keys()) {
+      const previous = marker.samples[marker.samples.length - 1];
+      if (sample.sampledAtMs === null || sample.sampledAtMs !== previous?.sampledAtMs) marker.samples.push(sample);
+    }
+    saveVideoMarks();
+  }
+  showVideoMarks();
+}
+function exportVideoDiagnostics() {
+  if (videoMarks.length === 0) return;
+  const file = new Blob([JSON.stringify({version:1, markers:videoMarks}, null, 2)], {type:'application/json'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(file);
+  link.download = 'station-video-diagnostics.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 function hardwareSize(bytes) {
   const gib = 1024 ** 3;
@@ -756,6 +900,11 @@ function showHardware(sample) {
   $('hardwareTempDetail').textContent = temp === null ? 'Датчик недоступен' : 'Датчик процессора';
   $('hardwareUptime').textContent = hardwareUptime(sample.uptimeMs);
   recordHardwareSample(cpuPercent, ramPercent);
+  const display = videoDisplay(sample.display);
+  $('videoOutputMode').textContent = display === null ? 'Нет данных'
+    : display.width + ' × ' + display.height + ' · ' + formatHardwareNumber(display.refreshHz, 2) + ' Гц';
+  updateVideoSample({receivedAtMs:Date.now(), sampledAtMs:sample.sampledAtMs, display, uptimeMs:sample.uptimeMs,
+    cpuPercent, ramPercent, storagePercent:diskPercent, temperatureC:temp});
 }
 function drawHardwareChart() {
   const canvas = $('hardwareChart');
@@ -836,6 +985,7 @@ async function refreshHardware() {
   } catch {
     if (watchingHardware()) {
       recordHardwareSample(null, null);
+      $('videoOutputMode').textContent = 'Нет свежих данных';
       $('hardwareFreshness').textContent = lastHardwareUpdate
         ? 'Нет новых данных · ' + hardwareClock(lastHardwareUpdate) : 'Данные недоступны';
       $('hardwareFreshness').classList.add('warn');
@@ -1017,6 +1167,9 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => lockVoiceHistory());
 window.addEventListener('resize', () => { if (watchingHardware()) drawHardwareChart(); });
 refreshStatus();
+$('markVideoStripes').addEventListener('click', markVideoStripes);
+$('exportVideoDiagnostics').addEventListener('click', exportVideoDiagnostics);
+showVideoMarks();
 showTab(tabFromHash(), false);
 window.addEventListener('hashchange', () => {
   const name = tabFromHash();

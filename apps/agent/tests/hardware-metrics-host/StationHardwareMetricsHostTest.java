@@ -2,6 +2,7 @@ package local.station.agent;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.json.JSONObject;
 
 public final class StationHardwareMetricsHostTest {
     private static void check(boolean valid, String label) {
@@ -16,7 +17,13 @@ public final class StationHardwareMetricsHostTest {
         return new StationHardwareMetrics.CpuSample(cores, at, states);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        JSONObject mode = StationHardwareMetrics.displayMode(1920, 1080, 60.000004f, true);
+        check(mode.getInt("width") == 1920 && mode.getInt("height") == 1080 && mode.getDouble("refreshHz") == 60
+                && mode.getBoolean("secureCapable"), "Android output mode keeps physical size and rounded refresh rate");
+        check(StationHardwareMetrics.displayMode(0, 1080, 60, false) == null
+                && StationHardwareMetrics.displayMode(1920, 1080, Float.NaN, false) == null,
+                "unavailable display mode is not fabricated");
         StationHardwareMetrics.CpuSample first = StationHardwareMetrics.parseProcStat("cpu  5 0 5 50 0 0 0 0 0 0");
         StationHardwareMetrics.CpuSample next = StationHardwareMetrics.parseProcStat("cpu  25 0 15 100 20 0 0 0 4 5");
         check(next.percentSince(first) == 30.0, "global load uses aggregate busy delta and excludes guest duplication");

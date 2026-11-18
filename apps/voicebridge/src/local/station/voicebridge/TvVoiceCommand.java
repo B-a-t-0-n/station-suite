@@ -41,6 +41,7 @@ final class TvVoiceCommand {
             + "поищи|открой|закрой|покажи|переключи|установи|прибавь|убавь)(?=$|[ ,:])");
     private static final Pattern NEGATIVE = words("^не(?: |$)");
     private static final Pattern MUSIC = words("^(?:песн[яюи]|трек|альбом|музык[ау]|клип|плейлист|радио)(?: |$)");
+    private static final Pattern TITLE_SEPARATORS = Pattern.compile("[ :.,–—-]+");
     private static final Pattern CONTEXTUAL_PLAY = words("^(?:включи|поставь|запусти)"
             + "(?: +мне)?(?:,? +пожалуйста,?)? +(.+)$");
     private static final Pattern NON_TITLE = words("^(?:(?:теле ?канал|(?:тв|tv)[ -]?канал|канал|прямой эфир"
@@ -317,6 +318,19 @@ final class TvVoiceCommand {
         }
     }
 
+    enum MediaPrompt { TITLE, RADIO }
+
+    private static final Pattern MISSING_MEDIA_TITLE = words("^(?:включи|запусти|открой|поставь|найди)"
+            + "(?: +мне)?(?: +(?:фильм|кино|видео|сериал|мультсериал|мультфильм|мультик|песню|трек))?$");
+    private static final Pattern RADIO_REQUEST = words("^(?:включи|запусти|открой|поставь)(?: +мне)? +радио$");
+
+    static MediaPrompt mediaPrompt(String transcript) {
+        String text = commandText(transcript);
+        if (text == null) return null;
+        if (RADIO_REQUEST.matcher(text).matches()) return MediaPrompt.RADIO;
+        return MISSING_MEDIA_TITLE.matcher(text).matches() ? MediaPrompt.TITLE : null;
+    }
+
     /** A bare playback title can follow the currently active media mode. */
     static String contextualTitle(String transcript) {
         String text = normalizeUtterance(transcript);
@@ -425,10 +439,12 @@ final class TvVoiceCommand {
             }
         }
         String title = stripTitleQuotes(body.substring(0, titleEnd).trim());
-        String canonicalFranchise = franchiseTitle(title);
-        if (source == null && mediaType == null && canonicalFranchise == null) return null;
-        if (canonicalFranchise != null) title = canonicalFranchise;
-        if (mediaType == null && "Смешарики".equals(canonicalFranchise)) mediaType = "animation";
+        KnownTitle known = knownTitle(title);
+        if (source == null && mediaType == null && known == null) return null;
+        if (known != null) {
+            title = known.title;
+            if (mediaType == null) mediaType = known.type;
+        }
         if (title.isEmpty() || title.length() > MAX_TITLE_CHARS || !title.codePoints().anyMatch(Character::isLetterOrDigit))
             return command(Kind.AMBIGUOUS, source);
         return new TvVoiceCommand(kind, source, title, mediaType, year, selection.season, selection.episode);
@@ -680,17 +696,74 @@ final class TvVoiceCommand {
         return "film";
     }
 
-    private static String franchiseTitle(String title) {
-        switch (title.toLowerCase(Locale.ROOT)) {
+    private enum KnownTitle {
+        SMESHARIKI("Смешарики", "animation"),
+        PIN_CODE("Смешарики: Пин-код", "series"),
+        CHEBURASHKA("Чебурашка", null),
+        HORSE_MOVE("Три богатыря: Ход конём", "film"),
+        DOBRYNYA("Добрыня Никитич и Змей Горыныч", "film"),
+        ALYOSHA("Алёша Попович и Тугарин Змей", "film"),
+        KOLOBOK("Последний богатырь. Колобок", "film"),
+        THE_BOYS_WORD("Слово пацана. Кровь на асфальте", "series");
+
+        final String title;
+        final String type;
+
+        KnownTitle(String title, String type) {
+            this.title = title;
+            this.type = type;
+        }
+    }
+
+    /** Whole-title speech variants observed in searches, with a verified media type when known. */
+    private static KnownTitle knownTitle(String title) {
+        String key = TITLE_SEPARATORS.matcher(title.toLowerCase(Locale.ROOT).replace('ё', 'е'))
+                .replaceAll(" ").trim();
+        switch (key) {
             case "смешарики":
             case "смешариков":
-                return "Смешарики";
+                return KnownTitle.SMESHARIKI;
+            case "смешарики пин код":
+            case "смешариков пин код":
+            case "смешарики пинкод":
+            case "смешариков пинкод":
+                return KnownTitle.PIN_CODE;
             case "чебурашка":
             case "чебурашку":
-                return "Чебурашка";
+                return KnownTitle.CHEBURASHKA;
+            case "три богатыря ход конем":
+            case "три богатыря ходконем":
+            case "три богатыря ход калем":
+            case "три богатыря ходкалем":
+                return KnownTitle.HORSE_MOVE;
+            case "добрынь":
+            case "добрыня":
+            case "добрыню":
+            case "добрыня никитич":
+            case "добрыню никитича":
+            case "добрыня никитич змей горыныч":
+            case "добрыня никитич и змей горыныч":
+            case "добрыню никитича и змея горыныча":
+                return KnownTitle.DOBRYNYA;
+            case "алеша попоич тугарин змей":
+            case "алеша попоич и тугарин змей":
+            case "алеша попович тугарин змей":
+            case "алеша попович и тугарин змей":
+            case "алешу поповича и тугарина змея":
+                return KnownTitle.ALYOSHA;
+            case "последний богатырь колобок":
+            case "последний богатырь голобок":
+                return KnownTitle.KOLOBOK;
+            case "слово пацана":
+            case "слово пацана кровь на асфальте":
+                return KnownTitle.THE_BOYS_WORD;
             default:
                 return null;
         }
+    }
+
+    static boolean hasKnownTitle(String title) {
+        return knownTitle(title) != null;
     }
 
     private static boolean hasSourceAlternative(String text) {

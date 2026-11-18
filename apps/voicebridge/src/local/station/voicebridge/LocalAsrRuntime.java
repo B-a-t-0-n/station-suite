@@ -274,7 +274,7 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
                 turn.writer.finishInput(turn.metadata, transcript);
                 if (closed.get() || turn.stale() || current.get() != turn) { cancelled++; return; }
             }
-            if (TvVoiceCommand.contextQuestion(transcript)
+            if (TvVoiceCommand.contextQuestion(transcript) || TvVoiceCommand.mediaPrompt(transcript) != null
                     || TvChannelCommand.parse(transcript) != null || TvVoiceCommand.parse(transcript) != null
                     || TvVoiceCommand.playback(transcript) != null) {
                 answers.transcriptReady(transcript, turn.metadata, turn.writer);
@@ -296,13 +296,12 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
                     || decision.command.action == LocalVoiceCommands.Action.PLAY_QUERY)) {
                 MediaVoiceContext.Mode mode = media.choose(commands.musicPlaying());
                 if (turn.stale() || current.get() != turn) return;
-                if (mode.videoType != null) {
+                if (mode != MediaVoiceContext.Mode.MUSIC) {
                     answers.transcriptReady(transcript, turn.metadata, turn.writer);
                     transferred = true; completed++; lastCode = "";
                     return;
                 }
-                if (mode == MediaVoiceContext.Mode.MUSIC)
-                    decision = LocalVoiceCommands.parseFinal("включи песню " + bareTitle);
+                decision = LocalVoiceCommands.parseFinal("включи песню " + bareTitle);
             }
             if (decision.handled()) {
                 if (turn.stale()) return;
@@ -312,7 +311,14 @@ public final class LocalAsrRuntime implements LoopbackVoiceServer.ProgressiveInp
                         || decision.command.action == LocalVoiceCommands.Action.RESUME);
                 boolean switchingFromVideo = musicRequest && media.choose(false).videoType != null;
                 LocalVoiceCommands.Result result = LocalVoiceCommands.execute(decision,
-                        command -> turn.stale() || closed.get() ? LocalVoiceCommands.Result.unavailable(command) : commands.apply(command));
+                        command -> turn.stale() || closed.get() ? LocalVoiceCommands.Result.unavailable(command)
+                                : commands.apply(command, media::hasForegroundVideo));
+                if (LocalVoiceCommands.VIDEO_STOP_DEFERRED.equals(result.code)) {
+                    if (turn.stale() || closed.get() || current.get() != turn) { cancelled++; return; }
+                    answers.transcriptReady(transcript, turn.metadata, turn.writer);
+                    transferred = true; completed++; lastCode = "";
+                    return;
+                }
                 if (current.get() == turn) {
                     if (result.accepted && !turn.stale()) {
                         if (result.action == LocalVoiceCommands.Action.PLAY_QUERY

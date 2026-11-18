@@ -177,6 +177,15 @@ public final class TvVoiceCommandHostTest {
     }
 
     private static void contextualPlayback() {
+        for (String incomplete : new String[]{"включи", "открой мне мультфильм", "найди трек"})
+            require(TvVoiceCommand.mediaPrompt(incomplete) == TvVoiceCommand.MediaPrompt.TITLE,
+                    incomplete, "missing title did not ask for clarification");
+        require(TvVoiceCommand.mediaPrompt("Алиса, включи радио") == TvVoiceCommand.MediaPrompt.RADIO,
+                "включи радио", "radio request was not routed to feedback");
+        require(TvVoiceCommand.mediaPrompt("включи музыку") == null,
+                "включи музыку", "music library intercepted by clarification");
+        assertCommand(TvVoiceCommand.parse("включи последний богатырь голобок"),
+                "ASR variant of Kolobok", TvVoiceCommand.Kind.PLAY, null, "Последний богатырь. Колобок", "film", 0);
         for (String text : new String[] {"Алиса, какой сейчас контекст?", "В каком ты сейчас контексте",
                 "Алиса, скажи, какой сейчас контекст?"})
             require(TvVoiceCommand.contextQuestion(text), text, "current context request missed");
@@ -223,6 +232,35 @@ public final class TvVoiceCommandHostTest {
         }
         require(TvVoiceCommand.contextualPlay("javascript:open", "film") == null,
                 "unsafe target", "ineligible title built a television request");
+    }
+
+    private static void observedTitleVariants() {
+        route("найди мне смешарики пин код", TvVoiceCommand.Kind.FIND,
+                null, "Смешарики: Пин-код", "series", 0);
+        route("Алиса, найди мне «Смешарики. Пинкод» на Окко", TvVoiceCommand.Kind.FIND,
+                TvVoiceCommand.Provider.OKKO, "Смешарики: Пин-код", "series", 0);
+        route("включи смешариков Пин-код", TvVoiceCommand.Kind.PLAY,
+                null, "Смешарики: Пин-код", "series", 0);
+        part("включи третью серию смешарики пин код в Окко", TvVoiceCommand.Kind.PLAY,
+                TvVoiceCommand.Provider.OKKO, "Смешарики: Пин-код", "series", 0, 0, 3);
+        route("найди мне три богатыря ходкалем", TvVoiceCommand.Kind.FIND,
+                null, "Три богатыря: Ход конём", "film", 0);
+        route("найди «Три богатыря: Ход конем» 2015 года", TvVoiceCommand.Kind.FIND,
+                null, "Три богатыря: Ход конём", "film", 2015);
+        route("включи добрынь", TvVoiceCommand.Kind.PLAY, null, "Добрыня Никитич и Змей Горыныч", "film", 0);
+        route("включи Алёша Попоич Тугарин змей", TvVoiceCommand.Kind.PLAY,
+                null, "Алёша Попович и Тугарин Змей", "film", 0);
+        route("найди Последний богатырь Колобок", TvVoiceCommand.Kind.FIND,
+                null, "Последний богатырь. Колобок", "film", 0);
+        route("найди Слово пацана", TvVoiceCommand.Kind.FIND,
+                null, "Слово пацана. Кровь на асфальте", "series", 0);
+        route("включи фильм Смешарики: Пин-код", TvVoiceCommand.Kind.PLAY,
+                null, "Смешарики: Пин-код", "film", 0);
+        for (String text : new String[] {"найди пин-код", "включи ход конём", "найди три богатыря",
+                "найди колобок", "включи песню Слово пацана", "включи песню добрынь",
+                "включи добрынь потом домой", "включи не добрынь"}) {
+            require(TvVoiceCommand.parse(text) == null, text, "ambiguous or non-TV request picked a known title");
+        }
     }
 
     public static void main(String[] args) {
@@ -308,6 +346,7 @@ public final class TvVoiceCommandHostTest {
         series();
         playback();
         contextualPlayback();
+        observedTitleVariants();
         System.out.println(checked + " TV admission assertions passed; no network or app launches");
     }
 }

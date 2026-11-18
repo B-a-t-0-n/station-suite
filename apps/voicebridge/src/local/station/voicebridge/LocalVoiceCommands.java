@@ -10,6 +10,7 @@ import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,6 +24,7 @@ import java.util.regex.Pattern;
 
 /** Final-ASR-only local commands. No shell, free-form intents, cloud, logging or retained speech. */
 public final class LocalVoiceCommands {
+    static final String VIDEO_STOP_DEFERRED = "video_stop_deferred";
     private static final int MAX_TEXT = 256, MAX_QUERY = 160;
     private static final Pattern TRACK_URL = Pattern.compile("http://127\\.0\\.0\\.1:17686/audio/track-[a-f0-9]{32}\\.mp3");
     private static final Pattern VOLUME = Pattern.compile(
@@ -91,6 +93,11 @@ public final class LocalVoiceCommands {
     public interface HomeAction { boolean goHome() throws Exception; }
 
     private LocalVoiceCommands() { }
+
+    static boolean isSmartStop(String transcript) {
+        Command command = parseFinal(transcript).command;
+        return command != null && command.action == Action.SMART_STOP;
+    }
 
     /** Never call on a partial hypothesis: a later word can negate or change a command. */
     public static Decision parseFinal(String finalText) {
@@ -369,6 +376,10 @@ public final class LocalVoiceCommands {
             finally { busy.set(false); }
         }
         @Override public Result apply(Command command) {
+            return apply(command, () -> false);
+        }
+
+        Result apply(Command command, BooleanSupplier foregroundVideo) {
             if (command == null) return result(false, "rejected", null, -1);
             if (!busy.compareAndSet(false, true)) return result(false, "busy", command.action, -1);
             try {
@@ -384,8 +395,9 @@ public final class LocalVoiceCommands {
                         || command.action == Action.SMART_STOP) {
                     Result stopped = stopTimer(command);
                     if (command.action != Action.SMART_STOP || !"timer_not_running".equals(stopped.code)) return stopped;
-                    // Only a valid zero-ring acknowledgement permits the usual music stop.
-                    // No guessed fallback when the schedule endpoint is unavailable.
+                    // Only a valid zero-ring acknowledgement permits stopping a player.
+                    checkCancelled();
+                    if (foregroundVideo.getAsBoolean()) return result(false, VIDEO_STOP_DEFERRED, command.action, -1);
                     command = new Command(Action.STOP, -1);
                 }
                 String path;
@@ -496,6 +508,8 @@ public final class LocalVoiceCommands {
         private Result playQuery(Command command) throws Exception {
             if (command.query == null || !command.query.isEmpty() && !validMusicQuery(command.query))
                 return result(false, "rejected", command.action, -1);
+            String query = musicWords(command.query);
+            if (query.isEmpty() && !command.query.isEmpty()) return result(false, "rejected", command.action, -1);
             checkCancelled();
             JSONObject search = request(command.query.isEmpty() ? "/api/library"
                     : "/api/search?q=" + encode(command.query), false, MAX_SEARCH_RESPONSE);
@@ -504,20 +518,63 @@ public final class LocalVoiceCommands {
             JSONArray tracks = search.optJSONArray("tracks");
             if (tracks == null || tracks.length() == 0) return result(false, "music_not_found", command.action, -1);
             JSONObject selected = null;
+            String selectedTitle = null, selectedArtist = null;
+            int bestScore = 0;
+            boolean usableTrack = false;
             for (int i = 0; i < tracks.length(); i++) {
                 JSONObject track = tracks.optJSONObject(i);
-                if (track != null && track.opt("url") instanceof String
-                        && TRACK_URL.matcher((String) track.opt("url")).matches()) { selected = track; break; }
+                if (track == null || !(track.opt("url") instanceof String)
+                        || !TRACK_URL.matcher((String) track.opt("url")).matches()) continue;
+                String title = metadata(track.opt("title")), artist = metadata(track.opt("artist"));
+                if (title == null || artist == null) continue;
+                usableTrack = true;
+                int score = query.isEmpty() ? 4 : musicMatch(query, title, artist);
+                if (score <= bestScore) continue;
+                selected = track;
+                selectedTitle = title;
+                selectedArtist = artist;
+                bestScore = score;
+                if (score == 4) break;
             }
-            if (selected == null) return result(false, "music_bad_response", command.action, -1);
-            String title = metadata(selected.opt("title")), artist = metadata(selected.opt("artist"));
-            if (title == null || artist == null) return result(false, "music_bad_response", command.action, -1);
+            if (selected == null)
+                return result(false, usableTrack ? "music_not_found" : "music_bad_response", command.action, -1);
             String path = "/api/play?url=" + encode((String) selected.opt("url"))
-                    + "&title=" + encode(title) + "&artist=" + encode(artist);
+                    + "&title=" + encode(selectedTitle) + "&artist=" + encode(selectedArtist);
             checkCancelled();
             JSONObject response = request(path, true);
             return result(Boolean.TRUE.equals(response.opt("ok")), Boolean.TRUE.equals(response.opt("ok"))
                     ? "accepted" : "agent_rejected", command.action, -1);
+        }
+
+        private static String musicWords(String text) {
+            return Normalizer.normalize(text, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT).replace('ё', 'е')
+                    .replaceAll("[^\\p{L}\\p{N}]+", " ").trim();
+        }
+
+        private static int musicMatch(String query, String title, String artist) {
+            String track = musicWords(title), performer = musicWords(artist);
+            if (query.equals(track) || query.equals(performer + " " + track)
+                    || query.equals(track + " " + performer)) return 4;
+            if (query.equals(performer)) return 3;
+            String[] candidates = (track + " " + performer).split(" ");
+            for (String word : query.split(" ")) {
+                boolean matched = false;
+                for (String candidate : candidates) {
+                    if (word.equals(candidate) || feminineCaseVariant(word, candidate)) {
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) return 0;
+            }
+            return 1;
+        }
+
+        private static boolean feminineCaseVariant(String first, String second) {
+            int length = first.length();
+            if (length < 5 || length != second.length() || !first.regionMatches(0, second, 0, length - 1)) return false;
+            char a = first.charAt(length - 1), b = second.charAt(length - 1);
+            return a == 'а' && b == 'у' || a == 'у' && b == 'а' || a == 'я' && b == 'ю' || a == 'ю' && b == 'я';
         }
         private static int integer(Object value) {
             if (!(value instanceof Integer || value instanceof Long)) return -1;
