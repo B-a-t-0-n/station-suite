@@ -83,7 +83,8 @@ public final class VoiceRuntimeService extends Service {
                 }
                 if (processOwner == null) {
                     handler = new RuntimeVoiceHandler(this, () -> PrivateConfig.read(this, "config.json"),
-                            () -> main.post(() -> { if (!destroyed) writeStatus(RuntimeSettings.enabled(this) && !stopping); }));
+                            () -> main.post(() -> { if (!destroyed) writeStatus(RuntimeSettings.enabled(this) && !stopping); }),
+                            new TvVoiceControl(this));
                     processOwner = handler;
                     try {
                         JSONObject config = PrivateConfig.read(this, "config.json");

@@ -21,6 +21,8 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
     private int workers, failures, status, retryAfter = -1;
     private long generation, backoffUntil, accepted, rejected, completed, discarded, failed, transactions;
     private long lastElapsedMs = -1, lastAsrMs = -1, lastLlmMs = -1, lastTtsMs = -1;
+    private long lastTvMs = -1;
+    private String lastTvCode = "";
     private long lastTtsFirstByteMs = -1, lastTtsFirstAudioMs = -1, lastFirstAudioReadyMs = -1;
     private long lastAsrOauthMs = -1, lastAsrUploadMs = -1, lastAsrAudioChatMs = -1, lastAsrDeleteMs = -1;
     private boolean lastCombinedAudioAnswer, lastStreamingAudio;
@@ -34,7 +36,11 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
 
     /** Validates local settings, then optionally warms catalogs while the local ASR model loads. */
     public RuntimeVoiceHandler(Context context, ConfigSource source, Runnable observer) {
-        this(new VoicePipeline(application(context)), source, realValidator(application(context)),
+        this(context, source, observer, null);
+    }
+
+    RuntimeVoiceHandler(Context context, ConfigSource source, Runnable observer, VoicePipeline.TvHandler tv) {
+        this(new VoicePipeline(application(context), tv), source, realValidator(application(context)),
                 () -> System.nanoTime() / 1000000L, observer);
         startWarmup();
     }
@@ -230,7 +236,11 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
                 }
             } : null;
             VoicePipeline.Result result = feedback != null ? pipeline.runFeedback(settings.config, localText, feedback, output)
-                    : localText != null ? pipeline.runTranscript(settings.config, localText, output)
+                    : localText != null ? pipeline.runTranscript(settings.config, localText, output, () -> {
+                        synchronized (RuntimeVoiceHandler.this) {
+                            return closed || generation != turn || !writer.isOpen();
+                        }
+                    })
                     : streaming ? pipeline.runStreaming(settings.config, input.audio, output) : pipeline.run(settings.config, input.audio);
             synchronized (this) {
                 timings(result.summary);
@@ -329,6 +339,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
     private void timings(JSONObject summary) {
         lastElapsedMs = timing(summary, "elapsedMs"); lastAsrMs = timing(summary, "asrMs");
         lastLlmMs = timing(summary, "llmMs"); lastTtsMs = timing(summary, "ttsMs");
+        lastTvMs = timing(summary, "tvMs"); lastTvCode = summary.optString("tvCode");
         lastTtsFirstByteMs = timing(summary, "ttsFirstByteMs"); lastTtsFirstAudioMs = timing(summary, "ttsFirstAudioMs");
         lastFirstAudioReadyMs = timing(summary, "firstAudioReadyMs");
         lastAsrOauthMs = timing(summary, "asrOauthMs"); lastAsrUploadMs = timing(summary, "asrUploadMs");
@@ -371,6 +382,7 @@ public final class RuntimeVoiceHandler implements LoopbackVoiceServer.CommandHan
         put(result, "lastFileDeleted", lastFileDeleted);
         put(result, "lastElapsedMs", lastElapsedMs); put(result, "lastAsrMs", lastAsrMs);
         put(result, "lastLlmMs", lastLlmMs); put(result, "lastTtsMs", lastTtsMs);
+        put(result, "lastTvMs", lastTvMs); put(result, "lastTvCode", lastTvCode);
         put(result, "lastTtsFirstByteMs", lastTtsFirstByteMs); put(result, "lastTtsFirstAudioMs", lastTtsFirstAudioMs);
         put(result, "lastFirstAudioReadyMs", lastFirstAudioReadyMs);
         put(result, "lastAsrOauthMs", lastAsrOauthMs); put(result, "lastAsrUploadMs", lastAsrUploadMs);

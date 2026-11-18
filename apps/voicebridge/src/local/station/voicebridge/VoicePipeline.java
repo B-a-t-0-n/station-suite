@@ -3,10 +3,11 @@ package local.station.voicebridge;
 import android.content.Context;
 import org.json.JSONObject;
 import java.io.IOException;
+import java.util.function.BooleanSupplier;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** One explicit ASR -> answer -> Ogg/Opus transaction. No playback, files or control actions. */
+/** One explicit ASR -> answer -> Ogg/Opus transaction. Runtime may supply a finalized TV command handler. */
 public final class VoicePipeline {
     public static final int MAX_AUDIO_INPUT_BYTES = 2 * 1024 * 1024;
     public static final int MAX_TRANSCRIPT_CHARS = 1000;
@@ -32,22 +33,43 @@ public final class VoicePipeline {
             + "Если просят действие, кратко поясни, что этот тест пока не выполняет команды. Реплика:\n";
     private final Backend backend;
     private final Clock clock;
+    private final TvHandler tv;
     private final AtomicBoolean running = new AtomicBoolean();
     private final AtomicReference<CloudClient.Warmup> warming = new AtomicReference<>();
 
     /** No configuration reads or network activity occur in the constructor. */
     public VoicePipeline(Context context) {
-        this(new RealBackend(context), () -> System.nanoTime() / 1000000L);
+        this(context, null);
+    }
+
+    VoicePipeline(Context context, TvHandler tv) {
+        this(new RealBackend(context), () -> System.nanoTime() / 1000000L, tv);
     }
 
     /** Package-private seam: host tests do not construct Android clients or open sockets. */
     VoicePipeline(Backend backend, Clock clock) {
+        this(backend, clock, null);
+    }
+
+    VoicePipeline(Backend backend, Clock clock, TvHandler tv) {
         if (backend == null || clock == null) throw new IllegalArgumentException("pipeline_dependencies_required");
         this.backend = backend;
         this.clock = clock;
+        this.tv = tv;
     }
 
     interface Clock { long millis(); }
+    interface TvHandler {
+        TvResult handle(String transcript, Chat chat, BooleanSupplier cancelled) throws Exception;
+    }
+    interface Chat { JSONObject ask(String prompt) throws Exception; }
+    static final class TvResult {
+        final String answer, code;
+        final boolean launched;
+        TvResult(String answer, String code, boolean launched) {
+            this.answer = answer; this.code = code; this.launched = launched;
+        }
+    }
     /** A current native reply. The first decoder page starts it; audio is never persisted. */
     public interface Output {
         void begin(String transcript, String answer) throws IOException;
@@ -180,8 +202,12 @@ public final class VoicePipeline {
 
     /** Final on-device ASR only. No audio upload, transcription API or remote file is created. */
     public Result runTranscript(JSONObject config, String transcript, Output output) throws PipelineException {
+        return runTranscript(config, transcript, output, () -> output != null && output.isCancelled());
+    }
+
+    Result runTranscript(JSONObject config, String transcript, Output output, BooleanSupplier cancelled) throws PipelineException {
         if (transcript == null) throw failure("input", "INVALID_TRANSCRIPT", new JSONObject());
-        return run(config, null, output, transcript, null);
+        return run(config, null, output, transcript, null, cancelled);
     }
 
     /** A finalized local result. Only the fixed feedback enters synthesis; no ASR or LLM. */
@@ -194,6 +220,11 @@ public final class VoicePipeline {
 
     private Result run(JSONObject config, byte[] audio, Output output, String localText, LocalFeedback feedback)
             throws PipelineException {
+        return run(config, audio, output, localText, feedback, () -> output != null && output.isCancelled());
+    }
+
+    private Result run(JSONObject config, byte[] audio, Output output, String localText, LocalFeedback feedback,
+                       BooleanSupplier cancelled) throws PipelineException {
         JSONObject summary = new JSONObject();
         put(summary, "pipeline", feedback != null ? "local_command_speechify_ogg"
                 : localText == null ? "gigachat_asr_answer_speechify_ogg" : "local_asr_gigachat_speechify_ogg");
@@ -261,20 +292,33 @@ public final class VoicePipeline {
                 put(summary, directAudio ? "combinedUsage" : "asrUsage", usage(asr.optJSONObject("usage")));
                 checkInterrupted(stage, summary);
                 checkOutput(output, stage, summary);
-                stage = "llm";
                 long llmStarted = clock.millis();
-                JSONObject response = directAudio ? asr : backend.ask(snapshot, INSTRUCTION + transcript);
-                put(summary, "llmMs", elapsed(llmStarted));
-                if (response == null || !Boolean.TRUE.equals(response.opt("ok")))
-                    throw failure(stage, "BAD_ANSWER_RESPONSE", summary);
-                answer = text(response.opt(directAudio ? "answer" : "text"), MAX_ANSWER_CHARS,
-                        stage, "INVALID_ANSWER", summary);
-                if (!directAudio) put(summary, "llmUsage", usage(response.optJSONObject("usage")));
+                stage = "tv";
+                TvResult television = tv == null || localText == null ? null
+                        : tv.handle(transcript, prompt -> backend.ask(snapshot, prompt), cancelled);
+                if (cancelled.getAsBoolean()) throw failure(stage, "CANCELLED", summary);
+                if (television != null) {
+                    put(summary, "pipeline", "local_asr_tv_search_speechify_ogg");
+                    put(summary, "tvCode", television.code);
+                    put(summary, "tvMs", elapsed(llmStarted));
+                    put(summary, "controlActionsExecuted", television.launched);
+                    answer = text(television.answer, MAX_ANSWER_CHARS, stage, "INVALID_ANSWER", summary);
+                } else {
+                    stage = "llm";
+                    JSONObject response = directAudio ? asr : backend.ask(snapshot, INSTRUCTION + transcript);
+                    put(summary, "llmMs", elapsed(llmStarted));
+                    if (response == null || !Boolean.TRUE.equals(response.opt("ok")))
+                        throw failure(stage, "BAD_ANSWER_RESPONSE", summary);
+                    answer = text(response.opt(directAudio ? "answer" : "text"), MAX_ANSWER_CHARS,
+                            stage, "INVALID_ANSWER", summary);
+                    if (!directAudio) put(summary, "llmUsage", usage(response.optJSONObject("usage")));
+                }
             }
             put(summary, "transcriptChars", transcript.length());
             put(summary, "answerChars", answer.length());
             checkInterrupted(stage, summary);
             checkOutput(output, stage, summary);
+            if (cancelled.getAsBoolean()) throw failure(stage, "CANCELLED", summary);
             stage = "tts";
             long stepStarted = clock.millis();
             if (output != null) {

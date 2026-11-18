@@ -1,4 +1,4 @@
-﻿"""Build the isolated Station Voice Lab APK locally. No ADB/device execution."""
+"""Build the isolated Station Voice Lab APK locally. No ADB/device execution."""
 from pathlib import Path
 import hashlib
 import json
@@ -17,7 +17,7 @@ ANDROID = SDK / 'platform/android.jar'
 BUILD = ROOT / 'build'
 PRIVATE = Path(os.environ['STATION_SIGNING_DIR'])
 OUT = ROOT / 'dist'
-VERSION, VERSION_CODE = '0.22', 22
+VERSION, VERSION_CODE = '0.23', 23
 DEPS = Path(os.environ.get('STATION_ASR_DEPS', str(SUITE / '.deps/asr'))) / 'extracted'
 DEPENDENCIES = [DEPS / 'vosk-android-0.3.75', DEPS / 'jna-5.18.1']
 DEXER = Path(os.environ.get('STATION_R8_JAR', str(SUITE / '.deps/asr/build-tools/r8-9.5.32.jar')))

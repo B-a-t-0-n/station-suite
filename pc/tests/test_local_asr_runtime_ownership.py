@@ -19,7 +19,8 @@ class LocalAsrOwnershipTests(unittest.TestCase):
     def test_actual_runtime_admission_and_completed_ownership(self):
         self.assertEqual(hashlib.sha256(JSON_JAR.read_bytes()).hexdigest(), JSON_SHA256)
         sources = [ROOT / "src/local/station/voicebridge" / name
-                   for name in ("OnDeviceRecognizer.java", "LocalAsrRuntime.java", "LocalVoiceCommands.java")]
+                   for name in ("OnDeviceRecognizer.java", "LocalAsrRuntime.java", "LocalVoiceCommands.java",
+                                "TvVoiceCommand.java")]
         with tempfile.TemporaryDirectory(prefix="local-asr-runtime-") as temporary:
             android_classes = Path(temporary) / "android"
             host_classes = Path(temporary) / "host"

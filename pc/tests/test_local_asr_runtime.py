@@ -35,6 +35,7 @@ class LocalAsrRuntimeTests(unittest.TestCase):
             sources += [ROOT / 'src/local/station/voicebridge/OnDeviceRecognizer.java',
                         ROOT / 'src/local/station/voicebridge/LocalAsrRuntime.java',
                         ROOT / 'src/local/station/voicebridge/LocalVoiceCommands.java',
+                        ROOT / 'src/local/station/voicebridge/TvVoiceCommand.java',
                         Path(__file__).resolve().parent / 'local-asr-host/LocalAsrRuntimeHostTest.java']
             commands = [
                 [JAVAC, '-encoding', 'UTF-8', '-source', '8', '-target', '8', '-Xlint:all,-auxiliaryclass',

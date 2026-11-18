@@ -232,7 +232,7 @@ final class RuntimeVoiceHandler {
     interface ConfigSource { JSONObject snapshot() throws Exception; }
     static int instances; static RuntimeVoiceHandler latest;
     final Runnable changed; boolean closed; int workers;
-    RuntimeVoiceHandler(Context context, ConfigSource config, Runnable changed) { this.changed = changed; latest = this; instances++; changed.run(); }
+    RuntimeVoiceHandler(Context context, ConfigSource config, Runnable changed, TvVoiceControl tv) { this.changed = changed; latest = this; instances++; changed.run(); }
     void begin() { if (!VoiceCloudGate.tryAcquire(this)) throw new AssertionError("gate busy"); workers = 1; }
     void finish() { workers = 0; VoiceCloudGate.release(this); changed.run(); }
     void close() { closed = true; }
@@ -274,3 +274,4 @@ final class LocalAsrRuntime {
     boolean isReady() { return !closed; }
     JSONObject snapshot() { return new JSONObject(); }
 }
+final class TvVoiceControl { TvVoiceControl(Context context) {} }
