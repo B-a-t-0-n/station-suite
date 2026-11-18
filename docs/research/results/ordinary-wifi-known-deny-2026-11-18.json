@@ -173,5 +173,15 @@
   "pcObservationBridgeStoppedAfterVerification": true,
   "agentHttpAfterPcObservationBridgeStop": 200,
   "ownedDiagnosticArtifactsRemoved": true,
-  "disposableProbePackageAbsenceVerified": true
+  "disposableProbePackageAbsenceVerified": true,
+  "userWorkingCheckpoint": {
+    "date": "2026-11-18",
+    "tag": "wifi-working-2026-11-18",
+    "source": "direct_user_report",
+    "allFunctionsReportedWorking": true,
+    "userObservedNoUpdate": true,
+    "observationDurationMeasured": false,
+    "otaPreventionGuaranteed": false,
+    "adoptedAsBaselineForFurtherModifications": true
+  }
 }
