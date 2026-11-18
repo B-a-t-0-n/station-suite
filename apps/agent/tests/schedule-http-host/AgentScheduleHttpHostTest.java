@@ -90,6 +90,13 @@ public final class AgentScheduleHttpHostTest {
         rejected(server, service, "PUT", "/api/equalizer", true, 405);
         rejected(server, service, "POST", "/api/equalizer?request=%5B%5D", true, 400);
         check(service.equalizerCalls == 2, "rejected EQ routes must not touch actuator");
+        response = dispatch(server, "GET", "/api/hardware", false);
+        check(response.startsWith("HTTP/1.1 200 OK") && response.contains("\"uptimeMs\":17")
+                && response.contains("Cache-Control: no-store") && service.hardwareCalls == 1,
+                "hardware snapshot must be available to the web panel");
+        response = dispatch(server, "POST", "/api/hardware", false);
+        check(response.startsWith("HTTP/1.1 405 ") && service.hardwareCalls == 1,
+                "hardware endpoint is read-only");
         System.out.println(assertions + " assertions passed; fake peers only");
     }
 }

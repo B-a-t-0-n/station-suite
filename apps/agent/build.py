@@ -17,6 +17,7 @@ ANDROID = SDK / 'platform/android.jar'
 BUILD = ROOT / 'build'
 PRIVATE = Path(os.environ['STATION_SIGNING_DIR'])
 OUT = ROOT / 'dist'
+VERSION, VERSION_CODE = '0.7.6', 20
 commands = []
 
 
@@ -89,7 +90,7 @@ def main():
                 archive.write(dex / 'classes.dex', 'classes.dex')
         aligned = BUILD / 'aligned.apk'
         run([BT / 'zipalign.exe', '-f', '4', unsigned, aligned], 'zipalign')
-        apk = OUT / 'station-agent-0.7.5.apk'
+        apk = OUT / f'station-agent-{VERSION}.apk'
         run([JAVA / 'java.exe', '-jar', BT / 'apksigner.jar', 'sign', '--ks', keystore,
              '--ks-key-alias', os.environ.get('STATION_KEY_ALIAS', 'station-suite'), '--ks-pass', f'env:{env_name}',
              '--key-pass', f'env:{env_name}', '--min-sdk-version', '28',
@@ -107,15 +108,14 @@ def main():
                           for p in [ROOT / 'AndroidManifest.xml',
                                     ROOT / 'res/xml/network_security_config.xml',
                                     *sorted((ROOT / 'assets').rglob('*.*')), *sources, Path(__file__).resolve()]]
-        record = {'package': 'local.station.agent', 'version': '0.7.5', 'version_code': 19, 'min_sdk': 28,
+        record = {'package': 'local.station.agent', 'version': VERSION, 'version_code': VERSION_CODE, 'min_sdk': 28,
                   'target_sdk': 28, 'compile_sdk': 28, 'apk': str(apk), 'bytes': len(raw),
                   'sha256': hashlib.sha256(raw).hexdigest(), 'java_home': str(JAVA.parent),
                   'sources': sources_record, 'steps': commands,
                   'installed_on_station': False, 'started_on_station': False,
                   'device_tested': False}
         (OUT / 'BUILD-RECORD.json').write_text(json.dumps(record, indent=2) + '\n', encoding='utf8')
-        (OUT / 'station-agent-0.7.5.apk.sha256').write_text(record['sha256'] + '  ' + apk.name + '\n',
-                                                          encoding='ascii')
+        apk.with_suffix('.apk.sha256').write_text(record['sha256'] + '  ' + apk.name + '\n', encoding='ascii')
         print(json.dumps({'apk': str(apk), 'bytes': len(raw), 'sha256': record['sha256']}), flush=True)
     finally:
         os.environ.pop(env_name, None)

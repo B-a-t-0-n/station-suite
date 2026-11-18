@@ -24,7 +24,7 @@ final class NativeCommands { static boolean send(String c){throw new AssertionEr
     'local/station/agent/AgentService.java': '''package local.station.agent;
 import org.json.JSONObject;
 final class AgentService {
- int scheduleCalls, equalizerCalls, displayCalls, playCalls; JSONObject received;
+ int scheduleCalls, equalizerCalls, displayCalls, playCalls, hardwareCalls; JSONObject received;
  JSONObject displayCommand(JSONObject request) throws Exception {displayCalls++;received=request;return new JSONObject().put("ok",true).put("scope","station_led");}
  JSONObject equalizerCommand(JSONObject request) throws Exception {equalizerCalls++;received=request;return new JSONObject().put("ok",true).put("scope","agent_player");}
  JSONObject scheduleCommand(JSONObject request) throws Exception {scheduleCalls++; received=request;return new JSONObject().put("ok",true).put("id","test-id");}
@@ -32,6 +32,7 @@ final class AgentService {
  int setVolumePercent(int n){return n;} int adjustVolume(int n){return n;} int mute(boolean b){return 0;}
  void play(String a,String b,String c){playCalls++;} void pause(){} void resume(){} void stop(){} void next(){} void previous(){} void seekTo(int n){}
  String apps(){return "{}";} String launch(String a,String b){return "{}";} String tvKey(String a){return "{}";} String tvStatus(){return "{}";} String localStatus(){return "{}";}
+ String hardwareStatus(){hardwareCalls++;return "{\\"ok\\":true,\\"uptimeMs\\":17}";}
  JSONObject proxyStatus(){return new JSONObject();} JSONObject vpnStatus(){return new JSONObject();} String vpnStart(){return "{}";} String vpnStop(){return "{}";}
  JSONObject dnsGuardStatus(){return new JSONObject();} String dnsGuardStart(){return "{}";} String dnsGuardStop(){return "{}";}
  String search(String a){return "{}";} String library(){return "{}";} String playlists(){return "{}";} String playlist(String a,String b){return "{}";}

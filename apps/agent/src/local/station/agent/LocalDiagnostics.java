@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 
 /** Read-only, fixed local probes; responses expose only selected booleans and counters. */
 final class LocalDiagnostics {
+    static final String VERSION = "0.7.6";
     private LocalDiagnostics() { }
     static JSONObject snapshot(JSONObject own, JSONObject input) throws Exception {
         JSONObject agent = agent(own), services = new JSONObject().put("agent", true)
@@ -28,7 +29,7 @@ final class LocalDiagnostics {
                 .put("services", services).put("updatedAtMs", System.currentTimeMillis());
     }
     static JSONObject agent(JSONObject own) throws Exception {
-        return new JSONObject().put("version", "0.7.5").put("playing", own.optBoolean("playing", false))
+        return new JSONObject().put("version", VERSION).put("playing", own.optBoolean("playing", false))
                 .put("prepared", own.optBoolean("prepared", false)).put("volume", Math.max(0, Math.min(100, own.optInt("volume", 0))));
     }
     private static JSONObject musicStatus() throws Exception {

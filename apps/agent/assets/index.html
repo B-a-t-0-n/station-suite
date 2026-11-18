@@ -19,6 +19,35 @@ input,select{min-width:0;border:1px solid var(--line);background:#faf9fd;color:v
 @media(max-width:680px){body{font-size:14px}main{padding:23px 18px 30px}header{gap:15px;align-items:flex-start;margin-bottom:22px}.brand-lockup{gap:10px}.brand-symbol{width:34px;height:42px}.brand-lockup h1{font-size:25px;letter-spacing:-.7px}.brand-lockup h1 span{display:block;font-size:14px;margin-top:5px;letter-spacing:0}.sub{font-size:11px;margin-top:5px}.mini{min-width:0;max-width:40%;padding:9px 11px;font-size:10px}.mini b{font-size:11px;max-width:120px}.grid{gap:14px}.span-4,.span-6,.span-8{grid-column:span 12}.card{border-radius:22px;padding:22px 18px}.card h2,h2{margin-bottom:17px}.now{font-size:24px}.services{grid-template-columns:1fr}.tvremote{margin-top:24px}.tabs{gap:4px;padding:5px;border-radius:17px}.tabs button,.tab{font-size:11px;padding:9px 7px;gap:5px}.tabs .icon{width:17px;height:17px}.agent .tabs button{flex-direction:column;gap:5px}.agent .tabs{position:fixed;z-index:10;bottom:calc(12px + env(safe-area-inset-bottom));left:14px;right:14px;margin:0;background:#fffefaf5;box-shadow:0 6px 30px #38215e12;backdrop-filter:blur(14px);max-width:none}.agent{padding-bottom:90px}.agent header .mini{padding:7px 0;background:transparent}.mobile header{padding:22px 18px 0;align-items:center}.mobile .brand-lockup h1{font-size:26px}.mobile main{padding:14px 18px 25px}.mobile .tabs{width:calc(100% - 28px);bottom:calc(10px + env(safe-area-inset-bottom));padding:5px;border-radius:18px}.lab header .actions{display:grid;grid-template-columns:1fr 1fr}.lab header .actions button{font-size:12px}.footer{font-size:10px}.track{gap:10px}.track button{padding:9px 11px}.remote-shortcuts{gap:6px}.kv{font-size:12px}.kv .v{max-width:65%}input[type=text]{min-width:125px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}button:active{transform:none}}
 
+.hardware { margin-bottom: 20px; }
+.hardware-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 0 0 16px; }
+.hardware-head h2 { margin: 0; color: var(--ink); font-size: clamp(21px, 4vw, 28px); letter-spacing: -.6px; text-transform: none; }
+.hardware-head .small { margin-top: 3px; }
+.hardware-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.hardware-metric { padding: 20px; }
+.hardware-metric h3 { margin: 0 0 10px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.hardware-value { color: var(--ink); font-size: clamp(24px, 3vw, 34px); line-height: 1.15; font-weight: 650; letter-spacing: -.8px; font-variant-numeric: tabular-nums; }
+.hardware-meter { margin-top: 15px; height: 5px; overflow: hidden; border-radius: 9px; background: #eeebf5; }
+.hardware-meter span { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--meter-color, var(--accent)); transition: width .28s ease; }
+.hardware-detail { display: block; margin-top: 9px; font-size: 11px; color: var(--muted); }
+.hardware-detail.warn { color: var(--warn); }
+.hardware-chart { margin-top: 14px; }
+.hardware-chart-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.hardware-chart-head h3 { margin: 0; font-size: 14px; font-weight: 650; }
+.hardware-chart-legend { display: flex; gap: 14px; color: var(--muted); font-size: 12px; }
+.hardware-chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.hardware-chart-legend span::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--series-color); }
+.hardware-cpu { --series-color: #7560ea; }
+.hardware-ram { --series-color: #24836c; }
+#hardwareChart { display: block; width: 100%; height: clamp(150px, 25vw, 210px); }
+@media(max-width: 850px) {
+  .hardware-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media(max-width: 480px) {
+  .hardware-grid { gap: 10px; }
+  .hardware-metric { padding: 16px 13px; }
+}
+
 </style>
 </head>
 <body class="agent">
@@ -145,6 +174,49 @@ input,select{min-width:0;border:1px solid var(--line);background:#faf9fd;color:v
 </section>
 
 <section id="tab-lab" class="panel">
+  <section class="hardware" aria-labelledby="hardwareTitle">
+    <div class="hardware-head">
+      <div>
+        <h2 id="hardwareTitle">Нагрузка Станции</h2>
+        <div class="small muted" id="hardwareUptime">Время работы —</div>
+      </div>
+      <span class="small muted" id="hardwareFreshness">Получаю данные…</span>
+    </div>
+    <div class="hardware-grid">
+      <section class="card hardware-metric">
+        <h3 id="hardwareCpuTitle">Процессор</h3>
+        <div class="hardware-value" id="hardwareCpu">—</div>
+        <div class="hardware-meter" aria-hidden="true"><span id="hardwareCpuBar"></span></div>
+        <span class="hardware-detail" id="hardwareCpuDetail"></span>
+      </section>
+      <section class="card hardware-metric" style="--meter-color:#24836c">
+        <h3>Оперативная память</h3>
+        <div class="hardware-value" id="hardwareRam">—</div>
+        <div class="hardware-meter" aria-hidden="true"><span id="hardwareRamBar"></span></div>
+        <span class="hardware-detail" id="hardwareRamDetail"></span>
+      </section>
+      <section class="card hardware-metric" style="--meter-color:#4076ba">
+        <h3>Накопитель</h3>
+        <div class="hardware-value" id="hardwareDisk">—</div>
+        <div class="hardware-meter" aria-hidden="true"><span id="hardwareDiskBar"></span></div>
+        <span class="hardware-detail" id="hardwareDiskDetail"></span>
+      </section>
+      <section class="card hardware-metric">
+        <h3>Температура</h3>
+        <div class="hardware-value" id="hardwareTemp">—</div>
+        <span class="hardware-detail" id="hardwareTempDetail"></span>
+      </section>
+    </div>
+    <section class="card hardware-chart">
+      <div class="hardware-chart-head">
+        <h3>Последние 2 минуты</h3>
+        <div class="hardware-chart-legend" aria-hidden="true">
+          <span class="hardware-cpu" id="hardwareCpuLegend">Процессор</span><span class="hardware-ram">Память</span>
+        </div>
+      </div>
+      <canvas id="hardwareChart" role="img" aria-label="Динамика загрузки процессора и памяти">Динамика загрузки процессора и памяти</canvas>
+    </section>
+  </section>
   <div class="grid">
     <section class="card span-6">
       <h2>Моя Станция</h2>
@@ -219,6 +291,7 @@ function showTab(name) {
   if (name === 'tv') loadApps();
   if (name === 'remote') { loadRemoteApps(); refreshRemote(); }
   if (name === 'lab') refreshLab();
+  syncHardwarePolling();
 }
 
 async function refreshStatus() {
@@ -387,8 +460,184 @@ async function refreshLab() {
   $('labServices').innerHTML = Object.keys(names).map(k => `<div class="service"><span>${dot(!!services[k], esc(names[k]))}</span><span>${services[k] ? 'OK' : 'off'}</span></div>`).join('');
 }
 
+const HARDWARE_INTERVAL_MS = 3000;
+const HARDWARE_WINDOW_MS = 120000;
+const hardwareSamples = [];
+let hardwareTimer;
+let hardwareRequest;
+let lastHardwareUpdate;
+let chartCpuName = 'Процессор';
+
+function watchingHardware() { return activeTab === 'lab' && !document.hidden; }
+function syncHardwarePolling() {
+  clearTimeout(hardwareTimer);
+  if (watchingHardware()) refreshHardware();
+  else if (hardwareRequest) hardwareRequest.abort();
+}
+function hardwareNumber(value) { return Number.isFinite(value) ? value : null; }
+function formatHardwareNumber(value, digits = 0) {
+  return value.toLocaleString('ru-RU', {maximumFractionDigits: digits});
+}
+function hardwareUsage(capacity) {
+  const total = hardwareNumber(capacity?.totalBytes);
+  const available = hardwareNumber(capacity?.availableBytes);
+  return total > 0 && available !== null && available >= 0 && available <= total
+    ? (1 - available / total) * 100 : null;
+}
+function hardwareSize(bytes) {
+  const gib = 1024 ** 3;
+  return bytes >= gib ? formatHardwareNumber(bytes / gib, 2) + ' ГиБ'
+    : formatHardwareNumber(bytes / (1024 ** 2)) + ' МиБ';
+}
+function showHardwarePercent(name, percent) {
+  $(name).textContent = percent === null ? '—' : formatHardwareNumber(percent, 1) + ' %';
+  $(name + 'Bar').style.width = (percent ?? 0) + '%';
+}
+function showHardwareCapacity(name, capacity, percent) {
+  showHardwarePercent(name, percent);
+  $(name + 'Detail').textContent = percent === null ? 'Нет данных'
+    : hardwareSize(capacity.availableBytes) + ' из ' + hardwareSize(capacity.totalBytes) + ' доступно';
+}
+function hardwareUptime(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return 'Время работы —';
+  const minutes = Math.floor(ms / 60000);
+  const parts = [];
+  if (minutes >= 1440) parts.push(Math.floor(minutes / 1440) + ' д');
+  if (minutes >= 60) parts.push(Math.floor(minutes / 60) % 24 + ' ч');
+  parts.push(minutes % 60 + ' мин');
+  return 'В работе ' + parts.join(' ');
+}
+function recordHardwareSample(cpu, ram) {
+  const time = performance.now();
+  hardwareSamples.push({time, cpu, ram});
+  while (hardwareSamples.length && time - hardwareSamples[0].time > HARDWARE_WINDOW_MS) {
+    hardwareSamples.shift();
+  }
+  drawHardwareChart();
+}
+function showHardware(sample) {
+  const cpu = sample.cpu || {};
+  const useAgentCpu = !cpu.source && hardwareNumber(cpu.percent) === null;
+  const cpuName = useAgentCpu && hardwareNumber(cpu.agentPercent) !== null ? 'Процессор Agent' : 'Процессор';
+  if (chartCpuName !== cpuName) {
+    hardwareSamples.forEach(point => { point.cpu = null; });
+    chartCpuName = cpuName;
+  }
+  $('hardwareCpuTitle').textContent = cpuName;
+  $('hardwareCpuLegend').textContent = cpuName;
+  const cpuPercent = hardwareNumber(useAgentCpu ? cpu.agentPercent : cpu.percent);
+  const ramPercent = hardwareUsage(sample.memory);
+  const diskPercent = hardwareUsage(sample.storage);
+  const temp = hardwareNumber(sample.temperatureC);
+  showHardwarePercent('hardwareCpu', cpuPercent);
+  const cores = cpu.cores > 0 ? cpu.cores + ' ядра' : '';
+  const cpuDetail = cpu.source === 'cpuidle' ? 'оценка по времени простоя'
+    : useAgentCpu && cpuPercent !== null ? 'доля общей мощности'
+      : cpuPercent === null ? 'ожидаю замер' : '';
+  $('hardwareCpuDetail').textContent = [cores, cpuDetail].filter(Boolean).join(' · ');
+  showHardwareCapacity('hardwareRam', sample.memory, ramPercent);
+  $('hardwareRamDetail').classList.toggle('warn', sample.memory?.low === true);
+  if (ramPercent !== null && sample.memory?.low === true) $('hardwareRamDetail').textContent += ' · мало памяти';
+  showHardwareCapacity('hardwareDisk', sample.storage, diskPercent);
+  $('hardwareTemp').textContent = temp === null ? '—' : formatHardwareNumber(temp, 1) + ' °C';
+  $('hardwareTempDetail').textContent = temp === null ? 'Датчик недоступен' : 'Датчик процессора';
+  $('hardwareUptime').textContent = hardwareUptime(sample.uptimeMs);
+  recordHardwareSample(cpuPercent, ramPercent);
+}
+function drawHardwareChart() {
+  const canvas = $('hardwareChart');
+  const width = canvas.clientWidth, height = canvas.clientHeight;
+  if (!width || !height) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(width * scale);
+  canvas.height = Math.round(height * scale);
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  const left = 36, top = 9, right = width - 8, bottom = height - 24;
+  const graphWidth = right - left;
+  const graphHeight = bottom - top;
+  const y = percent => bottom - Math.min(100, Math.max(0, percent)) * graphHeight / 100;
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.fillStyle = '#777384';
+  ctx.strokeStyle = '#eeeaf5';
+  ctx.textBaseline = 'middle';
+  for (const percent of [0, 25, 50, 75, 100]) {
+    const line = y(percent);
+    ctx.fillText(percent + '%', 0, line);
+    ctx.beginPath();
+    ctx.moveTo(left, line);
+    ctx.lineTo(right, line);
+    ctx.stroke();
+  }
+  ctx.fillText('−2 мин', left, height - 7);
+  ctx.textAlign = 'right';
+  ctx.fillText('сейчас', right, height - 7);
+  const first = performance.now() - HARDWARE_WINDOW_MS;
+  const x = time => left + (time - first) * graphWidth / HARDWARE_WINDOW_MS;
+  const points = hardwareSamples.filter(point => point.time >= first);
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  for (const [metric, color] of [['cpu', '#7560ea'], ['ram', '#24836c']]) {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    let previous = null;
+    for (const point of points) {
+      if (point[metric] === null) { previous = null; continue; }
+      if (previous && point.time - previous.time <= HARDWARE_INTERVAL_MS * 3) {
+        ctx.lineTo(x(point.time), y(point[metric]));
+      } else {
+        ctx.moveTo(x(point.time), y(point[metric]));
+      }
+      previous = point;
+    }
+    ctx.stroke();
+    if (previous) {
+      ctx.beginPath();
+      ctx.arc(x(previous.time), y(previous[metric]), 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  canvas.setAttribute('aria-label', 'Динамика за последние две минуты. '
+    + chartCpuName + ' ' + $('hardwareCpu').textContent + '. Память ' + $('hardwareRam').textContent + '.');
+}
+function hardwareClock(timestamp) {
+  return new Date(timestamp).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+async function refreshHardware() {
+  if (!watchingHardware() || hardwareRequest) return;
+  const request = new AbortController();
+  hardwareRequest = request;
+  const timeout = setTimeout(() => request.abort(), 4500);
+  try {
+    const response = await fetch('/api/hardware', {cache:'no-store', signal:request.signal});
+    if (!response.ok) throw new Error('hardware_unavailable');
+    const sample = await response.json();
+    if (!sample.ok) throw new Error('hardware_unavailable');
+    if (!watchingHardware()) return;
+    showHardware(sample);
+    lastHardwareUpdate = Date.now();
+    $('hardwareFreshness').textContent = 'Обновлено в ' + hardwareClock(lastHardwareUpdate);
+    $('hardwareFreshness').classList.remove('warn');
+  } catch {
+    if (watchingHardware()) {
+      recordHardwareSample(null, null);
+      $('hardwareFreshness').textContent = lastHardwareUpdate
+        ? 'Нет новых данных · ' + hardwareClock(lastHardwareUpdate) : 'Данные недоступны';
+      $('hardwareFreshness').classList.add('warn');
+    }
+  } finally {
+    clearTimeout(timeout);
+    hardwareRequest = null;
+    if (watchingHardware()) hardwareTimer = setTimeout(refreshHardware, HARDWARE_INTERVAL_MS);
+  }
+}
+
+document.addEventListener('visibilitychange', syncHardwarePolling);
+window.addEventListener('resize', () => { if (watchingHardware()) drawHardwareChart(); });
 refreshStatus();
-showTab('remote');
+showTab(location.hash === '#status' ? 'lab' : 'remote');
 setInterval(refreshStatus, 1000);
 setInterval(() => { if (activeTab === 'remote') refreshRemote(); }, 5000);
 setInterval(() => { if (activeTab === 'lab') refreshLab(); }, 5000);

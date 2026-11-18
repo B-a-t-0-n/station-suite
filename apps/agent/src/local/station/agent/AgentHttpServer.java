@@ -182,6 +182,11 @@ final class AgentHttpServer implements Runnable {
                 respond(client, 200, "text/html; charset=utf-8", new String(html, StandardCharsets.UTF_8));
             } else if ("/api/status".equals(path)) {
                 respondJson(client, 200, service.status().toString());
+            } else if ("/api/hardware".equals(path)) {
+                if (!"GET".equals(parts[0])) {
+                    respondJson(client, 405, "{\"ok\":false,\"code\":\"method_not_allowed\"}"); return;
+                }
+                respondJson(client, 200, service.hardwareStatus());
             } else if ("/api/local/status".equals(path)) {
                 if (!"GET".equals(parts[0])) { respondJson(client, 405, "{\"ok\":false,\"code\":\"method_not_allowed\"}"); return; }
                 respondJson(client, 200, service.localStatus());

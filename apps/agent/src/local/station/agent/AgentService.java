@@ -39,6 +39,7 @@ public final class AgentService extends Service implements BluetoothMediaCommand
     private NativeMusicPlayer nativePlayer;
     private AgentEqualizer equalizer;
     private StationDisplaySettings displaySettings;
+    private StationHardwareMetrics hardwareMetrics;
     private AgentHttpServer server;
     private BluetoothRecoveryServer bluetooth;
     private MediaSession session;
@@ -86,6 +87,7 @@ public final class AgentService extends Service implements BluetoothMediaCommand
         startForeground(NOTIFICATION_ID, notification("http://192.168.77.100:18080"));
         createMediaSession();
         schedules = new StationScheduleRuntime(this, this);
+        hardwareMetrics = new StationHardwareMetrics(this);
         server = new AgentHttpServer(this, this);
         server.start();
         scheduleDisplay = new StationScheduleDisplay(schedules);
@@ -148,7 +150,7 @@ public final class AgentService extends Service implements BluetoothMediaCommand
             int current = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
             value.put("playing", playing);
             value.put("prepared", prepared);
-            value.put("version", "0.7.5");
+            value.put("version", LocalDiagnostics.VERSION);
             value.put("title", title);
             value.put("artist", artist);
             value.put("url", trackUrl);
@@ -509,6 +511,11 @@ public final class AgentService extends Service implements BluetoothMediaCommand
     public String localStatus() {
         try { return LocalDiagnostics.snapshot(status(), StationInputClient.status()).toString(); }
         catch (Exception unavailable) { return "{\"ok\":false,\"code\":\"local_status_unavailable\"}"; }
+    }
+
+    String hardwareStatus() {
+        try { return hardwareMetrics.snapshot(); }
+        catch (Exception unavailable) { return "{\"ok\":false,\"code\":\"hardware_status_unavailable\"}"; }
     }
 
     public JSONObject proxyStatus() {
