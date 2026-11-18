@@ -1,2 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources><string name="app_name">Station Voice Lab</string></resources>
+<resources>
+    <string name="app_name">Station Voice Lab</string>
+    <string name="tv_playback_accessibility_label">Управление видео Станции</string>
+    <string name="tv_playback_accessibility_description">Выполняет голосовые команды для открытого плеера Окко. Использует его кнопки и шкалу времени. Данные экрана остаются на Станции.</string>
+</resources>

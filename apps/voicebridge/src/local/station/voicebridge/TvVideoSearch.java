@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -77,6 +78,7 @@ final class TvVideoSearch {
         final TvVoiceCommand.Provider provider;
         final String page, target, displayTitle, mediaType;
         final int score, year;
+        final long durationMs;
 
         Hit(TvVoiceCommand.Provider provider, String page, String target, String displayTitle, int score, int year) {
             this(provider, page, target, displayTitle, score, year, null);
@@ -84,6 +86,11 @@ final class TvVideoSearch {
 
         Hit(TvVoiceCommand.Provider provider, String page, String target, String displayTitle, int score, int year,
             String mediaType) {
+            this(provider, page, target, displayTitle, score, year, mediaType, -1);
+        }
+
+        Hit(TvVoiceCommand.Provider provider, String page, String target, String displayTitle, int score, int year,
+            String mediaType, long durationMs) {
             this.provider = provider;
             this.page = page;
             this.target = target;
@@ -91,6 +98,7 @@ final class TvVideoSearch {
             this.score = score;
             this.year = year;
             this.mediaType = mediaType;
+            this.durationMs = durationMs;
         }
 
         String launchTarget(boolean play) {
@@ -304,6 +312,10 @@ final class TvVideoSearch {
         return fetch(url, type, accept, cancelled, 2800);
     }
 
+    static byte[] fetchOkkoHead(String page, BooleanSupplier cancelled) throws IOException {
+        return fetch(new URL(page), "html", "text/html", cancelled, 2200);
+    }
+
     private static byte[] fetch(URL url, String type, String accept, BooleanSupplier cancelled,
                                 int timeoutMs) throws IOException {
         return fetch(url, type, accept, cancelled, timeoutMs, "html".equals(type) ? MAX_OKKO_CARD : MAX_BYTES);
@@ -405,13 +417,36 @@ final class TvVideoSearch {
                 || !film && "movie".equals(link.group(3))) return null;
         if (animation && !isOfficialAnimation(head, name, hit.page)) return null;
         String target = "okko://" + link.group(1) + "?uid=" + link.group(2) + "&type=" + link.group(3);
-        Hit confirmed = new Hit(hit.provider, hit.page, target, name, hit.score + 10, cardYear, film ? "film" : "series");
+        long duration = film ? officialFilmDuration(head, name) : -1;
+        Hit confirmed = new Hit(hit.provider, hit.page, target, name, hit.score + 10, cardYear,
+                film ? "film" : "series", duration);
         if (requestedYear == 0 || cardYear == requestedYear) return confirmed;
         if (isEligiblePremiereYear(confirmed, requestedYear)) {
             Matcher premiere = LOCAL_PREMIERE.matcher(html).region(end + "</head>".length(), html.length());
             if (premiere.find() && Integer.parseInt(premiere.group(1)) == requestedYear) return confirmed;
         }
         return null;
+    }
+
+    private static long officialFilmDuration(String head, String title) {
+        String expected = normalize(title);
+        Matcher structured = STRUCTURED_CARD.matcher(head);
+        long verified = -1;
+        for (int i = 0; i < 8 && structured.find(); i++) {
+            if (structured.end(1) - structured.start(1) > 262144) continue;
+            try {
+                JSONObject item = new JSONObject(structured.group(1));
+                if (!"VideoObject".equals(item.opt("@type"))
+                        || !expected.equals(normalize(item.optString("name", "")))) continue;
+                long duration = Duration.parse(item.optString("duration", "")).toMillis();
+                if (duration <= 0 || duration > 24 * 60 * 60_000L) continue;
+                if (verified != -1 && verified != duration) return -1;
+                verified = duration;
+            } catch (org.json.JSONException | java.time.format.DateTimeParseException | ArithmeticException invalid) {
+                // Optional metadata. Title matching still uses the verified card above.
+            }
+        }
+        return verified;
     }
 
     private static boolean isEligiblePremiereYear(Hit confirmed, int year) {

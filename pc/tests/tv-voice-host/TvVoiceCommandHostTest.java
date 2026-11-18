@@ -67,6 +67,105 @@ public final class TvVoiceCommandHostTest {
         require(pending.resolve("2023", 400_004) == null, "cleared year", "explicit clear lost");
     }
 
+    private static void part(String text, TvVoiceCommand.Kind kind, TvVoiceCommand.Provider provider,
+                             String title, String type, int year, int season, int episode) {
+        TvVoiceCommand value = TvVoiceCommand.parse(text);
+        assertCommand(value, text, kind, provider, title, type, year);
+        require(value.season == season && value.episode == episode, text, "wrong season or episode");
+    }
+
+    private static void episodeReply(String text, boolean allowBare, int season, int episode, boolean bare) {
+        TvVoiceCommand.EpisodeChoice value = TvVoiceCommand.episodeReply(text, allowBare);
+        if (season == 0 && episode == 0) {
+            require(value == null, text, "unexpected episode reply");
+        } else {
+            require(value != null && value.season == season && value.episode == episode && value.bare == bare,
+                    text, "wrong episode reply");
+        }
+    }
+
+    private static void series() {
+        part("включи мультсериал Смешарики 2 сезон 3 серия на Окко", TvVoiceCommand.Kind.PLAY,
+                TvVoiceCommand.Provider.OKKO, "Смешарики", "series", 0, 2, 3);
+        part("включи 2 серию Смешариков", TvVoiceCommand.Kind.PLAY,
+                null, "Смешарики", "series", 0, 0, 2);
+        part("включи на Окко третью серию второго сезона сериала Друзья", TvVoiceCommand.Kind.PLAY,
+                TvVoiceCommand.Provider.OKKO, "Друзья", "series", 0, 2, 3);
+        part("найди сериал «Эпизод 3» второй сезон 2023 года", TvVoiceCommand.Kind.FIND,
+                null, "Эпизод 3", "series", 2023, 2, 0);
+        part("поставь пятую серию на Окко", TvVoiceCommand.Kind.EPISODE,
+                TvVoiceCommand.Provider.OKKO, "", "series", 0, 0, 5);
+        part("найди пятую серию на Окко", TvVoiceCommand.Kind.FIND,
+                TvVoiceCommand.Provider.OKKO, "", "series", 0, 0, 5);
+        part("сколько серий доступно?", TvVoiceCommand.Kind.EPISODES, null, "", "series", 0, 0, 0);
+        part("сколько тут серий?", TvVoiceCommand.Kind.EPISODES, null, "", "series", 0, 0, 0);
+        part("сколько всего вышло серий?", TvVoiceCommand.Kind.EPISODES, null, "", "series", 0, 0, 0);
+        part("сколько серий в этом сериале?", TvVoiceCommand.Kind.EPISODES, null, "", "series", 0, 0, 0);
+        part("сколько всего серий у мультсериала Смешарики на Окко?", TvVoiceCommand.Kind.EPISODES,
+                TvVoiceCommand.Provider.OKKO, "Смешарики", "series", 0, 0, 0);
+        part("сколько эпизодов в первом сезоне?", TvVoiceCommand.Kind.EPISODES, null, "", "series", 0, 1, 0);
+        part("какие серии доступны в Окко?", TvVoiceCommand.Kind.EPISODES,
+                TvVoiceCommand.Provider.OKKO, "", "series", 0, 0, 0);
+        part("есть ли в Окко пятая серия?", TvVoiceCommand.Kind.EPISODES,
+                TvVoiceCommand.Provider.OKKO, "", "series", 0, 0, 5);
+        part("вышла ли уже третья серия второго сезона мультсериала Смешарики?", TvVoiceCommand.Kind.EPISODES,
+                null, "Смешарики", "series", 0, 2, 3);
+        part("доступен ли десятый эпизод?", TvVoiceCommand.Kind.EPISODES, null, "", "series", 0, 0, 10);
+        part("включи сериал, второй сезон", TvVoiceCommand.Kind.EPISODE, null, "", "series", 0, 2, 0);
+        route("включи первую или вторую серию сериала Друзья", TvVoiceCommand.Kind.AMBIGUOUS, null, "", null, 0);
+        route("включи сериал Друзья 2023 серия", TvVoiceCommand.Kind.AMBIGUOUS, null, "", null, 0);
+        episodeReply("Алиса, пятая серия.", false, 0, 5, false);
+        episodeReply("серия номер двадцать третья", false, 0, 23, false);
+        episodeReply("сезон 2 серия 3", false, 2, 3, false);
+        episodeReply("второй сезон, третья серия", true, 2, 3, false);
+        episodeReply("второй сезон и третья серия", true, 2, 3, false);
+        episodeReply("шестая серия в четвёртом сезоне", true, 4, 6, false);
+        episodeReply("двадцать пятая", true, 0, 25, true);
+        episodeReply("сто двадцать пятая серия", false, 0, 125, false);
+        episodeReply("5", false, 0, 0, false);
+        episodeReply("5", true, 0, 5, true);
+        episodeReply("2023", true, 0, 0, false);
+        episodeReply("3 серия, 4 серия", true, 0, 0, false);
+        episodeReply("какая пятая серия?", true, 0, 0, false);
+        episodeReply("2 или 3", true, 0, 0, false);
+        episodeReply("семь минут", true, 0, 0, false);
+    }
+
+    private static void playback(String text, TvVoiceCommand.PlaybackAction action, long positionMs) {
+        TvVoiceCommand.Playback value = TvVoiceCommand.playback(text);
+        require(action == null ? value == null : value != null && value.action == action
+                && value.positionMs == positionMs, text, "wrong playback command");
+    }
+
+    private static void playback() {
+        playback("Алиса, поставь фильм на паузу.", TvVoiceCommand.PlaybackAction.PAUSE, 0);
+        playback("Поставь на паузу видео, пожалуйста", TvVoiceCommand.PlaybackAction.PAUSE, 0);
+        playback("продолжи просмотр фильма", TvVoiceCommand.PlaybackAction.RESUME, 0);
+        playback("включи фильм сначала", TvVoiceCommand.PlaybackAction.RESTART, 0);
+        playback("перемотай в начало фильма", TvVoiceCommand.PlaybackAction.RESTART, 0);
+        playback("перемотай фильм вперёд на две минуты и тридцать секунд", TvVoiceCommand.PlaybackAction.SEEK_BY, 150_000);
+        playback("перемотай фильм на тридцать секунд", TvVoiceCommand.PlaybackAction.SEEK_BY, 30_000);
+        playback("перемотай на минуту назад", TvVoiceCommand.PlaybackAction.SEEK_BY, -60_000);
+        playback("перемотай назад на 12 секунд", TvVoiceCommand.PlaybackAction.SEEK_BY, -12_000);
+        playback("перемотай фильм на 23 минуту 10 секунду", TvVoiceCommand.PlaybackAction.SEEK_TO, 1_390_000);
+        playback("поставь фильм на двадцать третьей минуте и десятой секунде", TvVoiceCommand.PlaybackAction.SEEK_TO, 1_390_000);
+        playback("включи фильм с 23:10", TvVoiceCommand.PlaybackAction.SEEK_TO, 1_390_000);
+        require(TvVoiceCommand.playback("включи фильм с 23:10").resumeAfterSeek,
+                "включи фильм с 23:10", "play from a timestamp resumes playback");
+        require(!TvVoiceCommand.playback("перейди на 23:10").resumeAfterSeek,
+                "перейди на 23:10", "seek alone preserves pause state");
+        playback("перемотай на 1 : 23 : 10", TvVoiceCommand.PlaybackAction.SEEK_TO, 4_990_000);
+        playback("перейди на пять минут, девять секунд", TvVoiceCommand.PlaybackAction.SEEK_TO, 309_000);
+        playback("перейди на 0:00", TvVoiceCommand.PlaybackAction.SEEK_TO, 0);
+        for (String text : new String[] {"пауза", "поставь на паузу", "продолжи", "поставь музыку на паузу",
+                "поставь таймер на 5 минут", "включи песню с 1:20", "перемотай песню назад на 12 секунд",
+                "поставь фильм в 12:00",
+                "не ставь фильм на паузу", "поставь фильм на паузу?", "перемотай на 15 минут 78 секунд",
+                "перемотай на 12:72", "перемотай на 80:00:00", "перемотай на 5 секунд и включи свет",
+                "перемотай на две минуты две минуты", "перемотай на 10 секунд назад вперед"})
+            playback(text, null, 0);
+    }
+
     public static void main(String[] args) {
         route("Алиса, включи мне фильм простаквашено.", TvVoiceCommand.Kind.PLAY,
                 null, "простаквашено", "film", 0);
@@ -137,6 +236,7 @@ public final class TvVoiceCommandHostTest {
                 "поставь песню Смешарики", "включи Чебурашку и останови музыку", "найди Чебурашку песню",
                 "найди Дюну", "алиса включи группу Кино", "2023",
                 "алиса включи музыку", "поставь таймер на пять минут", "не включи фильм простоквашино",
+                "есть ли погода", "доступен ли фильм Дюна?", "есть ли 3 серия или 4 серия?",
                 "включи фильм Простоквашино и поставь таймер", "покажи фильм простоквашино выключи звук",
                 "что есть на окко", "найди фильм Дюна?", "найди фильм Дюна？", "можешь включить на окко дюну",
                 "включи фильм https://okko.tv/movie/name", "включи фильм <html>Дюна</html>",
@@ -146,6 +246,8 @@ public final class TvVoiceCommandHostTest {
         require(TvVoiceCommand.Provider.YOUTUBE.packageName.equals("com.google.android.youtube.tv"),
                 "YouTube", "TV package must take precedence");
         yearFollowUp();
+        series();
+        playback();
         System.out.println(checked + " TV admission assertions passed; no network or app launches");
     }
 }

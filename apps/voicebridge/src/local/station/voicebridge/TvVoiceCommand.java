@@ -73,8 +73,89 @@ final class TvVoiceCommand {
     private static final Pattern DOMAIN = words("[\\p{L}0-9-]+\\.(?:ru|com|net|org|рф|io|dev|tv|me|biz|online)(?![\\p{L}0-9])");
     private static final Pattern URI_SCHEME = words("(?:^|[ ,])(?:https?|ftp|file|intent|javascript|data|content|"
             + "okko|vkvideo|rutube|youtube|lampa):");
+    private static final String[] HUNDREDS = {"", "сто", "двести", "триста", "четыреста", "пятьсот",
+            "шестьсот", "семьсот", "восемьсот", "девятьсот"};
+    private static final String QUANTITY_SUFFIX = "(?:[-–—]?(?:й|ая|ую|ой|го|м|ю))?";
+    private static final String FEMININE_ORDINAL = "(?:ая|ую|ой)";
+    private static final String COUNT_WORD = numberWords();
+    private static final String QUANTITY = "(?:[0-9]{1,4}" + QUANTITY_SUFFIX
+            + "|" + COUNT_WORD + "(?: " + COUNT_WORD + "){0,3})";
+    private static final String SEASON_WORD = "сезон(?:а|е|ом|у)?";
+    private static final String EPISODE_WORD = "сери(?:ю|я|и|е|ей)|эпизод(?:а|е|ом|у)?";
+    private static final String SERIES_UNIT = "(?:" + SEASON_WORD + "|" + EPISODE_WORD + ")";
+    private static final Pattern SERIES_SELECTOR = words("(?:^|(?<=[ ,:(]))(?:(?<before>" + QUANTITY
+            + ") +(?<afterunit>" + SERIES_UNIT + ")|(?<beforeunit>" + SERIES_UNIT
+            + ") +(?:номер +)?(?<after>" + QUANTITY + "))(?=$|[ ,:)])");
+    private static final Pattern UNQUALIFIED_SELECTOR = words("^(?:" + QUANTITY + ")$");
+    private static final Pattern EPISODES_QUESTION = words("^(?:(?:сколько (?:(?:всего|там|тут|в н[её]м|доступно|вышло) ){0,2}"
+            + "(?:серий|эпизодов)(?: (?:всего|доступно|есть|вышло)){0,2})"
+            + "|(?:какие (?:серии|эпизоды) (?:доступны|есть|вышли)))"
+            + "(?: +(.*))?$");
+    private static final Pattern EPISODE_AVAILABILITY = words("^(?:есть|доступен|доступн[аоы]|выш(?:ла|ел)) ли (?:уже )?(.+)$");
+    private static final Pattern EPISODES_CONTEXT = words("^(?:там|тут|у него|у не[её]|в н[её]м|в ней"
+            + "|в (?:этом|текущем) (?:мульт)?сериале)$");
+    private static final Pattern EPISODES_TOPIC = words("^(?:у|в) +(?:(?:мульт)?сериал(?:е|а)? +)?");
+    private static final Pattern SERIES_TITLE_LABEL = words("^(?:мульт)?сериала +");
+    private static final Pattern SERIES_TARGET = words("^(?:этот |текущий )?(?:мульт)?сериал$");
+    private static final Pattern SERIES_PREPOSITION = words("(?:^| )(?:(?:в|из|к|на|с) +)$");
+    private static final Pattern SERIES_ALTERNATIVE = words("(?:^|[ ,])(?:или|либо)(?=$|[ ,:])");
+    private static final Pattern SERIES_CONJUNCTION = words("^[ ,:]*и[ ,:]*$");
+    private static final Pattern PLAYBACK_NEGATION = words("(?:^| )не(?: |$)");
+    private static final String VIDEO_TARGET = "(?:этот |текущий )?(?:фильм|сериал|мультсериал|мультфильм|"
+            + "мультик|видео|ролик|кино|серию|эпизод)";
+    private static final Pattern VIDEO_PAUSE = words("^(?:(?:поставь|поставить) +" + VIDEO_TARGET + " +на паузу"
+            + "|(?:поставь|поставить) +на паузу +" + VIDEO_TARGET + "|приостанови +" + VIDEO_TARGET
+            + "|пауза (?:в фильме|в сериале|на видео))$");
+    private static final Pattern VIDEO_RESUME = words("^(?:продолжи|возобнови|сними с паузы) +"
+            + "(?:просмотр +)?(?:" + VIDEO_TARGET + "|фильма|сериала|видео)$");
+    private static final Pattern VIDEO_RESTART = words("^(?:(?:включи|поставь|запусти|воспроизведи|смотри) +"
+            + VIDEO_TARGET + " +(?:сначала|с начала|с самого начала)|(?:включи|запусти|поставь) +"
+            + "(?:сначала|с начала) +" + VIDEO_TARGET + "|(?:перезапусти|начни заново) +" + VIDEO_TARGET
+            + "|(?:перемотай|верни(?:сь)?) +(?:" + VIDEO_TARGET + " +)?(?:в начало|на начало|к началу)"
+            + "(?: +(?:фильма|видео|серии|сериала))?)$");
+    private static final Pattern SEEK = words("^(?<verb>перемотай|мотай|вернись|перейди|переключи|включи"
+            + "|запусти|поставь|продолжи)(?: +" + VIDEO_TARGET + ")?"
+            + "(?: +(?<direction>назад|впер[её]д))? +(?<preposition>на|к|с) +(?<time>.+?)"
+            + "(?: +(?<trailing>назад|впер[её]д))?$");
+    private static final Pattern PLAYBACK_CLOCK = Pattern.compile("^(?:([0-9]{1,2}):)?([0-9]{1,4}):([0-5]?[0-9])$");
+    private static final Pattern PLAYBACK_UNIT = words("(?:(?<amount>" + QUANTITY + ") +)?"
+            + "(?<unit>час(?:а|ов|е|у)?|минут(?:а|у|ы|е)?|секунд(?:а|у|ы|е)?)(?=$|[ ,])");
+    private static final Pattern PLAYBACK_POINT = words("(?:^| )" + QUANTITY
+            + " +(?:минут[уе]|секунд[уе]|часе)(?=$|[ ,])");
+    private static final Pattern PLAYBACK_DELIMITER = words("(?: +и +| *, *| +)");
+    private static final Pattern NUMBER_DIGITS = words("^([0-9]{1,4})" + QUANTITY_SUFFIX + "$");
+    private static final int MAX_SEASON = 100, MAX_EPISODE = 999;
+    private static final long MAX_POSITION_MS = 24L * 60 * 60 * 1000;
 
-    enum Kind { FIND, PLAY, OPEN, LIST, UNSUPPORTED_SOURCE, AMBIGUOUS }
+    enum Kind { FIND, PLAY, OPEN, LIST, EPISODE, EPISODES, UNSUPPORTED_SOURCE, AMBIGUOUS }
+    enum PlaybackAction { PAUSE, RESUME, SEEK_TO, SEEK_BY, RESTART }
+
+    static final class Playback {
+        final PlaybackAction action;
+        final long positionMs;
+        final boolean resumeAfterSeek;
+
+        private Playback(PlaybackAction action, long positionMs) {
+            this(action, positionMs, false);
+        }
+
+        private Playback(PlaybackAction action, long positionMs, boolean resumeAfterSeek) {
+            this.action = action;
+            this.positionMs = positionMs;
+            this.resumeAfterSeek = resumeAfterSeek;
+        }
+    }
+
+    static final class EpisodeChoice {
+        final int season, episode;
+        final boolean bare;
+
+        private EpisodeChoice(int season, int episode, boolean bare) {
+            this.season = season;
+            this.episode = episode;
+            this.bare = bare;
+        }
+    }
 
     enum Provider {
         OKKO("Окко", "tv.okko.androidtv", "ок ?ко|okko"),
@@ -101,17 +182,29 @@ final class TvVoiceCommand {
     final Kind kind;
     final String mediaType;
     final int year;
+    final int season, episode;
 
     private TvVoiceCommand(Kind kind, Provider provider, String title, String mediaType, int year) {
+        this(kind, provider, title, mediaType, year, 0, 0);
+    }
+
+    private TvVoiceCommand(Kind kind, Provider provider, String title, String mediaType, int year, int season,
+                           int episode) {
         this.kind = kind;
         this.provider = provider;
         this.title = title;
         this.mediaType = mediaType;
         this.year = year;
+        this.season = season;
+        this.episode = episode;
     }
 
     TvVoiceCommand withYear(int year) {
-        return new TvVoiceCommand(kind, provider, title, mediaType, year);
+        return new TvVoiceCommand(kind, provider, title, mediaType, year, season, episode);
+    }
+
+    TvVoiceCommand withEpisode(int season, int episode) {
+        return new TvVoiceCommand(kind, provider, title, mediaType, year, season, episode);
     }
 
     static int followUpYear(String transcript) {
@@ -167,8 +260,17 @@ final class TvVoiceCommand {
         text = WAKE.matcher(text).replaceFirst("");
         if (LIST_APPS.matcher(text).matches()) return command(Kind.LIST, null);
         String unquotedText = maskQuotes(text);
-        if (questionMark || QUESTION.matcher(unquotedText).find() || MULTIPLE_ACTIONS.matcher(unquotedText).find())
-            return null;
+        if (MULTIPLE_ACTIONS.matcher(unquotedText).find()) return null;
+        Matcher count = EPISODES_QUESTION.matcher(text);
+        if (count.matches()) return parseRequest(Kind.EPISODES, count.group(1) == null ? "" : count.group(1).trim(), false);
+        Matcher availability = EPISODE_AVAILABILITY.matcher(text);
+        if (availability.matches()) {
+            String body = availability.group(1);
+            SeriesSelection selection = seriesSelection(body);
+            if (selection != null && selection.episode > 0) return parseRequest(Kind.EPISODES, body, false);
+        }
+        if (QUESTION.matcher(unquotedText).find()) return null;
+        if (questionMark) return null;
         Matcher verb = VERB.matcher(text);
         if (!verb.matches()) return null;
         String action = verb.group(1).toLowerCase(Locale.ROOT);
@@ -176,6 +278,12 @@ final class TvVoiceCommand {
         if (MUSIC.matcher(body).find() || NEGATIVE.matcher(body).find()) return null;
         boolean find = action.equals("найди") || action.equals("отыщи") || action.equals("поищи") || action.equals("ищи");
         boolean open = action.equals("открой") || action.equals("запусти") || action.equals("включи");
+        return parseRequest(find ? Kind.FIND : Kind.PLAY, body, open);
+    }
+
+    private static TvVoiceCommand parseRequest(Kind kind, String body, boolean open) {
+        boolean find = kind == Kind.FIND;
+        boolean count = kind == Kind.EPISODES;
         if (open || find) {
             for (Provider provider : Provider.values()) {
                 if (provider.standalone.matcher(body).matches()) return command(open ? Kind.OPEN : Kind.AMBIGUOUS, provider);
@@ -209,9 +317,14 @@ final class TvVoiceCommand {
         }
         if (source != null && hasSourceAlternative(unquoted)) return command(Kind.AMBIGUOUS, null);
         if (source != null) body = (body.substring(0, sourceStart) + " " + body.substring(sourceEnd)).trim();
-        body = body.replaceFirst("^[ ,:]+", "").replaceFirst("[ ,:]+$", "").replaceAll(" {2,}", " ");
+        body = cleanTitle(body);
         if (MUSIC.matcher(body).find()) return null;
 
+        SeriesSelection selection = seriesSelection(body);
+        if (selection == null) return command(Kind.AMBIGUOUS, source);
+        body = selection.title;
+        if (count) body = EPISODES_CONTEXT.matcher(body).matches() ? "" : EPISODES_TOPIC.matcher(body).replaceFirst("");
+        body = SERIES_TITLE_LABEL.matcher(body).replaceFirst("");
         String mediaType = null;
         Matcher media = MEDIA.matcher(body);
         if (media.matches()) {
@@ -219,6 +332,15 @@ final class TvVoiceCommand {
             body = media.group(2).trim();
         }
         if (EXTRA_ACTION.matcher(maskQuotes(body)).find()) return null;
+        boolean selectedPart = selection.season != 0 || selection.episode != 0;
+        if (selectedPart || count) {
+            if (mediaType != null && !"series".equals(mediaType) && !"animation".equals(mediaType))
+                return command(Kind.AMBIGUOUS, source);
+            if (mediaType == null) mediaType = "series";
+            if (body.isEmpty() || SERIES_TARGET.matcher(body).matches())
+                return new TvVoiceCommand(count || find ? kind : Kind.EPISODE,
+                    source, "", mediaType, 0, selection.season, selection.episode);
+        }
         if (body.isEmpty() || body.matches("(?iu)" + VIDEO_TYPES))
             return source == null && mediaType == null ? null : command(Kind.AMBIGUOUS, source);
         int year = 0;
@@ -248,7 +370,192 @@ final class TvVoiceCommand {
         if (mediaType == null && "Смешарики".equals(canonicalFranchise)) mediaType = "animation";
         if (title.isEmpty() || title.length() > MAX_TITLE_CHARS || !title.codePoints().anyMatch(Character::isLetterOrDigit))
             return command(Kind.AMBIGUOUS, source);
-        return new TvVoiceCommand(find ? Kind.FIND : Kind.PLAY, source, title, mediaType, year);
+        return new TvVoiceCommand(kind, source, title, mediaType, year, selection.season, selection.episode);
+    }
+
+    static EpisodeChoice episodeReply(String transcript, boolean allowBareNumber) {
+        String text = commandText(transcript);
+        if (text == null || text.indexOf('?') >= 0) return null;
+        SeriesSelection selection = seriesSelection(text);
+        if (selection == null) return null;
+        if (selection.title.isEmpty() && (selection.season > 0 || selection.episode > 0))
+            return new EpisodeChoice(selection.season, selection.episode, false);
+        if (!allowBareNumber || !UNQUALIFIED_SELECTOR.matcher(text).matches()) return null;
+        int episode = quantity(text);
+        return episode > 0 && episode <= MAX_EPISODE ? new EpisodeChoice(0, episode, true) : null;
+    }
+
+    static Playback playback(String transcript) {
+        String text = commandText(transcript);
+        if (text == null || text.indexOf('?') >= 0 || PLAYBACK_NEGATION.matcher(text).find()) return null;
+        if (VIDEO_PAUSE.matcher(text).matches()) return new Playback(PlaybackAction.PAUSE, 0);
+        if (VIDEO_RESUME.matcher(text).matches()) return new Playback(PlaybackAction.RESUME, 0);
+        if (VIDEO_RESTART.matcher(text).matches()) return new Playback(PlaybackAction.RESTART, 0);
+        Matcher seek = SEEK.matcher(text);
+        if (!seek.matches()) return null;
+        String direction = seek.group("direction");
+        String trailing = seek.group("trailing");
+        if (direction != null && trailing != null) return null;
+        if (direction == null) direction = trailing;
+        String time = seek.group("time").replaceAll(" *: *", ":");
+        long positionMs = playbackTime(time);
+        if (positionMs < 0) return null;
+        String verb = seek.group("verb").toLowerCase(Locale.ROOT);
+        boolean rewind = verb.equals("перемотай") || verb.equals("мотай");
+        String preposition = seek.group("preposition").toLowerCase(Locale.ROOT);
+        boolean relative = direction != null || rewind && preposition.equals("на")
+                && time.indexOf(':') < 0 && !PLAYBACK_POINT.matcher(time).find();
+        if (relative && (positionMs == 0 || !preposition.equals("на"))) return null;
+        if ("назад".equalsIgnoreCase(direction)) positionMs = -positionMs;
+        boolean resume = !relative && (verb.equals("включи") || verb.equals("запусти") || verb.equals("продолжи"));
+        return new Playback(relative ? PlaybackAction.SEEK_BY : PlaybackAction.SEEK_TO, positionMs, resume);
+    }
+
+    private static long playbackTime(String text) {
+        Matcher clock = PLAYBACK_CLOCK.matcher(text);
+        if (clock.matches()) {
+            int hours = clock.group(1) == null ? 0 : Integer.parseInt(clock.group(1));
+            int minutes = Integer.parseInt(clock.group(2));
+            int seconds = Integer.parseInt(clock.group(3));
+            if (clock.group(1) != null && minutes >= 60) return -1;
+            long ms = (hours * 3600L + minutes * 60L + seconds) * 1000;
+            return ms <= MAX_POSITION_MS ? ms : -1;
+        }
+        Matcher component = PLAYBACK_UNIT.matcher(text);
+        Matcher delimiter = PLAYBACK_DELIMITER.matcher(text);
+        long total = 0;
+        int offset = 0, previousUnit = 0;
+        while (component.region(offset, text.length()).lookingAt()) {
+            String unit = component.group("unit").toLowerCase(Locale.ROOT);
+            int seconds = unit.startsWith("час") ? 3600 : unit.startsWith("минут") ? 60 : 1;
+            String amount = component.group("amount");
+            int value = amount == null ? singleUnit(unit) : quantity(amount);
+            if (value < 0 || previousUnit != 0 && (seconds >= previousUnit || value >= 60)) return -1;
+            total += value * seconds * 1000L;
+            if (total > MAX_POSITION_MS) return -1;
+            previousUnit = seconds;
+            offset = component.end();
+            if (offset == text.length()) return total;
+            if (!delimiter.region(offset, text.length()).lookingAt()) return -1;
+            offset = delimiter.end();
+        }
+        return -1;
+    }
+
+    private static int singleUnit(String unit) {
+        return "час".equals(unit) || "минуту".equals(unit) || "секунду".equals(unit) ? 1 : -1;
+    }
+
+    private static SeriesSelection seriesSelection(String body) {
+        String unquoted = maskQuotes(body).replace('ё', 'е').replace('Ё', 'Е');
+        Matcher selector = SERIES_SELECTOR.matcher(unquoted);
+        StringBuilder title = new StringBuilder();
+        int cursor = 0, season = 0, episode = 0;
+        while (selector.find()) {
+            String before = selector.group("before");
+            int number = quantity(before == null ? selector.group("after") : before);
+            String unit = before == null ? selector.group("beforeunit") : selector.group("afterunit");
+            if (number < 1) return null;
+            if (unit.regionMatches(true, 0, "сезон", 0, 5)) {
+                if (season != 0 || number > MAX_SEASON) return null;
+                season = number;
+            } else {
+                if (episode != 0 || number > MAX_EPISODE) return null;
+                episode = number;
+            }
+            String remainder = body.substring(cursor, selector.start());
+            if (cursor == 0 || !SERIES_CONJUNCTION.matcher(remainder).matches())
+                title.append(SERIES_PREPOSITION.matcher(remainder).replaceFirst("")).append(' ');
+            cursor = selector.end();
+        }
+        if (cursor == 0) return new SeriesSelection(body, 0, 0);
+        if (SERIES_ALTERNATIVE.matcher(unquoted).find()) return null;
+        title.append(body.substring(cursor));
+        String remaining = cleanTitle(title.toString().replaceAll("\\( *\\)", " "));
+        return new SeriesSelection(remaining, season, episode);
+    }
+
+    private static final class SeriesSelection {
+        final String title;
+        final int season, episode;
+
+        SeriesSelection(String title, int season, int episode) {
+            this.title = title;
+            this.season = season;
+            this.episode = episode;
+        }
+    }
+
+    private static String commandText(String transcript) {
+        String text = normalizeUtterance(transcript);
+        if (text == null) return null;
+        return WAKE.matcher(text.trim().replaceFirst("[.!]+$", "").trim()).replaceFirst("")
+                .replaceFirst("(?iu),? +пожалуйста$", "").toLowerCase(Locale.ROOT).replace('ё', 'е');
+    }
+
+    private static String cleanTitle(String title) {
+        return title.trim().replaceFirst("^[ ,:]+", "").replaceFirst("[ ,:]+$", "").replaceAll(" {2,}", " ");
+    }
+
+    private static int quantity(String phrase) {
+        String value = phrase.toLowerCase(Locale.ROOT).replace('ё', 'е');
+        Matcher digits = NUMBER_DIGITS.matcher(value);
+        if (digits.matches()) return Integer.parseInt(digits.group(1));
+        if (value.equals("ноль") || value.equals("нуль")) return 0;
+        int separator = value.indexOf(' ');
+        String first = separator < 0 ? value : value.substring(0, separator);
+        for (int i = 1; i < HUNDREDS.length; i++) {
+            if (first.equals(HUNDREDS[i])) {
+                if (separator < 0) return i * 100;
+                int remainder = quantityBelowHundred(value.substring(separator + 1));
+                return remainder < 0 ? -1 : i * 100 + remainder;
+            }
+        }
+        return quantityBelowHundred(value);
+    }
+
+    private static int quantityBelowHundred(String value) {
+        int known = yearBelowHundred(value);
+        if (known > 0) return known;
+        int small = feminineSmall(value);
+        if (small > 0) return small;
+        for (int i = 2; i < YEAR_CARDINAL_TENS.length; i++) {
+            if (value.matches(YEAR_ORDINAL_TENS[i] + FEMININE_ORDINAL)) return i * 10;
+            if (value.startsWith(YEAR_CARDINAL_TENS[i] + " ")) {
+                int units = feminineSmall(value.substring(YEAR_CARDINAL_TENS[i].length() + 1));
+                if (units > 0 && units < 10) return i * 10 + units;
+            }
+        }
+        return -1;
+    }
+
+    private static int feminineSmall(String value) {
+        if (value.matches("одн(?:а|у|ой)|перв" + FEMININE_ORDINAL)) return 1;
+        if (value.matches("две|втор" + FEMININE_ORDINAL)) return 2;
+        if (value.matches("треть(?:я|ю|ей)")) return 3;
+        for (int i = 4; i < YEAR_SMALL.length; i++) {
+            if (value.matches(ordinalStem(i) + FEMININE_ORDINAL)) return i;
+        }
+        return -1;
+    }
+
+    private static String ordinalStem(int value) {
+        String pattern = YEAR_SMALL[value];
+        return pattern.substring(pattern.indexOf('|') + 1, pattern.indexOf('('));
+    }
+
+    private static String numberWords() {
+        StringBuilder expression = new StringBuilder("(?:ноль|нуль|одн(?:а|у|ой)|две|перв" + FEMININE_ORDINAL
+                + "|втор" + FEMININE_ORDINAL + "|треть(?:я|ю|ей)");
+        for (int i = 1; i < YEAR_SMALL.length; i++) {
+            expression.append('|').append(YEAR_SMALL[i]);
+            if (i >= 4) expression.append('|').append(ordinalStem(i)).append(FEMININE_ORDINAL);
+        }
+        for (int i = 2; i < YEAR_CARDINAL_TENS.length; i++)
+            expression.append('|').append(YEAR_CARDINAL_TENS[i]).append('|').append(YEAR_ORDINAL_TENS[i])
+                    .append("(?:ый|ой|ого|ом|ая|ую)");
+        for (int i = 1; i < HUNDREDS.length; i++) expression.append('|').append(HUNDREDS[i]);
+        return expression.append(')').toString();
     }
 
     private static int spokenReleaseYear(String phrase) {

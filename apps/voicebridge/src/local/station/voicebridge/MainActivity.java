@@ -1,12 +1,14 @@
 package local.station.voicebridge;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.Settings;
 import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
@@ -43,6 +45,8 @@ public final class MainActivity extends Activity {
         enable.setOnClickListener(view -> setRuntime(true));
         Button disable = button("Выключить голосовой режим");
         disable.setOnClickListener(view -> setRuntime(false));
+        Button tvControl = button("Настроить голосовое управление видео");
+        tvControl.setOnClickListener(view -> openAccessibilitySettings());
         label("Проверки API", 22, PURPLE);
         status = label("Ожидает проверки", 17, PURPLE);
         Button probe = button("Проверить доступ к GigaChat");
@@ -69,6 +73,13 @@ public final class MainActivity extends Activity {
         } catch (Exception ignored) { model.setText("GigaChat-2"); }
         Button save = button("Сохранить настройки");
         save.setOnClickListener(view -> save());
+    }
+    private void openAccessibilitySettings() {
+        try {
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+        } catch (ActivityNotFoundException unavailable) {
+            startActivity(new Intent(Settings.ACTION_SETTINGS));
+        }
     }
     private void test(String operation) {
         if (RuntimeSettings.enabled(this)) {

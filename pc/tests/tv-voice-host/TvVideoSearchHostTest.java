@@ -37,6 +37,12 @@ public final class TvVideoSearchHostTest {
         check(validated.launchTarget(true).equals(validated.target + "&extraElementToPlay=" + UID + "&extraPlayVideo=true"),
                 "autoplay asks for the exact verified movie");
         check(validated.launchTarget(false).equals(validated.target), "find opens a movie's card");
+        String video = "<script type=\"application/ld+json\">{\"@type\":\"VideoObject\",\"name\":\"" + TITLE
+                + "\",\"duration\":\"PT1H46M\"}</script>";
+        check(TvVideoSearch.verifyOkko(bytes(card.replace("</head>", video + "</head>")), film.get(0), TITLE, 2026)
+                .durationMs == 6_360_000, "official video duration matches exact title");
+        check(TvVideoSearch.verifyOkko(bytes(card.replace("</head>", video.replace(TITLE, "Трейлер") + "</head>")),
+                film.get(0), TITLE, 2026).durationMs == -1, "another video's duration is ignored");
         check(TvVideoSearch.verifyOkko(bytes(card), film.get(0), TITLE, 2024) == null, "official release year is strict");
         check(TvVideoSearch.verifyOkko(bytes(card.replace(TITLE + " (2026)", TITLE + ": Новый сезон (2026)")),
                 film.get(0), TITLE, 2026) == null, "official title must match completely");
