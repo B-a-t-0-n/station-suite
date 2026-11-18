@@ -23,6 +23,10 @@ public final class ControlActivity extends Activity {
             String action=getIntent().getStringExtra("command");
             if("socket_owner_probe".equals(action)) {
                 SocketOwnerProbe.start(this,getIntent().getStringExtra("nonce"));return;
+            } else if("syn_owner_probe".equals(action)) {
+                SynOwnerProbeService.request(this,getIntent().getStringExtra("nonce"));return;
+            } else if("tv_configure".equals(action)||"tv_start".equals(action)||"tv_stop".equals(action)) {
+                code=TvControl.command(this,action);
             } else if("prepare".equals(action)) {
                 if(state!=null&&state.getBoolean(CONSENT_PENDING,false)){consentPending=true;return;}
                 Files.deleteIfExists(new File(getFilesDir(),"control-status.json").toPath());

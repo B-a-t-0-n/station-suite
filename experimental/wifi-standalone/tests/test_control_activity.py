@@ -86,9 +86,17 @@ STUBS = {
         public boolean reconnect(){throw new AssertionError();}
     }''',
     'local/station/wifi/WifiRelayService.java': '''package local.station.wifi; public class WifiRelayService {}''',
+    'local/station/wifi/TvControl.java': '''package local.station.wifi; final class TvControl {
+        static int calls;static String action;
+        static String command(android.app.Activity activity,String command){calls++;action=command;return "tv_stub";}
+    }''',
     'local/station/wifi/SocketOwnerProbe.java': '''package local.station.wifi; final class SocketOwnerProbe {
         static int starts; static String nonce;
         static void start(android.app.Activity activity,String value){starts++;nonce=value;activity.finish();}
+    }''',
+    'local/station/wifi/SynOwnerProbeService.java': '''package local.station.wifi; final class SynOwnerProbeService {
+        static int starts; static String nonce;
+        static void request(android.app.Activity activity,String value){starts++;nonce=value;activity.finish();}
     }''',
 }
 
@@ -150,6 +158,18 @@ public final class ControlActivityHostTest {
         check(VpnService.preparations==prepareBefore,"diagnostic does not prepare VPN");
         check(!diagnostic.files.toPath().resolve("control-status.json").toFile().exists(),"diagnostic uses separate result file");
         check(diagnostic.finishes==1,"diagnostic controls its own completion");isolated(diagnostic);
+        ControlActivity syn=activity(root,"syn");
+        syn.intent=new Intent().putExtra("command","syn_owner_probe").putExtra("nonce","fedcba9876543210fedcba9876543210");
+        syn.onCreate(null);
+        check(SynOwnerProbeService.starts==1&&"fedcba9876543210fedcba9876543210".equals(SynOwnerProbeService.nonce),"SYN diagnostic receives exact nonce");
+        check(!syn.files.toPath().resolve("control-status.json").toFile().exists(),"SYN diagnostic separate status");
+        check(syn.finishes==1,"SYN diagnostic returns Activity");isolated(syn);
+        int tvCalls=0;
+        for(String action:new String[]{"tv_configure","tv_start","tv_stop"}){
+            ControlActivity tv=activity(root,action);tv.intent=new Intent().putExtra("command",action);tv.onCreate(null);
+            check(TvControl.calls==++tvCalls&&action.equals(TvControl.action),"TV branch delegates only its explicit action");
+            check("tv_stub".equals(status(tv))&&tv.finishes==1,"TV branch returns its isolated result");isolated(tv);
+        }
         System.out.println(assertions+" assertions passed; consent-only Activity lifecycle; no device/network");
     }
 }'''

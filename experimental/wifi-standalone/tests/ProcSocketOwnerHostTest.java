@@ -54,6 +54,24 @@ public final class ProcSocketOwnerHostTest {
         result=lookup(oversized.toString(),EMPTY);check(!result.complete(),"bounded row count");
         result=lookup(EMPTY,HEADER+row("0000000000000000000000000100007F:5E2E","0000000000000000000000000100007F:5E2F","01","10005"));
         check(result.complete()&&!result.owners[0].found(),"IPv4 compatible IPv6 is not mapped IPv4");
+        ProcSocketOwner.Tuple syn=new ProcSocketOwner.Tuple(new byte[]{10,111,77,2},24112,new byte[]{(byte)198,18,0,(byte)254},24113);
+        String synRow=row("024D6F0A:5E30","FE0012C6:5E31","02","10005");
+        result=ProcSocketOwner.fromText(HEADER+synRow,EMPTY,ProcSocketOwner.TcpState.SYN_SENT,syn);
+        check(result.complete()&&result.owners[0].uid()==10005,"explicit SYN_SENT exact TUN tuple");
+        result=ProcSocketOwner.fromText(HEADER+synRow,EMPTY,syn);
+        check(result.complete()&&!result.owners[0].found(),"default remains ESTABLISHED only");
+        result=ProcSocketOwner.fromText(HEADER+synRow.replace(" 02 "," 01 "),EMPTY,ProcSocketOwner.TcpState.SYN_SENT,syn);
+        check(result.complete()&&!result.owners[0].found(),"SYN lookup does not accept ESTABLISHED fallback");
+        result=ProcSocketOwner.fromText(EMPTY,HEADER+row("0000000000000000FFFF0000024D6F0A:5E30","0000000000000000FFFF0000FE0012C6:5E31","02","10005"),ProcSocketOwner.TcpState.SYN_SENT,syn);
+        check(result.complete()&&result.owners[0].uid()==10005,"mapped IPv6 SYN tuple");
+        for(String invalid:new String[]{"00","0D","FF","-1","2","GG"}){
+            result=ProcSocketOwner.fromText(HEADER+synRow.replace(" 02 "," "+invalid+" "),EMPTY,ProcSocketOwner.TcpState.SYN_SENT,syn);
+            check(!result.complete()&&!result.owners[0].found(),"unknown or malformed kernel state "+invalid);
+        }
+        try{ProcSocketOwner.fromText(HEADER+synRow,EMPTY,(ProcSocketOwner.TcpState)null,syn);throw new AssertionError("null state accepted");}
+        catch(IllegalArgumentException expected){assertions++;}
+        result=ProcSocketOwner.fromText(HEADER+synRow+synRow.replace("10005","10006"),EMPTY,ProcSocketOwner.TcpState.SYN_SENT,syn);
+        check(result.complete()&&result.owners[0].ambiguous()&&result.owners[0].uid()==-1,"SYN conflicting owners fail closed");
         System.out.println(assertions+" assertions passed; exact TCP owner fixtures only; no device/network/filesystem");
     }
 }
