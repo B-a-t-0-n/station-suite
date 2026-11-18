@@ -11,10 +11,12 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.text.InputType;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import org.json.JSONObject;
 
@@ -23,6 +25,7 @@ public final class MainActivity extends Activity {
     private LinearLayout body;
     private TextView status, runtimeStatus;
     private EditText giga, model, speechify, voice;
+    private Spinner voiceGain;
     private final Handler main = new Handler();
     private final Runnable refresh = new Runnable() {
         @Override public void run() { showResult(); main.postDelayed(this, 1500); }
@@ -47,6 +50,21 @@ public final class MainActivity extends Activity {
         disable.setOnClickListener(view -> setRuntime(false));
         Button tvControl = button("Настроить голосовое управление видео");
         tvControl.setOnClickListener(view -> openAccessibilitySettings());
+        label("Громкость ответов Алисы", 16, Color.DKGRAY);
+        voiceGain = new Spinner(this);
+        String[] gainOptions = new String[SpeechifyClient.MAX_VOICE_GAIN_DB - SpeechifyClient.MIN_VOICE_GAIN_DB + 1];
+        for (int i = 0; i < gainOptions.length; i++) {
+            int gain = i + SpeechifyClient.MIN_VOICE_GAIN_DB;
+            gainOptions[i] = gain == 0 ? "Без коррекции" : (gain > 0 ? "+" : "") + gain + " дБ";
+        }
+        ArrayAdapter<String> levels = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, gainOptions);
+        levels.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        voiceGain.setAdapter(levels);
+        voiceGain.setContentDescription("Громкость ответов Алисы");
+        body.addView(voiceGain, new LinearLayout.LayoutParams(-1, dp(48)));
+        voiceGain.setSelection(SpeechifyClient.DEFAULT_VOICE_GAIN_DB - SpeechifyClient.MIN_VOICE_GAIN_DB);
+        TextView volumeStatus = label("", 14, Color.DKGRAY);
+        button("Сохранить громкость ответов").setOnClickListener(view -> saveVoiceGain(volumeStatus));
         label("Проверки API", 22, PURPLE);
         status = label("Ожидает проверки", 17, PURPLE);
         Button probe = button("Проверить доступ к GigaChat");
@@ -70,6 +88,7 @@ public final class MainActivity extends Activity {
             JSONObject config = PrivateConfig.read(this, "config.json");
             model.setText(config.optString("gigachat_model", "GigaChat-2"));
             voice.setText(config.optString("speechify_voice_id", "vasilisa"));
+            voiceGain.setSelection(SpeechifyClient.voiceGainDb(config) - SpeechifyClient.MIN_VOICE_GAIN_DB);
         } catch (Exception ignored) { model.setText("GigaChat-2"); }
         Button save = button("Сохранить настройки");
         save.setOnClickListener(view -> save());
@@ -79,6 +98,17 @@ public final class MainActivity extends Activity {
             startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
         } catch (ActivityNotFoundException unavailable) {
             startActivity(new Intent(Settings.ACTION_SETTINGS));
+        }
+    }
+
+    private void saveVoiceGain(TextView feedback) {
+        try {
+            JSONObject config = PrivateConfig.read(this, "config.json");
+            config.put(SpeechifyClient.VOICE_GAIN_KEY, voiceGain.getSelectedItemPosition() + SpeechifyClient.MIN_VOICE_GAIN_DB);
+            PrivateConfig.write(this, "config.json", config);
+            feedback.setText("Громкость ответов сохранена");
+        } catch (Exception unavailable) {
+            feedback.setText("Не удалось сохранить громкость ответов");
         }
     }
     private void test(String operation) {

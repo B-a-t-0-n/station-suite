@@ -106,7 +106,9 @@ public final class SpeechifyClientHostTest {
         check(oggBody.length() == 6 && "ogg".equals(oggBody.getString("audio_format"))
                 && "ogg_24000".equals(oggBody.getString("output_format")), "explicit Ogg wire contract");
         check("simba-3.5".equals(oggBody.getString("model")) && "ru-RU".equals(oggBody.getString("language"))
-                && "vasilisa".equals(oggBody.getString("voice_id")) && "Проверка голоса.".equals(oggBody.getString("input")), "Ogg voice/model/input");
+                && "vasilisa".equals(oggBody.getString("voice_id"))
+                && "<speak><prosody volume=\"+4dB\">Проверка голоса.</prosody></speak>".equals(oggBody.getString("input")),
+                "buffered Ogg applies the default gain");
         check("https://api.speechify.ai/v1/audio/speech".equals(oggFactory.url.toString())
                 && !oggTransport.tlsOverride && !oggTransport.hostnameOverride
                 && !oggTransport.getInstanceFollowRedirects(), "Ogg retains endpoint/TLS/redirect safety");
@@ -248,6 +250,8 @@ public final class SpeechifyClientHostTest {
         check(body.length() == 5 && "ogg_24000".equals(body.getString("output_format")) && !body.has("audio_format"), "stream JSON contract");
         check("simba-3.5".equals(body.getString("model")) && "vasilisa".equals(body.getString("voice_id"))
                 && "ru-RU".equals(body.getString("language")), "stream preserves Russian voice/model");
+        check("<speak><prosody volume=\"+4dB\">Тест</prosody></speak>".equals(body.getString("input")),
+                "streaming and buffered Ogg use the same default gain");
         check(result.audioBytes == ogg.length && result.pages == 4 && result.inputCharacters == 4, "stream byte/page/input counts");
         check(result.billableCharacters == -1 && "ogg".equals(result.audioFormat), "stream does not invent billing metadata");
         check(result.firstByteMs >= 0 && result.firstAudioMs >= result.firstByteMs && result.elapsedMs >= result.firstAudioMs,
@@ -261,6 +265,22 @@ public final class SpeechifyClientHostTest {
         Factory proxy = new Factory(proxied);
         new SpeechifyClient(proxy).streamOgg(config().put("lab_proxy_port", 18443), "Тест", collecting());
         check(proxy.proxy.type() == Proxy.Type.HTTP && "/127.0.0.1:18443".equals(proxy.proxy.address().toString()), "stream loopback proxy only");
+
+        Fake adjusted = streamFake(ogg);
+        new SpeechifyClient(new Factory(adjusted)).streamOgg(
+                config().put(SpeechifyClient.VOICE_GAIN_KEY, -2), "Раз <два> & три", collecting());
+        JSONObject adjustedBody = new JSONObject(new String(adjusted.sent.toByteArray(), StandardCharsets.UTF_8));
+        check("<speak><prosody volume=\"-2dB\">Раз &lt;два&gt; &amp; три</prosody></speak>".equals(adjustedBody.getString("input")),
+                "custom gain escapes spoken text before inserting it into SSML");
+        Fake neutral = streamFake(ogg);
+        new SpeechifyClient(new Factory(neutral)).streamOgg(
+                config().put(SpeechifyClient.VOICE_GAIN_KEY, 0), "Тест", collecting());
+        JSONObject neutralBody = new JSONObject(new String(neutral.sent.toByteArray(), StandardCharsets.UTF_8));
+        check("<speak>Тест</speak>".equals(neutralBody.getString("input")), "neutral setting omits gain");
+        for (Object invalid : new Object[]{-7, 7, Long.MAX_VALUE, "2", 2.5}) {
+            check(SpeechifyClient.voiceGainDb(config().put(SpeechifyClient.VOICE_GAIN_KEY, invalid)) == 4,
+                    "invalid setting falls back to the default");
+        }
 
         streamFails("BAD_RESPONSE", streamFake(Arrays.copyOf(ogg, 12)), collecting());
         streamFails("BAD_RESPONSE", streamFake(Arrays.copyOf(ogg, ogg.length - 1)), collecting());

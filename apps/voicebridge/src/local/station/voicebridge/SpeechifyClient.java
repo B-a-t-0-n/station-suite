@@ -35,6 +35,9 @@ public final class SpeechifyClient {
     private static final String MP3 = "mp3";
     private static final String OGG = "ogg";
     private static final String OGG_OUTPUT = "ogg_24000";
+    static final String VOICE_GAIN_KEY = "speechify_gain_db";
+    static final int DEFAULT_VOICE_GAIN_DB = 4;
+    static final int MIN_VOICE_GAIN_DB = -6, MAX_VOICE_GAIN_DB = 6;
     private static final int MAX_INPUT_CODEPOINTS = 2000;
     private static final int MAX_AUDIO_BYTES = 4 * 1024 * 1024;
     private static final int MAX_JSON_BYTES = 6 * 1024 * 1024;
@@ -128,7 +131,7 @@ public final class SpeechifyClient {
         if (sink == null) throw failure("INVALID_INPUT");
         final byte[] body;
         try {
-            body = new JSONObject().put("input", text).put("voice_id", voiceId)
+            body = new JSONObject().put("input", voiceInput(config, text)).put("voice_id", voiceId)
                     .put("model", MODEL).put("language", LANGUAGE).put("output_format", OGG_OUTPUT)
                     .toString().getBytes(StandardCharsets.UTF_8);
         } catch (Exception ignored) { throw failure("INVALID_INPUT"); }
@@ -388,7 +391,8 @@ public final class SpeechifyClient {
         validateInput(text);
         byte[] body;
         try {
-            JSONObject request = new JSONObject().put("input", text).put("voice_id", voiceId)
+            JSONObject request = new JSONObject().put("input", OGG.equals(format) ? voiceInput(config, text) : text)
+                    .put("voice_id", voiceId)
                     .put("model", MODEL).put("language", LANGUAGE).put("audio_format", format);
             if (OGG.equals(format)) request.put("output_format", OGG_OUTPUT);
             body = request.toString().getBytes(StandardCharsets.UTF_8);
@@ -615,6 +619,23 @@ public final class SpeechifyClient {
                 throw failure("INVALID_INPUT");
             }
         }
+    }
+
+    static int voiceGainDb(JSONObject config) {
+        Object raw = config.opt(VOICE_GAIN_KEY);
+        if (raw instanceof Integer || raw instanceof Long) {
+            long number = ((Number) raw).longValue();
+            if (number >= MIN_VOICE_GAIN_DB && number <= MAX_VOICE_GAIN_DB) return (int) number;
+        }
+        return DEFAULT_VOICE_GAIN_DB;
+    }
+
+    private static String voiceInput(JSONObject config, String text) {
+        int gain = voiceGainDb(config);
+        String escaped = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        if (gain == 0) return "<speak>" + escaped + "</speak>";
+        return "<speak><prosody volume=\"" + (gain > 0 ? "+" : "") + gain + "dB\">"
+                + escaped + "</prosody></speak>";
     }
 
     private static SpeechifyException httpFailure(int status, String providerCode, String retryAfter) {
